@@ -8,6 +8,24 @@ This project adheres to [Keep a CHANGELOG](http://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Changed
+
+- Replaced the dagre layout engine with elkjs (Eclipse Layout Kernel).
+  Spec-driven algorithm selection: `layered` for hierarchical C4
+  (Container/Component/Deployment), `force` for hub-and-spoke Context
+  diagrams. Fixes the wide-ribbon layout for Context diagrams.
+- Node sizing now uses real font metrics (fontkit + bundled Liberation
+  Sans) instead of fixed per-type constants.
+- Connectors carry the layout engine’s routed polyline as draw.io waypoints.
+- Directional hints: `Rel_U/D` honored on the layered path; `Rel_L/R`
+  honored when nodes share a rank; `Lay_*` fed as layout-only constraints.
+
+### Added
+
+- Structural parity test + deterministic draw.io golden snapshot gate;
+  exhaustive C4-PlantUML fixture. Independently maintained (originated
+  from localgod/catalyst; now substantially diverged).
+
 ### Added
 
 - Support for Dagre layout engine for automatic graph layout
