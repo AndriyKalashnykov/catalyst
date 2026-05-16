@@ -59,9 +59,17 @@ class RelParser {
             const primitive = match[1];
             const source = match[2].trim();
             const target = match[3].trim();
-            // Group 4 is the optional RelIndex leading integer; ignored for
-            // layout but consumed by the regex so it doesn't break label capture.
-            const label = match[5].trim();
+            // The leading integer of `RelIndex(n, …)` is the C4_Dynamic step
+            // ORDINAL — the whole point of a Dynamic diagram (PlantUML renders
+            // "1: opens"). The main regex deliberately consumes it without a
+            // capture group (keeps group numbering stable, #23 finding: it was
+            // then silently dropped → ordering lost). Re-extract it from the
+            // matched call (same secondary-regex pattern as `$tags` below) and
+            // prepend `n: ` to the verb so measurement AND emit stay in lock-
+            // step (both read `label`). Non-RelIndex primitives never match.
+            const idxMatch = /^RelIndex\w*\(\s*(\d+)\s*,/.exec(match[0]);
+            const verb = match[5].trim();
+            const label = idxMatch ? `${idxMatch[1]}: ${verb}` : verb;
             const description = (match[6] ?? '').trim();
             const bidirectional = primitive.startsWith('BiRel');
             // $tags="x" may appear in the trailing args swallowed by `[^)]*`.
