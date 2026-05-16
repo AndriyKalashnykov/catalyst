@@ -131,15 +131,20 @@ describe('corpus structural sanity gate', () => {
       }
 
       // 5. Description preservation (bug #3): an entity that declared a
-      //    description must keep it in the emitted node. PlantUML `\n`
-      //    breaks are intentionally translated to `<br/>` (Phase 1 layout
-      //    fix) — normalise the expectation the same way so "not dropped"
-      //    still holds without forbidding the line-break translation.
+      //    description must keep it in the emitted node. Normalise the
+      //    expectation through the SAME contract the emitter applies so
+      //    "not dropped" holds without forbidding the safe transforms:
+      //    PlantUML `\n` → `<br/>` (Phase 1 layout fix) AND literal `<`
+      //    → `&lt;` (#23 `<…>`-strip fix — a raw `<x>` would be eaten as
+      //    an empty HTML tag by draw.io's html=1 label; `>` stays raw,
+      //    harmless in text). This locks the fixed, browser-safe form.
       for (const ent of entities) {
         if (ent.description && ent.description.trim().length > 0) {
           const node = nodes.get(ent.alias);
           expect(node, `${name}: entity "${ent.alias}" emitted`).toBeDefined();
-          const expected = splitLabelLines(ent.description).join('<br/>');
+          const expected = splitLabelLines(ent.description)
+            .map((seg) => seg.replace(/</g, '&lt;'))
+            .join('<br/>');
           expect(node!.c4Description, `${name}: entity "${ent.alias}" keeps its description`).toBe(expected);
         }
       }

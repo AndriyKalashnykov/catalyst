@@ -38,11 +38,16 @@ describe('Bug 1 — XML escaping of catalyst-authored attribute values', () => {
     }
 
     // The literal characters survive the round-trip (draw.io decodes the
-    // attribute, then substitutes %c4Name% into the label).
+    // attribute, then substitutes %c4Name% into the `html=1` label).
+    // `<` MUST arrive as the entity `&lt;`, not a raw `<`: draw.io drops
+    // `%c4Name%` straight into a `<div>`, so a raw `<C>` would be parsed
+    // as an empty HTML tag and VANISH (the #23 `<…>`-strip data-loss
+    // bug). `>` may stay literal (harmless in text); `&`→`&` (real
+    // ampersand preserved). This asserts the FIXED contract.
     const root = doc.mxfile.diagram[0].mxGraphModel[0].root[0];
     const names = (root.object ?? []).map((o: { $: { c4Name?: string } }) => o.$.c4Name);
-    expect(names).toContain('A & B <C> D');                 // entity verb-less name
-    expect(names).toContain('calls & waits <sync>');         // relationship verb
+    expect(names).toContain('A & B &lt;C> D');               // entity verb-less name — `<`→`&lt;`
+    expect(names).toContain('calls & waits &lt;sync>');      // relationship verb — `<`→`&lt;`
   });
 });
 
@@ -92,12 +97,14 @@ describe('Phase 1 — PlantUML \\n becomes a real line break, never a literal', 
       expect(m[1], `literal \\n survived in ${m[0]}`).not.toMatch(/\\n/);
     }
 
-    // After the XML round-trip the value carries a real <br/> at each break
-    // (draw.io substitutes this into the html=1 label).
+    // After the XML round-trip the value carries a real <br/> at each
+    // break (draw.io substitutes this into the html=1 label), AND a
+    // literal `<` arrives as `&lt;` so `<workload>` renders verbatim
+    // instead of being eaten as an empty HTML tag (#23 `<…>`-strip fix).
     const root = doc.mxfile.diagram[0].mxGraphModel[0].root[0];
     const objs = (root.object ?? []) as { $: Record<string, string> }[];
     const byId = (id: string) => objs.find((o) => o.$.id === id)!.$;
-    expect(byId('s').c4Name).toBe('K8s Secret<br/><workload>-tls');
+    expect(byId('s').c4Name).toBe('K8s Secret<br/>&lt;workload>-tls');
     expect(byId('s').c4Description).toBe('Holds the issued<br/>leaf cert<br/>and key');
     expect(byId('a').c4Description).toBe('OpenAPI 3.1 REST:<br/>  POST /issue');
     // Relationship verb keeps its break too.
