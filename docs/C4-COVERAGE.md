@@ -4,6 +4,37 @@ Tracks catalyst's export coverage against the [C4-PlantUML v2.13.0](https://gith
 
 Legend: `✓` full, `~` partial (rendered but not with dedicated styling), `✗` silently dropped, `!` crashes parser.
 
+## Surface delta v2.10.0 → v2.13.0 (verified 2026-05-16)
+
+Enumerated diff of the stdlib `!procedure` definitions across both tags:
+
+- **`C4_Context.puml` / `C4_Container.puml` / `C4_Component.puml` /
+  `C4_Deployment.puml`: ZERO user-facing procedures added or removed.**
+  The element/relationship macro surface (`Person*`, `System*`,
+  `Container*`, `Component*`, `Node*`/`Deployment_Node*`, `Rel*`,
+  `BiRel*`, `RelIndex*`, boundaries) is byte-identical v2.10→v2.13.
+- `C4.puml` (core) added only: `$bl`, `$fillMissing`,
+  `$fixHeaderColumns`, `$l_up/$l_down/$l_left/$l_right`,
+  `$updatePropColumns` (all internal `$`-helpers — never user-authored
+  top-level statements), `SharpCornerShape`, `UpdateLegendTitle`. None
+  are entity-shaped; `EntityParser.isValidEntityType()` rejects any
+  non-element token that slips past the `isComponent` skip-list, so
+  none can produce a spurious node.
+
+**Conclusion:** the v2.10.0→v2.13.0 stdlib bump required **no parser
+change**. Re-run on the next stdlib bump:
+
+```bash
+for b in C4 C4_Context C4_Container C4_Component C4_Deployment; do
+  for v in <OLD> <NEW>; do
+    curl -s "https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/$v/$b.puml" \
+      | grep -oE '^!(unquoted )?procedure \$?[A-Za-z_]+' \
+      | sed -E 's/^!(unquoted )?procedure //' | sort -u > /tmp/$b.$v
+  done
+  comm -13 /tmp/$b.<OLD> /tmp/$b.<NEW>   # additions; '$'-prefixed = internal
+done
+```
+
 ## Entity-creation procedures
 
 ### Context level

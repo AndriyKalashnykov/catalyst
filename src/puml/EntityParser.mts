@@ -73,9 +73,14 @@ class EntityParser {
     // The regex is a negative lookahead: returns true (skip this line) when the
     // line starts with one of these directives. Keep in sync with C4-PlantUML
     // v2.13.0 procedure surface — anything not enumerated here is assumed to be
-    // an entity candidate. (v2.11–2.13 additions over v2.10 are sprite/tag/
-    // legend/layout helpers already covered by the Add*Tag / LAYOUT_ / SHOW_ /
-    // Update*Style prefix patterns below; no new entity-shaped procedure.)
+    // an entity candidate. VERIFIED (2026-05-16) by an enumerated diff of the
+    // stdlib source v2.10.0→v2.13.0: C4_Context/Container/Component/Deployment
+    // added/removed ZERO user-facing macros — the Person*/System*/Container*/
+    // Component*/Node*/Rel* surface is byte-identical. C4.puml's only additions
+    // are 8 internal `$`-helpers + SharpCornerShape + UpdateLegendTitle, none
+    // entity-shaped; isValidEntityType() rejects any non-element token that
+    // slips past this list anyway, so even an un-skipped helper emits no shape.
+    // Re-verify on a stdlib bump: see docs/C4-COVERAGE.md "Surface delta".
     const skipPrefixes = [
       // Relationships — cover plain, _Back, _Neighbor, short + long directionals,
       // BiRel variants, and RelIndex (dynamic) variants in one negative branch.
