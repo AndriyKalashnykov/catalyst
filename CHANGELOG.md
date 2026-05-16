@@ -6,7 +6,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 This project adheres to [Keep a CHANGELOG](http://keepachangelog.com/).
 
-## [Unreleased]
+## [1.6.1] - 2026-05-16
 
 ### Fixed
 
