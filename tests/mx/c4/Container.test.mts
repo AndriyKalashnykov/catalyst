@@ -56,9 +56,14 @@ describe('Container', () => {
     expect(style).toContain('strokeColor=#0E7DAD');
   });
 
-  it('should include fontZize property (typo in original)', () => {
+  it('does NOT emit the misspelled fontZize key (typo removed)', () => {
+    // `fontZize` was a typo (mxGraph silently ignores the unknown key,
+    // so it shipped as a garbage `fontZize=11;` token doing nothing).
+    // Removed entirely — no sibling element template sets a cell
+    // fontSize, and Container's label <div>s all set inline font-size,
+    // so the line was inert. render-compare proved zero visual change.
     const style = Container.style();
-    
-    expect(style).toContain('fontZize=11');
+    expect(style).not.toContain('fontZize');
+    expect(style).not.toContain('fontSize=11'); // not "fixed" to an inert lone key — removed
   });
 });

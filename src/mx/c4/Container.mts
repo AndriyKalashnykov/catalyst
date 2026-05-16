@@ -24,7 +24,6 @@ class Container {
             rounded: 1,
             whiteSpace: 'wrap',
             html: 1,
-            fontZize: 11,
             labelBackgroundColor: 'none',
             fillColor: '#23A2D9',
             fontColor: '#ffffff',
