@@ -224,7 +224,16 @@ export class Catalyst {
       rankdir: options.layoutDirection || 'TB',
       nodesep: options.nodesep || 50,
       edgesep: options.edgesep || 10,
-      ranksep: options.ranksep || 50,
+      // Inter-layer gap → ELK `layered.spacing.nodeNodeBetweenLayers`.
+      // 36 == Graphviz `dot`'s default ranksep (0.5in = 36pt). dot IS
+      // PlantUML's own C4 layout engine, i.e. the exact renderer the
+      // side-by-side comparison is judged against — so matching its
+      // ranksep removes the "connectors too long vs the PlantUML render"
+      // gap. Empirically (spike, post line-height/fidelity): example.puml
+      // edge centre-distance 268→240 (~10% shorter), c4-container
+      // unaffected, ZERO node- or label-overlap regression at this value.
+      // A cited reference, not a tuned constant.
+      ranksep: options.ranksep || 36,
       marginx: options.marginx || 20,
       marginy: options.marginy || 20
     }
