@@ -8,6 +8,8 @@ This project adheres to [Keep a CHANGELOG](http://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-05-16
+
 ### Added
 
 - **Layout Phase 2** — measured edge-label dimensions are fed to ELK so
