@@ -65,7 +65,11 @@ This project adheres to [Keep a CHANGELOG](http://keepachangelog.com/).
 - PlantUML executable dependencies (now uses server-only approach)
 - Legacy LayoutConverter class
 - Unused SVG utilities
-- Deprecated `.gitpod.yml` configuration file
+- `slides/` Slidev presentation deck (standalone; not part of the
+  library build, tests, or CI) and its `/slides` Dependabot entry,
+  `tsconfig.json` exclude, and `mdlint --ignore slides`.
+- Gitpod configuration (`.gitpod.yml` and `.gitpod/automations.yaml`) —
+  it was largely slides-driven and the project does not use Gitpod.
 
 ### Fixed
 
