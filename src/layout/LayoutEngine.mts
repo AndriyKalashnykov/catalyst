@@ -219,19 +219,22 @@ class LayoutEngine {
           // chunks — NOT a single over-wide rank — and it empirically
           // flattened normal ranking. Plain layered already balances
           // hierarchical C4 (multiple ranks); the wide-star case is handled
-          // by the force branch below, not by mis-using wrapping.
+          // by the stress (Context) branch below, not by mis-using wrapping.
           // L1 L/R: bias within-layer order by model order WITHOUT overriding
           // edge ranking (forceNodeModelOrder rejected — it flattens ranks).
           'elk.layered.considerModelOrder.strategy': 'NODES_AND_EDGES',
           ...this.graphOpts
         }
       : {
-          // C4 Context (hub-and-spoke): force gives a balanced, overlap-free
-          // arrangement (spike on the real ibmwm-c4-context: layered 2.43 →
-          // force 0.98, 0/12 overlaps). Edges are straight (a context
-          // overview is not a flow diagram). graphOpts (rankdir/spacing) do
-          // not apply to force and are intentionally not spread here.
-          'elk.algorithm': 'org.eclipse.elk.force',
+          // C4 Context (hub-and-spoke): `stress` over `force` (Phase 3).
+          // Empirical spike on the real ibm-wm c4-context (post Phase 1+2
+          // node sizes): force = 3 edge crossings, stress = 0, and stress
+          // is DETERMINISTIC (force is seed-based — unstable golden/route
+          // signatures). `stress` confirmed in elkjs 0.11.1's own
+          // knownLayoutAlgorithms() registry. Edges stay straight (a
+          // context overview is not a flow diagram); graphOpts
+          // (rankdir/spacing) don't apply and are intentionally not spread.
+          'elk.algorithm': 'org.eclipse.elk.stress',
           'elk.hierarchyHandling': 'INCLUDE_CHILDREN',
           ...edgeLabelOpts
         }
@@ -239,11 +242,44 @@ class LayoutEngine {
     return { id: 'root', layoutOptions, children, edges }
   }
 
+  /**
+   * Phase 3 second pass. `stress` minimises edge crossings (0 on the real
+   * c4-context) but, unlike `force`, has NO node-repulsion — it can leave
+   * boxes overlapping (the layout-quality gate's invariant). ELK's
+   * `sporeOverlap` is purpose-built to remove node overlaps while
+   * preserving the relative arrangement, so the crossing-minimal positions
+   * from stress survive. Deterministic. Compound nesting (boundaries) is
+   * kept via INCLUDE_CHILDREN; the spacing is the same font-derived title
+   * band used elsewhere (a real metric, not an invented constant).
+   */
+  private async declump(laid: ElkNode): Promise<ElkNode> {
+    const gap = this.titlePadding().top
+    const clone = (n: ElkNode): ElkNode => ({
+      id: n.id,
+      x: n.x, y: n.y, width: n.width, height: n.height,
+      ...(n.children ? { children: n.children.map(clone) } : {}),
+    })
+    const g2: ElkNode = {
+      id: laid.id,
+      layoutOptions: {
+        'elk.algorithm': 'org.eclipse.elk.sporeOverlap',
+        'elk.hierarchyHandling': 'INCLUDE_CHILDREN',
+        'elk.spacing.nodeNode': String(gap),
+      },
+      children: (laid.children ?? []).map(clone),
+      edges: (laid.edges ?? []) as ElkExtendedEdge[],
+    }
+    return this.elk.layout(g2)
+  }
+
   async calculateLayout(): Promise<LayoutResult> {
     const g = this.buildGraph()
     // elkjs returns a laid-out graph: x/y/width/height on shapes, routed
     // `sections` on edges (top-level edge coords are absolute).
-    const r = await this.elk.layout(g)
+    let r = await this.elk.layout(g)
+    // Context (non-hierarchical) used `stress` — declump any node overlaps
+    // it left, preserving its crossing-minimal arrangement.
+    if (!this.isHierarchical()) r = await this.declump(r)
 
     const nodes: LayoutNode[] = []
     const clusters: LayoutNode[] = []

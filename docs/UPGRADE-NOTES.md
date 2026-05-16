@@ -49,8 +49,11 @@ release-chain step (the BLOCKING visual acceptance gate).
 - Phase 2 (edge-label dims → ELK): done — PR pending. Local visual gate
   PASS on ibm-wm c4-context (baseline had labels on top of boxes; after,
   all labels clear). CHANGELOG Unreleased updated.
-- Phase 3 (Context `force` → `stress`): README "Layout engine" line
-  (`layered` + `force`) → reflect `stress`; ADR.
+- Phase 3 (Context `force` → `stress` + `sporeOverlap` declump): done —
+  PR pending. README "Layout engine" line + diagram + Tech Stack updated;
+  ADR-0005; CHANGELOG. Local visual gate PASS on ibm-wm c4-context
+  (compact, 0 overlaps, no tangle vs baseline). force=21 / stress=0 /
+  pipeline≈5 on the synthetic spike.
 - Phase 4 (native compound boundary layout): README + C4-COVERAGE
   boundary cells; ADR; largest diagram-shape change → full gallery +
   ibm-wm regen.
