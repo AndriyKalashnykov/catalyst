@@ -1,5 +1,6 @@
 # Catalyst — PlantUML C4 → draw.io converter.
 # Tunables mirror scripts/render-compare.mjs env defaults (?= lets env/CI override).
+# renovate: datasource=maven depName=net.sourceforge.plantuml:plantuml
 PLANTUML_VERSION    ?= 1.2026.2
 DRAWIO_EXPORT_IMAGE ?= rlespinasse/drawio-export:latest
 DRAWIO_EXPORT_SCALE ?= 2
