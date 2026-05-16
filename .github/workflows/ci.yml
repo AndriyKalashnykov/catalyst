@@ -12,13 +12,14 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      # Node comes from .mise.toml (node 26) — pinned local↔CI parity,
+      # not the moving `node-version: latest`. SHA matches the
+      # portfolio-canonical pin (puml2drawio / ibm-wm).
+      - uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
         with:
-          node-version: 'latest'
-          check-latest: true
-          cache: 'npm'
-          cache-dependency-path: 'package-lock.json'
+          install: true
+          cache: true
       - name: Install dependencies
         run: |
           ./setup.sh
@@ -34,13 +35,11 @@ jobs:
       contents: read
       pull-requests: write
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
         with:
-          node-version: 'latest'
-          check-latest: true
-          cache: 'npm'
-          cache-dependency-path: 'package-lock.json'
+          install: true
+          cache: true
       - name: Install dependencies
         run: |
           ./setup.sh
@@ -48,7 +47,7 @@ jobs:
       - name: Run tests with coverage
         run: npm run test:coverage
       - name: Report Coverage
-        uses: davelosert/vitest-coverage-report-action@v2
+        uses: davelosert/vitest-coverage-report-action@02f3c2e641286b7fa308cd3e430783103ce6103b # v2
         if: always()
         with:
           name: 'Coverage Report'
