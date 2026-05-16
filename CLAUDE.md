@@ -314,7 +314,50 @@ Everything below is researched, not speculative. Sizes are honest.
 > Deployment-node / BiRel / RelIndex items the original task named are
 > now ✓ (this session shipped them), so they are NOT backlogged.
 
-1. **C4 surface residual gaps (low — see `docs/C4-COVERAGE.md`
+1. **`edge-large-graph` hierarchical edge-label cram — the #24
+   analogue for `layered` (BIG; root-caused + first spike DISPROVED;
+   design-first, ready for a focused session).** User-flagged
+   2026-05-16. Pre-existing (the `.drawio` is byte-identical since
+   #41; #24/#25 explicitly didn't touch hierarchical), NOT a session
+   regression. **What's actually wrong (fact-checked, not eyeballed):**
+   the 6 `integrates [REST]` edges fanning from services → External
+   1–6 have their labels crammed (≈3 nearly stacked). The boundary
+   title is FINE (exactly 33u clearance — an initial thumbnail glance
+   that it "collided with Service 1" was a #19-style false read,
+   disproven by measurement). The 6 `reads/writes [SQL]` are long but
+   adequately separated. **Root cause (code-traced):** ELK computes a
+   non-overlapping label rect per edge and `LayoutEngine` threads it
+   on `LayoutEdge.label`, but `catalyst.mts`'s emit loop captures only
+   `e.points` into `layoutEdgeByRelIdx` and **discards `e.label`**.
+   For a non-laned edge whose ELK route is a 2-point straight section
+   (`poly.length≤2` → the final `else`), `context===false` so #24's
+   waypoint is skipped and drawio auto-anchors the label on its own
+   orthogonal route → cram. Same fundamental as #24 (non-laned solo-
+   edge label on drawio's unpredictable auto-route) but the
+   hierarchical case #24's scope guard deliberately excluded.
+   **DISPROVED hypothesis (spike, render-compare — do NOT retry):**
+   thread `e.label` and emit a waypoint at ELK's label-rect centre
+   for non-laned edges. Render-compare showed it REGRESSED the
+   `calls` chain — ELK's label rect can sit on a long detour segment,
+   so forcing the edge THROUGH it drags the route + stacks the
+   `calls [gRPC]` labels into a left-margin column. Routing-through-
+   label-centre is the wrong shape.
+   **Next hypothesis (for the focused session — spike, don't commit
+   on faith):** the cram is because drawio auto-routes (orthogonal
+   L-shape) while ELK placed the label for ELK's straight 2-point
+   route. Candidate: lower the `else if (poly && poly.length > 2)`
+   threshold so even a 2-point ELK section is emitted as explicit
+   drawio waypoints (drawio then draws ELK's exact segment, not its
+   own auto-route) → ELK's label placement becomes valid; emit
+   `e.label` as the offset. Scope-guard to hierarchical non-laned
+   non-cluster edges; Context (#24) + laned + poly>2 paths
+   byte-identical; gate = corpus route-signature + parity/golden +
+   layout-quality + full gallery render-compare + the ibm-wm
+   `c4-container`/deployment pair. The `fix/edge-large-graph-hier-
+   labels` spike branch was dropped (analysis preserved here);
+   re-cut from fresh `main`.
+
+2. **C4 surface residual gaps (low — see `docs/C4-COVERAGE.md`
    Tier-2/3, validated 2026-05-16).** The genuinely-unimplemented `✗`
    surface, all low-value/no-parity-impact: `$sprite` (no drawio
    sprite registry), `$shadowing`/custom `$lineStyle`/`SET_SKETCH_STYLE`,
@@ -329,7 +372,7 @@ Everything below is researched, not speculative. Sizes are honest.
    C4-COVERAGE when tackled). Pick up individually only when a
    downstream diagram actually needs one; none block parity/golden.
 
-2. **Palette + MX-flag single-sourcing (medium, same theme as #34).**
+3. **Palette + MX-flag single-sourcing (medium, same theme as #34).**
    Colours (`fillColor`/`strokeColor`/`fontColor` hexes — the C4/
    Structurizr palette) are still scattered literals across the 17
    shape files; and the `MX.*` flag enums in `theme.mjs` exist but the
@@ -339,7 +382,7 @@ Everything below is researched, not speculative. Sizes are honest.
    `MX` enums at the call sites. Byte-identical output; verify via
    golden + a render diff.
 
-3. **Sequence-diagram support (deferred feature, large, design-first).**
+4. **Sequence-diagram support (deferred feature, large, design-first).**
    catalyst fail-louds on `C4_Sequence`/PlantUML sequence. New
    subsystem (parser + deterministic non-ELK layout + umlLifeline
    emit). Full design context in memory `open-followups` item 4.
