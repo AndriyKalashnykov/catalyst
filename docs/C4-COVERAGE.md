@@ -1,6 +1,6 @@
 # C4-PlantUML Coverage Matrix
 
-Tracks catalyst's export coverage against the [C4-PlantUML v2.10.0](https://github.com/plantuml-stdlib/C4-PlantUML/tree/v2.10.0) spec surface. Updated as fixes land.
+Tracks catalyst's export coverage against the [C4-PlantUML v2.13.0](https://github.com/plantuml-stdlib/C4-PlantUML/tree/v2.13.0) spec surface. Updated as fixes land.
 
 Legend: `✓` full, `~` partial (rendered but not with dedicated styling), `✗` silently dropped, `!` crashes parser.
 

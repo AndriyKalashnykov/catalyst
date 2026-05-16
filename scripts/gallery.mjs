@@ -19,7 +19,7 @@
  * Requirements: java, docker, network (PlantUML C4 !include + jar download).
  *
  * Env (all overridable, documented defaults — mirrors render-compare.mjs):
- *   PLANTUML_VERSION    default 1.2024.7
+ *   PLANTUML_VERSION    default 1.2026.3
  *   PLANTUML_JAR        default <OUT>/plantuml.jar (downloaded if absent)
  *   DRAWIO_EXPORT_IMAGE default rlespinasse/drawio-export:latest
  *   DRAWIO_EXPORT_SCALE default 2
@@ -31,7 +31,7 @@ import { mkdirSync, existsSync, readFileSync, writeFileSync, copyFileSync, readd
 import { basename, join, resolve } from 'node:path';
 import { Catalyst } from '../dist/catalyst.mjs';
 
-const PLANTUML_VERSION = process.env.PLANTUML_VERSION ?? '1.2024.7';
+const PLANTUML_VERSION = process.env.PLANTUML_VERSION ?? '1.2026.3';
 const DRAWIO_IMAGE = process.env.DRAWIO_EXPORT_IMAGE ?? 'rlespinasse/drawio-export:latest';
 const DRAWIO_SCALE = process.env.DRAWIO_EXPORT_SCALE ?? '2';
 const CORPUS_DIR = resolve(process.env.CORPUS_DIR ?? 'tests/fixtures/corpus');

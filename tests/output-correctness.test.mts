@@ -19,7 +19,7 @@ import { Catalyst } from '../src/catalyst.mjs';
  */
 
 const C4 = (inc: string, body: string) =>
-  `@startuml t\n!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.10.0/${inc}\n${body}\n@enduml\n`;
+  `@startuml t\n!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/${inc}\n${body}\n@enduml\n`;
 
 describe('Bug 1 — XML escaping of catalyst-authored attribute values', () => {
   it('escapes & < > " in c4Name/c4Technology/c4Description and stays well-formed', async () => {

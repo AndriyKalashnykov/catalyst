@@ -1,0 +1,6 @@
+# mise — portfolio-mandatory cross-language version manager.
+# Node is the only toolchain catalyst needs (TypeScript build + vitest).
+# Tracks the latest Node 26.x, mirroring CI's `node-version: 'latest' +
+# check-latest: true` so local and CI run the same major.
+[tools]
+node = "26"

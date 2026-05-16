@@ -1,5 +1,5 @@
 {
-  "typeScriptVersion": "5.8.3",
+  "typeScriptVersion": "6.0.3",
   "compilerOptions": {
     "strict": true,
     "target": "es2024",
@@ -8,10 +8,11 @@
       "ES2024",
       "DOM"
     ],
+    "rootDir": "./src",
     "outDir": "./dist",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
-    "moduleResolution": "Node",
+    "moduleResolution": "bundler",
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "typeRoots": [

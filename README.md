@@ -41,8 +41,8 @@ flowchart LR
 
 | Component | Technology |
 |-----------|-----------|
-| Language | TypeScript 5.8, ES2024 (`.mts` ESM) |
-| Runtime | Node.js (ES2024+) |
+| Language | TypeScript 6.0, ES2024 (`.mts` ESM) |
+| Runtime | Node.js 26 (ES2024+), mise-managed (`.mise.toml`) |
 | Layout engine | elkjs (Eclipse Layout Kernel) — `layered` + `force` |
 | Text metrics | fontkit + bundled Liberation Sans (SIL OFL) |
 | Serialization | xml2js |
@@ -116,7 +116,7 @@ Input is standard PlantUML C4 syntax — `Person()`, `System()`, `Container()`,
 
 ```plantuml
 @startuml
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.10.0/C4_Container.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Container.puml
 
 System(systemA, "System A", "Description")
 Container(containerA, "Container A", "Technology", "Description")

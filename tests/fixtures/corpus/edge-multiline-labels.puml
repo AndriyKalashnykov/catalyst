@@ -1,5 +1,5 @@
 @startuml edge-multiline-labels
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.10.0/C4_Container.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Container.puml
 title Edge cases — explicit PlantUML \n line breaks in name and description
 
 ' Repro of the ibm-wm c4-admin-sidecar "super crammed" render: an explicit

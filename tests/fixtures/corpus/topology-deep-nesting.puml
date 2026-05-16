@@ -1,5 +1,5 @@
 @startuml topology-deep-nesting
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.10.0/C4_Context.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Context.puml
 title Topology — deep boundary nesting
 Enterprise_Boundary(ent, "Acme Corp") {
   System_Boundary(plat, "Platform") {

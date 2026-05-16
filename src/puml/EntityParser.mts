@@ -72,8 +72,10 @@ class EntityParser {
   private isComponent(str: string): boolean {
     // The regex is a negative lookahead: returns true (skip this line) when the
     // line starts with one of these directives. Keep in sync with C4-PlantUML
-    // v2.10.0 procedure surface — anything not enumerated here is assumed to be
-    // an entity candidate.
+    // v2.13.0 procedure surface — anything not enumerated here is assumed to be
+    // an entity candidate. (v2.11–2.13 additions over v2.10 are sprite/tag/
+    // legend/layout helpers already covered by the Add*Tag / LAYOUT_ / SHOW_ /
+    // Update*Style prefix patterns below; no new entity-shaped procedure.)
     const skipPrefixes = [
       // Relationships — cover plain, _Back, _Neighbor, short + long directionals,
       // BiRel variants, and RelIndex (dynamic) variants in one negative branch.
