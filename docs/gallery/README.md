@@ -505,6 +505,34 @@ Rel(svc6, ext6, "integrates", "REST")
 
 </details>
 
+### `edge-multiline-labels.puml`
+
+| Source PlantUML | catalyst → draw.io |
+|---|---|
+| ![edge-multiline-labels source](img/edge-multiline-labels.puml.png) | ![edge-multiline-labels drawio](img/edge-multiline-labels.drawio.png) |
+
+<details><summary>PlantUML source</summary>
+
+```plantuml
+@startuml edge-multiline-labels
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Container.puml
+title Edge cases — explicit PlantUML \n line breaks in name and description
+
+' Repro of the ibm-wm c4-admin-sidecar "super crammed" render: an explicit
+' \n in a ContainerDb name and a multi-line description with indented lines.
+' Untranslated, the literal \n shows in draw.io AND measureNode sizes the
+' box to one giant single line, overflowing into neighbours.
+ContainerDb(secret, "K8s Secret\n<workload>-tls", "Kubernetes", "Holds the issued\nleaf certificate\nand private key")
+Container(admin, "Admin API", "Go", "OpenAPI 3.1 REST:\n  POST /issue\n  POST /renew\n  GET  /status")
+Person(op, "Operator", "Drives certificate\nlifecycle operations")
+
+Rel(op, admin, "issues / renews via", "HTTPS")
+Rel(admin, secret, "writes\nleaf cert + key to", "K8s API")
+@enduml
+```
+
+</details>
+
 ### `edge-tags-styling.puml`
 
 | Source PlantUML | catalyst → draw.io |

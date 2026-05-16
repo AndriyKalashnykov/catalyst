@@ -8,6 +8,36 @@ This project adheres to [Keep a CHANGELOG](http://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-05-16
+
+### Fixed
+
+- **Box sizing uses the renderer's line box.** `measureNode` /
+  `measureEdgeLabel` now size text at mxGraph's `LINE_HEIGHT = 1.2`
+  (`ABSOLUTE_LINE_HEIGHT: false`, verified in mxGraph source) instead of
+  fontkit's font-intrinsic 1.1499 — the ~4.4 %/line under-estimate that
+  clipped the last line of tall multi-line descriptions.
+- **C4 element grammar fidelity.** Element shapes now render in
+  C4-PlantUML canonical order — `«stereotype»` (italic, top) → **Name**
+  (bold) → `[Technology]` (own line, only if present) → Description —
+  vertically centered, matching the PlantUML reference render
+  (previously Name → `[Type]` → Description, top-packed).
+- **Connector length.** Inter-layer gap default `ranksep` 50 → **36**
+  (Graphviz `dot`'s default — PlantUML's own C4 engine), removing the
+  "connectors too long vs the PlantUML render" gap. Zero overlap
+  regression; caller-overridable.
+
+### Changed
+
+- CI: Node pinned via `jdx/mise-action` (`.mise.toml` node 26) instead
+  of `setup-node` `latest`; all actions SHA-pinned; `make ci-run` (act).
+- Dependabot → **Renovate** with customManagers (PLANTUML_VERSION via
+  Maven datasource, C4-PlantUML stdlib pin); `drawio-export` `:latest`
+  → `:v4.51.0`.
+- Verified (enumerated diff) that the C4-PlantUML v2.10→v2.13 stdlib
+  bump added no entity-shaped macros — no parser change needed.
+- `.vscode/` untracked.
+
 ## [1.5.0] - 2026-05-16
 
 ### Added

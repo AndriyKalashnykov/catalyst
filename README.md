@@ -38,6 +38,26 @@ flowchart LR
   A --> D[".drawio"]
 ```
 
+## What a conversion looks like
+
+[`sample/example.puml`](sample/example.puml) (left, rendered by
+PlantUML) converts to `.drawio` (right, rendered by draw.io). The
+`.drawio` is fully editable in [diagrams.net](https://app.diagrams.net/)
+/ the VS Code Draw.io extension — not a flat image. PlantUML and draw.io
+use different layout engines, so the two are never pixel-identical;
+compare **content + grammar**: every box, the `«stereotype»`/Name/
+`[Technology]`/description element order, every relationship verb and
+`[technology]`.
+
+<p align="center">
+  <img src="docs/examples/example.puml.png" alt="PlantUML C4 source diagram" width="380">
+  &nbsp;&nbsp;→&nbsp;&nbsp;
+  <img src="docs/examples/example.drawio.png" alt="Converted editable draw.io diagram" width="380">
+</p>
+
+Regenerate with `make render-compare RENDER_SRC=sample/example.puml`
+(or the full corpus via `make gallery` → [`docs/gallery/`](docs/gallery/)).
+
 ## Tech Stack
 
 | Component | Technology |
@@ -58,7 +78,7 @@ registry). Pin a tag:
 
 ```bash
 # add to a project (npm resolves it under the package name "catalyst")
-npm install github:AndriyKalashnykov/catalyst#v1.5.0
+npm install github:AndriyKalashnykov/catalyst#v1.6.0
 
 # development of catalyst itself
 make deps      # npm ci
