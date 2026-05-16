@@ -9,3 +9,8 @@ build
 # gallery: downloaded tool + root-owned drawio export scratch (artifacts committed are docs/gallery/img + drawio + README)
 docs/gallery/plantuml.jar
 docs/gallery/drawio/export/
+
+# Editor-specific (do not track)
+.vscode/
+.idea/
+*.swp
