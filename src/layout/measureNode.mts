@@ -60,3 +60,33 @@ export function measureNode(entity: EntityDescriptor): { width: number; height: 
 
   return { width: Math.max(textW, minW), height: Math.max(textH, minH) }
 }
+
+/**
+ * Text-measured edge-label size (Phase 2). Models the exact label HTML
+ * `Relastionship.label()` emits:
+ *   verb  — c4Name, 11px bold        (`text-align:center;font-weight:bold`)
+ *   tech  — c4Technology, 11px       (`[Tech]`, only when present)
+ * Both honour explicit PlantUML `\n` breaks (Phase 1). Returned dimensions
+ * are attached to the ELK edge so the layout reserves real space for the
+ * label instead of letting it collide with a node (the dominant
+ * c4-context symptom). Padding is the font's own space advance.
+ */
+export function measureEdgeLabel(
+  verb: string,
+  technology?: string,
+): { width: number; height: number } {
+  const PX = 11
+  const pad = spaceAdvance(PX, false)
+  const verbLines = splitLabelLines(verb)
+  const techLines = technology ? splitLabelLines(`[${technology}]`) : []
+  const widthOf = (lines: string[], bold: boolean) =>
+    lines.reduce((m, l) => Math.max(m, textWidth(l, PX, bold)), 0)
+
+  const width = Math.ceil(
+    Math.max(widthOf(verbLines, true), widthOf(techLines, false)) + 2 * pad)
+  const height = Math.ceil(
+    verbLines.length * lineHeight(PX, true) +
+    techLines.length * lineHeight(PX, false) +
+    2 * pad)
+  return { width, height }
+}

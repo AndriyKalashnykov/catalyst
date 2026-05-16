@@ -14,7 +14,7 @@ Audit during the layout-tuning run found multiple stale pins (user:
 | vitest / coverage-v8 | 4.1.4 | 4.1.6 | |
 | oxlint | 1.59.0 | 1.65.0 | |
 | @types/node | 25.6.0 | 25.8.0 | |
-| PLANTUML_VERSION default | 1.2024.7 | 1.2026.3 | ~2yr stale; render-tooling only (ADR 0003) |
+| PLANTUML_VERSION default | 1.2024.7 | 1.2026.2 | ~2yr stale; render-tooling only (ADR 0003) |
 | C4-PlantUML stdlib pin | v2.10.0 | v2.13.0 | fixtures/tests/docs |
 | Node version mgmt | none | mise `.mise.toml` node=26 | portfolio-mandatory |
 | elkjs / fontkit / xml2js | — | — | already latest (0.11.1 / 2.0.4 / 0.6.2) |

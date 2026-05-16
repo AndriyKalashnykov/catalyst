@@ -9,7 +9,7 @@ Applied:
 
 - TypeScript 5.8 → 6.0; `tsconfig` `moduleResolution: bundler` + `rootDir`.
 - vitest/coverage 4.1.4 → 4.1.6; oxlint 1.59 → 1.65; @types/node bump.
-- `PLANTUML_VERSION` 1.2024.7 → 1.2026.3 (Makefile + both scripts'
+- `PLANTUML_VERSION` 1.2024.7 → 1.2026.2 (Makefile + both scripts'
   defaults & doc comments).
 - C4-PlantUML stdlib v2.10.0 → v2.13.0 (all fixtures + corpus +
   `output-correctness` helper + EntityParser comment).
@@ -46,7 +46,9 @@ release-chain step (the BLOCKING visual acceptance gate).
 
 - Phase 1 (`\n` → `<br/>`): merged (PR #16). Docs: CHANGELOG pending at
   release; gallery regen pending.
-- Phase 2 (edge-label dims → ELK): pending.
+- Phase 2 (edge-label dims → ELK): done — PR pending. Local visual gate
+  PASS on ibm-wm c4-context (baseline had labels on top of boxes; after,
+  all labels clear). CHANGELOG Unreleased updated.
 - Phase 3 (Context `force` → `stress`): README "Layout engine" line
   (`layered` + `force`) → reflect `stress`; ADR.
 - Phase 4 (native compound boundary layout): README + C4-COVERAGE
