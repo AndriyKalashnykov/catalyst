@@ -213,20 +213,23 @@ describe('RelParser — directional intent (L1)', () => {
   });
 });
 describe('RelParser — RelIndex leading-index + numeric-alias safety (7-a)', () => {
-  it('RelIndex($index, $from, $to, $label) discards the index, keeps from/to', () => {
+  // #23 fix: the RelIndex ordinal is the POINT of a C4_Dynamic diagram
+  // (PlantUML renders "1: opens"); it must be PRESERVED as an `n: ` verb
+  // prefix, not discarded. from/to/technology unaffected.
+  it('RelIndex($index, $from, $to, $label) preserves the index as an `n: ` prefix', () => {
     const rels = RelParser.getRelations('RelIndex(1, user, web, "opens")');
     expect(rels).toHaveLength(1);
-    expect(rels[0]).toMatchObject({ source: 'user', target: 'web', label: 'opens' });
+    expect(rels[0]).toMatchObject({ source: 'user', target: 'web', label: '1: opens' });
   });
 
-  it('RelIndex 5-arg keeps technology (group 6)', () => {
+  it('RelIndex 5-arg keeps technology (group 6) and prefixes the index', () => {
     const rels = RelParser.getRelations('RelIndex(2, web, api, "GET /orders", "JSON/HTTPS")');
-    expect(rels[0]).toMatchObject({ source: 'web', target: 'api', label: 'GET /orders', description: 'JSON/HTTPS' });
+    expect(rels[0]).toMatchObject({ source: 'web', target: 'api', label: '2: GET /orders', description: 'JSON/HTTPS' });
   });
 
-  it('RelIndex_* directional variant also discards the leading index', () => {
+  it('RelIndex_* directional variant also preserves the leading index', () => {
     const rels = RelParser.getRelations('RelIndex_Back(3, a, b, "x")');
-    expect(rels[0]).toMatchObject({ source: 'a', target: 'b', label: 'x' });
+    expect(rels[0]).toMatchObject({ source: 'a', target: 'b', label: '3: x' });
   });
 
   it('plain Rel with a numeric leading argument is NOT treated as a RelIndex index', () => {
