@@ -167,6 +167,27 @@ async function layoutData2mx(layoutData: LayoutResult, pumlElements: EntityDescr
       const A = nodeCenter.get(rel.source)
       const B = nodeCenter.get(rel.target)
       if (A && B) {
+        // #24: deterministic Context solo-edge routing. Emit ONE
+        // waypoint at the A↔B centre-midpoint so drawio routes straight
+        // THROUGH it (no orthogonal auto-route); the edge's path-
+        // midpoint then EQUALS this point — exactly what
+        // resolveLabelOverlap assumes — so its de-collision lands
+        // correctly instead of fighting drawio's unpredictable
+        // auto-route. Mirrors the proven laned solo-waypoint path with
+        // lane.shift == 0. SCOPE GUARD (BLOCKING): Context (`stress`)
+        // only — hierarchical edges already carry a deterministic ELK
+        // ORTHOGONAL route (handled by the `else if` poly branch
+        // above; a rare 2-point ELK section reaching here must stay
+        // byte-identical, so do NOT add a waypoint). Cluster endpoints
+        // excluded (L4 reroutes ranking edges; a centre waypoint would
+        // not match the visible boundary attach points).
+        if (layoutData.context === true
+            && !clusterIds.has(rel.source) && !clusterIds.has(rel.target)) {
+          g.addArrayPoint(new MxPoint(
+            Math.round((A.cx + B.cx) / 2),
+            Math.round((A.cy + B.cy) / 2),
+          ))
+        }
         const d = measureEdgeLabel(rel.label, rel.description, edgeLabelCap(rel.source, rel.target))
         const obstacles: NodeRect[] = []
         for (const [id, c] of nodeCenter) {
