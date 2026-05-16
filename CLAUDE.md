@@ -82,15 +82,71 @@ Everything below is researched, not speculative. Sizes are honest.
 > across catalyst v1.5.0→v1.6.1 for that corpus — fresh regen verified
 > via mtimes, not stale). Memory `release-chain-topology` updated.
 
-1. **#19 — BLOCKING final visual acceptance gate.** After the release, visually
-   compare all **10** ibm-wm `_drawio/*.drawio.png` against the baseline
-   at pinned sha `a6cd3cc` AND their `_images/*.puml.png` PlantUML
-   renders. Per-phase gates already PASSed for c4-admin-sidecar /
-   c4-context / c4-container; the other 7 were asserted via the test
-   suite + zero-regression spike, NOT eyeballed — eyeball them now.
-   Pass = visibly ≥ the PlantUML render, no overflow/collision.
+---
 
-2. **#23 — finish the 20-pair gallery visual review.** 6 reviewed
+> 🔎 **#19 visual acceptance gate — EYEBALLED 2026-05-16 (7 of 7).**
+> Verdicts (catalyst `_drawio/*.drawio.png` vs `_images/*.puml.png`):
+> **PASS** — c4-cli (minor: K8s-Secret cylinder tight to the Kubernetes
+> Cluster boundary subtitle = soft #25; `<workload>` placeholder
+> stripped from a label = catalyst handling angle-brackets, benign),
+> c4-component-sdk (clearly *better* than the cramped PUML render),
+> c4-poc-stack (minor: one "Workload API (future)" label on the
+> poc-node box + a namespace subtitle edge-clipped = #4/#24-class).
+> **CONCERN, root-caused, NOT a v1.6.1 regression** —
+> c4-deployment-profile-a/b/c (one shared template): triple-nested
+> boundary title bands collide (a child box top overlaps the outer
+> boundary's `[…]` subtitle: Customer Site ▸ Kubernetes Cluster ▸
+> namespace:policy/cert-manager/…); "Mounts read-only"×N edge labels
+> cluster/overlap near the top. Body content is clean (no in-box
+> overflow, no box-on-box). These ARE backlog items 4 (#24 edge-label
+> placement) + 5 (#25 nested-boundary-title spacing); byte-identical
+> to the v1.5.0-era render so the release did not introduce them.
+> **FAIL (new concrete defect)** — layered-architecture: see item 1.
+
+1. **`measureNode` under-sizes nodes with long descriptions →
+   text overflows the box bottom (NEW, from #19; real fix, design+
+   render-compare-gated).** In `layered-architecture.drawio.png` the
+   "Language SDK (in-house thin client)" and "CLM orchestrator (in
+   cluster, K8s-native)" Container boxes render their last description
+   line(s) *below* the rounded-rect bottom border (PlantUML contains
+   them fully — catalyst is visibly < PUML here, so #19 is NOT a clean
+   pass). Also: catalyst drops PlantUML `note` callouts entirely (2
+   yellow notes missing in this diagram) — separate unimplemented-
+   feature gap; track it via item 6 (C4-COVERAGE validation enumerates
+   the unimplemented surface). Root cause (analysed,
+   `src/layout/measureNode.mts`):
+   the description is wrapped at `contentW = max(titleW,stereoW,techW)`
+   using `pad = spaceAdvance(TITLE_PX=16px,bold)` as the inset unit,
+   but the drawio template (`src/mx/c4/Container.mts`: 4 stacked
+   `<div>`s, `whiteSpace:wrap; html:1; align:center; verticalAlign:top`)
+   is RE-wrapped by mxGraph at the *cell inner width minus mxGraph's
+   own HTML-label horizontal inset* — which is narrower than `contentW`
+   when the 16px-space `pad` < mxGraph's real label padding, so the
+   renderer produces MORE description lines than `descLines.length`
+   measured → the reserved height is short → vertical overflow. This is
+   the SAME measure-vs-render desync class as the 10px edge-label bug
+   (memory `renderer-style-cascade`): measurement must wrap at the value
+   the renderer ACTUALLY applies. Fix shape: single-source the real
+   label horizontal inset (cite it from mxGraph `mxConstants`/the
+   template, not an invented constant), wrap the description at
+   `finalBoxWidth − 2·realInset`, derive height from THAT line count;
+   floor unchanged. **BLOCKING discipline:** golden/parity only
+   fingerprint topology — prove the fix with `make render-compare`
+   (RENDER_SRC=ibm-wm layered-architecture.puml) AND re-run the full
+   #19 7-pair eyeball; do NOT declare fixed on green tests. Likely also
+   fixes the c4-cli/poc-stack soft boundary tightness if the same inset
+   feeds `titlePadding`.
+
+2. **#19 — re-run the 7-pair eyeball after item 1 lands.** Same
+   procedure used 2026-05-16 (crop the committed `_drawio/*.drawio.png`
+   to legible bands via a tiny Pillow script — ImageMagick is NOT
+   installed; `pip install --user Pillow` then crop ~1100px bands /
+   quadrants for wide ones — and Read each vs `_images/*.puml.png`).
+   Pass = visibly ≥ the PUML render, no in-box overflow. The deployment
+   profiles stay CONCERN until #3/#4 land; gate them on "no NEW
+   regression vs this 2026-05-16 baseline", not on perfection.
+
+3. **#23 — finish the 20-pair gallery visual review.** 6 reviewed
    (rel-long-labels FIXED #32; topology-deep-nesting boundary FIXED-
    partial #34; wide-rank/cyclic/parallel = the #24 limitation; cyclic
    ok). 14 unviewed: edge-empty-descriptions, edge-multiline-labels,
@@ -101,7 +157,7 @@ Everything below is researched, not speculative. Sizes are honest.
    Read `docs/gallery/img/<f>.drawio.png` vs `<f>.puml.png`; fix real
    defects (real fixes, no magic constants), regenerate `make gallery`.
 
-3. **#24 — deterministic Context-edge routing (BIG, design-first).**
+4. **#24 — deterministic Context-edge routing (BIG, design-first).**
    Root cause (researched): non-laned edges get NO catalyst waypoint →
    drawio orthogonally auto-routes them and anchors the label on that
    route; on `stress`/`force` ELK neither routes nor places labels, so
@@ -114,7 +170,7 @@ Everything below is researched, not speculative. Sizes are honest.
    changes routing broadly — gate via corpus-sanity route signatures +
    layout-quality + full 20-pair gallery + the #19 ibm-wm gate.
 
-4. **#25 — dense nested-boundary title collision (BIG, compound
+5. **#25 — dense nested-boundary title collision (BIG, compound
    layout).** `titlePadding` reserves the band per compound node
    (children no longer overlap the title; title inset off the stroke —
    both shipped #34), but ELK packs sibling nested boundaries with
@@ -123,7 +179,7 @@ Everything below is researched, not speculative. Sizes are honest.
    sibling compound nodes (ELK compound spacing / extra padding).
    Design-first; same gates as #24.
 
-5. **C4-COVERAGE.md validation + backlog the gaps (user-requested,
+6. **C4-COVERAGE.md validation + backlog the gaps (user-requested,
    medium).** Validate every `✗`/`~` row in `docs/C4-COVERAGE.md`
    against current code (it predates the v1.5–1.6 work — e.g. it still
    says Context uses `force`; it's `stress`+`sporeOverlap` now; the
@@ -132,7 +188,7 @@ Everything below is researched, not speculative. Sizes are honest.
    variants, RelIndex/dynamic, sprites, properties, legend, sequence
    diagrams) as concrete backlog items here.
 
-6. **Palette + MX-flag single-sourcing (medium, same theme as #34).**
+7. **Palette + MX-flag single-sourcing (medium, same theme as #34).**
    Colours (`fillColor`/`strokeColor`/`fontColor` hexes — the C4/
    Structurizr palette) are still scattered literals across the 17
    shape files; and the `MX.*` flag enums in `theme.mjs` exist but the
@@ -142,7 +198,7 @@ Everything below is researched, not speculative. Sizes are honest.
    `MX` enums at the call sites. Byte-identical output; verify via
    golden + a render diff.
 
-7. **Sequence-diagram support (deferred feature, large, design-first).**
+8. **Sequence-diagram support (deferred feature, large, design-first).**
    catalyst fail-louds on `C4_Sequence`/PlantUML sequence. New
    subsystem (parser + deterministic non-ELK layout + umlLifeline
    emit). Full design context in memory `open-followups` item 4.
