@@ -74,29 +74,15 @@ Standalone, independently-maintained library (no upstream; never add an
 
 Everything below is researched, not speculative. Sizes are honest.
 
-1. **Final release chain v1.6.1 (mechanical, do first — ships everything
-   already merged).** Since v1.6.0, main gained: line-height fix (already
-   in 1.6.0), edge-label wrap (#32), single-edge de-collision (#33),
-   C4 typography single-source + the **10px edge-label bug fix** +
-   boundary title band (#34). Steps: bump `package.json`/lock 1.6.0→
-   1.6.1, README install pin `#v1.6.1`, CHANGELOG `[Unreleased]`→
-   `[1.6.1] - <date>`; PR; merge; **annotated tag `v1.6.1`** + push.
-   Then puml2drawio: branch, `printf 'v1.6.1\n' > CATALYST_REF`,
-   `rm -rf vendor/`, `make examples-png`, `make examples-check`, PR,
-   merge, `git tag -a v1.5.4`, push, `make release-floating-tags
-   VERSION=v1.5.4`. **Gating rule:** verify ghcr published before
-   ibm-wm — the docker metadata action publishes the **v-LESS** tag
-   (`ghcr.io/andriykalashnykov/puml2drawio:1.5.4`, NOT `:v1.5.4`);
-   confirm `:1`==`:1.5.4` by digest. Then ibm-wm: branch, bump the
-   `.github/workflows/diagrams.yml` SHA pin to v1.5.4's `^{}` commit
-   (`git ls-remote … 'refs/tags/v1.5.4^{}'`) + the "bundles catalyst
-   vX" comment + `CLAUDE.md` pin note (DON'T blanket-sed the historical
-   "vX.Y.1 fixed …" note — it bit twice), `make diagrams-clean
-   diagrams-embed` + `diagrams-drawio-png`, commit the 10 regenerated
-   `_drawio/*.drawio.png`, PR (the `diagrams-pass` gate re-renders and
-   stale-checks). See memory `release-chain-topology`.
+> ✅ **Release chain v1.6.1 — DONE 2026-05-16.** catalyst v1.6.1
+> (tag `v1.6.1`, `^{}`=`113a661`; PRs #36+#37) → puml2drawio v1.5.4
+> (tag `v1.5.4`, `^{}`=`80967616`; PR #93; ghcr `:1.5.4`==`:1.5`==`:1`
+> digest `sha256:a01904b0…`; floating tags retargeted) → ibm-wm SHA-pin
+> `80967616…` (PR #12, `diagrams-pass` green; diagrams byte-identical
+> across catalyst v1.5.0→v1.6.1 for that corpus — fresh regen verified
+> via mtimes, not stale). Memory `release-chain-topology` updated.
 
-2. **#19 — BLOCKING final visual acceptance gate.** After (1), visually
+1. **#19 — BLOCKING final visual acceptance gate.** After the release, visually
    compare all **10** ibm-wm `_drawio/*.drawio.png` against the baseline
    at pinned sha `a6cd3cc` AND their `_images/*.puml.png` PlantUML
    renders. Per-phase gates already PASSed for c4-admin-sidecar /
@@ -104,7 +90,7 @@ Everything below is researched, not speculative. Sizes are honest.
    suite + zero-regression spike, NOT eyeballed — eyeball them now.
    Pass = visibly ≥ the PlantUML render, no overflow/collision.
 
-3. **#23 — finish the 20-pair gallery visual review.** 6 reviewed
+2. **#23 — finish the 20-pair gallery visual review.** 6 reviewed
    (rel-long-labels FIXED #32; topology-deep-nesting boundary FIXED-
    partial #34; wide-rank/cyclic/parallel = the #24 limitation; cyclic
    ok). 14 unviewed: edge-empty-descriptions, edge-multiline-labels,
@@ -115,7 +101,7 @@ Everything below is researched, not speculative. Sizes are honest.
    Read `docs/gallery/img/<f>.drawio.png` vs `<f>.puml.png`; fix real
    defects (real fixes, no magic constants), regenerate `make gallery`.
 
-4. **#24 — deterministic Context-edge routing (BIG, design-first).**
+3. **#24 — deterministic Context-edge routing (BIG, design-first).**
    Root cause (researched): non-laned edges get NO catalyst waypoint →
    drawio orthogonally auto-routes them and anchors the label on that
    route; on `stress`/`force` ELK neither routes nor places labels, so
@@ -128,7 +114,7 @@ Everything below is researched, not speculative. Sizes are honest.
    changes routing broadly — gate via corpus-sanity route signatures +
    layout-quality + full 20-pair gallery + the #19 ibm-wm gate.
 
-5. **#25 — dense nested-boundary title collision (BIG, compound
+4. **#25 — dense nested-boundary title collision (BIG, compound
    layout).** `titlePadding` reserves the band per compound node
    (children no longer overlap the title; title inset off the stroke —
    both shipped #34), but ELK packs sibling nested boundaries with
@@ -137,7 +123,7 @@ Everything below is researched, not speculative. Sizes are honest.
    sibling compound nodes (ELK compound spacing / extra padding).
    Design-first; same gates as #24.
 
-6. **C4-COVERAGE.md validation + backlog the gaps (user-requested,
+5. **C4-COVERAGE.md validation + backlog the gaps (user-requested,
    medium).** Validate every `✗`/`~` row in `docs/C4-COVERAGE.md`
    against current code (it predates the v1.5–1.6 work — e.g. it still
    says Context uses `force`; it's `stress`+`sporeOverlap` now; the
@@ -146,7 +132,7 @@ Everything below is researched, not speculative. Sizes are honest.
    variants, RelIndex/dynamic, sprites, properties, legend, sequence
    diagrams) as concrete backlog items here.
 
-7. **Palette + MX-flag single-sourcing (medium, same theme as #34).**
+6. **Palette + MX-flag single-sourcing (medium, same theme as #34).**
    Colours (`fillColor`/`strokeColor`/`fontColor` hexes — the C4/
    Structurizr palette) are still scattered literals across the 17
    shape files; and the `MX.*` flag enums in `theme.mjs` exist but the
@@ -156,7 +142,7 @@ Everything below is researched, not speculative. Sizes are honest.
    `MX` enums at the call sites. Byte-identical output; verify via
    golden + a render diff.
 
-8. **Sequence-diagram support (deferred feature, large, design-first).**
+7. **Sequence-diagram support (deferred feature, large, design-first).**
    catalyst fail-louds on `C4_Sequence`/PlantUML sequence. New
    subsystem (parser + deterministic non-ELK layout + umlLifeline
    emit). Full design context in memory `open-followups` item 4.
