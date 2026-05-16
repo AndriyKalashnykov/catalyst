@@ -27,10 +27,29 @@ export function textWidth(text: string, fontSizePx: number, isBold = false): num
   return (run.advanceWidth / f.unitsPerEm) * fontSizePx
 }
 
-/** Natural line height (px) — includes the font's own leading (lineGap). */
+/** Natural line height (px) — includes the font's own leading (lineGap).
+ *  This is the FONT-INTRINSIC value (Liberation Sans ≈ 1.150·fontSize).
+ *  Do NOT use it to size a box to its drawio-rendered label — drawio
+ *  renders via mxGraph, which lays each line out at a fixed relative
+ *  line box, not the font's hhea metrics (see {@link renderedLineHeight}). */
 export function lineHeight(fontSizePx: number, isBold = false): number {
   const f = pick(isBold)
   return ((f.ascent - f.descent + f.lineGap) / f.unitsPerEm) * fontSizePx
+}
+
+/**
+ * mxGraph's HTML-label line box: `LINE_HEIGHT = 1.2`, `ABSOLUTE_LINE_HEIGHT
+ * = false` (i.e. 1.2 × fontSize, relative) — verified in the authoritative
+ * mxGraph source (`util/mxConstants.js`) and its maxGraph successor
+ * (`util/Constants.ts`). drawio renders every catalyst C4 label through
+ * mxGraph, so a box sized to fit its rendered text MUST use THIS height,
+ * not fontkit's font-intrinsic ≈1.150 (which under-sizes ~4.4 %/line and
+ * clips the last line of tall multi-line descriptions). Real renderer
+ * metric, not an invented constant.
+ */
+const MX_LINE_HEIGHT = 1.2
+export function renderedLineHeight(fontSizePx: number): number {
+  return fontSizePx * MX_LINE_HEIGHT
 }
 
 /** Advance (px) of a space — the font-derived padding unit. */

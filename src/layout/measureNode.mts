@@ -1,5 +1,5 @@
 import { EntityDescriptor } from '../puml/EntityDescriptor.interface.mjs'
-import { textWidth, lineHeight, spaceAdvance, wrap } from '../text/TextMetrics.mjs'
+import { textWidth, renderedLineHeight, spaceAdvance, wrap } from '../text/TextMetrics.mjs'
 import { splitLabelLines } from '../text/labelLines.mjs'
 
 /**
@@ -38,9 +38,9 @@ export function measureNode(entity: EntityDescriptor): { width: number; height: 
 
   const textW = Math.ceil(Math.max(titleW, metaW, longestDescW) + 2 * pad)
   const textH = Math.ceil(
-    titleLines.length * lineHeight(TITLE_PX, true) +   // title (1+ lines)
-    lineHeight(BODY_PX, false) +                       // meta
-    descLines.length * lineHeight(BODY_PX, false) +    // wrapped description
+    titleLines.length * renderedLineHeight(TITLE_PX) + // title (1+ lines)
+    renderedLineHeight(BODY_PX) +                      // meta
+    descLines.length * renderedLineHeight(BODY_PX) +   // wrapped description
     2 * pad)                                           // top/bottom breathing
 
   // Floor at the established C4 element box convention. fontkit measures the
@@ -85,8 +85,8 @@ export function measureEdgeLabel(
   const width = Math.ceil(
     Math.max(widthOf(verbLines, true), widthOf(techLines, false)) + 2 * pad)
   const height = Math.ceil(
-    verbLines.length * lineHeight(PX, true) +
-    techLines.length * lineHeight(PX, false) +
+    verbLines.length * renderedLineHeight(PX) +
+    techLines.length * renderedLineHeight(PX) +
     2 * pad)
   return { width, height }
 }
