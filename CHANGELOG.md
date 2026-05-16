@@ -8,6 +8,25 @@ This project adheres to [Keep a CHANGELOG](http://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **Long relationship labels no longer overrun the endpoint nodes.**
+  A drawio edge label has no box, so a long single-line verb/technology
+  was laid out as one un-wrappable line smeared across both endpoint
+  boxes (`rel-long-labels` gallery defect). Edge labels are now
+  word-wrapped to a cap **derived from the real measured width of the
+  narrower endpoint node** (pure geometry — "never wider than the
+  smallest box it sits between"; no magic constant; cluster/unknown
+  endpoint ⇒ no wrap). `measureEdgeLabel` (ELK reservation) and the Mx
+  emit share one wrap routine (`labelLines.wrapEdgeLabelLines`), so the
+  rendered block equals the space ELK reserved.
+- The edge-label font size is now the **cited** mxGraph
+  `DEFAULT_FONTSIZE` (`TextMetrics.MX_DEFAULT_FONTSIZE`, verified in the
+  authoritative source) instead of a bare `11` literal — the
+  Relationship template sets no `font-size`, so it renders at the
+  renderer default; measurement is anchored to that constant (same
+  rigor as `MX_LINE_HEIGHT`).
+
 ## [1.6.0] - 2026-05-16
 
 ### Fixed
