@@ -3,7 +3,8 @@ import { Mx, MxGeometry } from './mx/Mx.mjs'
 import { MxPoint } from './mx/MxPoint.mjs'
 import { RelParser } from './puml/RelParser.mjs'
 import { LayoutEngine, LayoutResult } from './layout/LayoutEngine.mjs'
-import { assignEdgeLanes, type NodeCenter } from './layout/edgeLanes.mjs'
+import { assignEdgeLanes, resolveLabelOverlap, type NodeCenter, type NodeRect } from './layout/edgeLanes.mjs'
+import { measureEdgeLabel } from './layout/measureNode.mjs'
 import { StyleParser } from './puml/StyleParser.mjs'
 import type { ParsedStyles, StyleOverride } from './puml/StyleParser.mjs'
 
@@ -156,6 +157,24 @@ async function layoutData2mx(layoutData: LayoutResult, pumlElements: EntityDescr
     } else if (poly && poly.length > 2 && !clusterIds.has(rel.source) && !clusterIds.has(rel.target)) {
       for (const p of poly.slice(1, -1)) {
         g.addArrayPoint(new MxPoint(Math.round(p.x), Math.round(p.y)))
+      }
+    } else {
+      // Straight, non-laned edge (the stress/force Context case: ELK
+      // neither routes nor places the label). drawio anchors the label
+      // at the A↔B midpoint, which can land on an unrelated node. Push
+      // it the minimal geometry-exact distance to clear every other
+      // box — same offset mechanism the lane fan uses.
+      const A = nodeCenter.get(rel.source)
+      const B = nodeCenter.get(rel.target)
+      if (A && B) {
+        const d = measureEdgeLabel(rel.label, rel.description, edgeLabelCap(rel.source, rel.target))
+        const obstacles: NodeRect[] = []
+        for (const [id, c] of nodeCenter) {
+          if (id === rel.source || id === rel.target) continue
+          obstacles.push({ x: c.cx - c.hw, y: c.cy - c.hh, w: c.hw * 2, h: c.hh * 2 })
+        }
+        const off = resolveLabelOverlap(A, B, d.width, d.height, obstacles)
+        if (off) g.addPoint(new MxPoint(off.dx, off.dy, 'offset'))
       }
     }
     const relOvr: StyleOverride = { ...styles.relDefault }

@@ -136,3 +136,77 @@ export function assignEdgeLanes(
   }
   return out
 }
+
+/** Axis-aligned rectangle (top-left + size) — a node's box in absolute px. */
+export interface NodeRect { x: number; y: number; w: number; h: number }
+
+const aabbOverlap = (
+  ax: number, ay: number, aw: number, ah: number,
+  b: NodeRect,
+): boolean =>
+  ax < b.x + b.w && ax + aw > b.x && ay < b.y + b.h && ay + ah > b.y
+
+/**
+ * Single-edge label de-collision (renderer-side, geometry-exact).
+ *
+ * On a non-laned edge catalyst emits no waypoint, so drawio anchors the
+ * label at the straight-line midpoint. On `stress`/`force` (Context)
+ * layouts ELK neither routes nor places labels, so that midpoint can
+ * land on top of an unrelated node (the `topology-wide-rank` /
+ * `rel-parallel` / `topology-cyclic` "label on a box" defect).
+ *
+ * This returns the **minimal** offset (from the midpoint, along the
+ * edge's perpendicular) that separates the label's axis-aligned rect
+ * from every obstacle node. The optimum along a line always occurs at an
+ * axis-contact boundary, so the candidate set is exactly
+ * {0} ∪ {±x-touch, ±y-touch per obstacle}; we take the smallest-|offset|
+ * candidate that clears ALL obstacles. Every number is derived from real
+ * rectangles — no spacing constant, no sampling step. Returns `null`
+ * when the midpoint label already clears everything (emit no offset).
+ */
+export function resolveLabelOverlap(
+  a: NodeCenter,
+  b: NodeCenter,
+  labelW: number,
+  labelH: number,
+  obstacles: ReadonlyArray<NodeRect>,
+): { dx: number; dy: number } | null {
+  const dx = b.cx - a.cx
+  const dy = b.cy - a.cy
+  const len = Math.hypot(dx, dy)
+  if (len === 0 || labelW <= 0 || labelH <= 0) return null
+  const px = -dy / len            // perpendicular unit
+  const py = dx / len
+  const mx = (a.cx + b.cx) / 2     // default label anchor = edge midpoint
+  const my = (a.cy + b.cy) / 2
+  const hlw = labelW / 2
+  const hlh = labelH / 2
+
+  // Label top-left after shifting the centre by t·perp.
+  const lx = (t: number) => mx + px * t - hlw
+  const ly = (t: number) => my + py * t - hlh
+  const clearsAll = (t: number) =>
+    !obstacles.some((o) => aabbOverlap(lx(t), ly(t), labelW, labelH, o))
+
+  if (clearsAll(0)) return null    // midpoint already clear — no offset
+
+  // Candidate offsets: for each obstacle, the four t where the label
+  // rect just touches it on an axis (so moving past separates on that
+  // axis). Solve mx+px·t ± hlw == o.x{,+w}  and the y analogue.
+  const cands: number[] = [0]
+  for (const o of obstacles) {
+    if (px !== 0) {
+      cands.push((o.x - hlw - mx) / px, (o.x + o.w + hlw - mx) / px)
+    }
+    if (py !== 0) {
+      cands.push((o.y - hlh - my) / py, (o.y + o.h + hlh - my) / py)
+    }
+  }
+  cands.sort((u, v) => Math.abs(u) - Math.abs(v))
+  for (const t of cands) {
+    if (clearsAll(t)) {
+      return { dx: Math.round(px * t), dy: Math.round(py * t) }
+    }
+  }
+  return null                      // unreachable in practice; fail safe
+}
