@@ -41,22 +41,27 @@ flowchart LR
 ## What a conversion looks like
 
 [`sample/example.puml`](sample/example.puml) (left, rendered by
-PlantUML) converts to `.drawio` (right, rendered by draw.io). The
-`.drawio` is fully editable in [diagrams.net](https://app.diagrams.net/)
-/ the VS Code Draw.io extension — not a flat image. PlantUML and draw.io
-use different layout engines, so the two are never pixel-identical;
-compare **content + grammar**: every box, the `«stereotype»`/Name/
-`[Technology]`/description element order, every relationship verb and
-`[technology]`.
+PlantUML) converts to `.drawio` (right, rendered by draw.io) — a fully
+editable diagram in [diagrams.net](https://app.diagrams.net/) or the
+VS Code Draw.io extension, **not a flat image**. PlantUML and draw.io
+use different layout engines, so the two are never pixel-identical; what
+catalyst guarantees is faithful **content + C4 grammar** — every box,
+the `«stereotype»` / **Name** / `[Technology]` / description element
+order, and every relationship verb with its `[technology]`.
+
+> 🖼️ **See it on real diagrams: the [**full conversion gallery →
+> `docs/gallery/`**](docs/gallery/)** — all **20 corpus fixtures**
+> (deep-nested boundaries, deployment nodes, hub-and-spoke context,
+> cyclic & disconnected topologies, tag styling, unicode/edge cases)
+> rendered PlantUML-vs-draw.io side by side. Reproduce this pair with
+> `make render-compare RENDER_SRC=sample/example.puml`, or the whole
+> gallery with `make gallery`.
 
 <p align="center">
   <img src="docs/examples/example.puml.png" alt="PlantUML C4 source diagram" width="380">
   &nbsp;&nbsp;→&nbsp;&nbsp;
   <img src="docs/examples/example.drawio.png" alt="Converted editable draw.io diagram" width="380">
 </p>
-
-Regenerate with `make render-compare RENDER_SRC=sample/example.puml`
-(or the full corpus via `make gallery` → [`docs/gallery/`](docs/gallery/)).
 
 ## Tech Stack
 
