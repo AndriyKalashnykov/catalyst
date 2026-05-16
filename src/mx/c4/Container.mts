@@ -1,4 +1,4 @@
-import { ELEMENT_TITLE_PX, ELEMENT_BODY_PX } from './theme.mjs';
+import { ELEMENT_TITLE_PX, ELEMENT_BODY_PX, PALETTE, MX, SHAPE } from './theme.mjs';
 class Container {
     static async label() {
         // Build HTML directly with inline styles
@@ -23,16 +23,16 @@ class Container {
         const styles: Record<string, unknown> = {
             rounded: 1,
             whiteSpace: 'wrap',
-            html: 1,
+            html: MX.ON,
             labelBackgroundColor: 'none',
-            fillColor: '#23A2D9',
-            fontColor: '#ffffff',
+            fillColor: PALETTE.CONTAINER_FILL,
+            fontColor: PALETTE.ELEMENT_FONT,
             align: 'center',
             verticalAlign:'top',
-            arcSize: 10,
-            strokeColor: '#0E7DAD',
-            metaEdit: 1,
-            resizable: 1
+            arcSize: SHAPE.ARC_SIZE,
+            strokeColor: PALETTE.CONTAINER_STROKE,
+            metaEdit: MX.ON,
+            resizable: MX.ON
         }
 
         return Object.entries(styles).map(([key, value]) => `${key}=${value}`).join(';');

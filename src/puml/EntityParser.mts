@@ -1,4 +1,5 @@
 import type { EntityDescriptor } from './EntityDescriptor.interface.mjs'
+import { DECIMAL_RADIX } from '../constants.mjs'
 
 class EntityParser {
 
@@ -9,7 +10,7 @@ class EntityParser {
   private restoreQuoted(s: string | undefined): string | undefined {
     if (s === undefined) return undefined;
     // eslint-disable-next-line no-control-regex -- U+0001 is the intentional load-bearing sentinel for quote-strip placeholders from parse(), not text input
-    return s.replace(/\u0001Q(\d+)\u0001/g, (_, n) => this.quoted[parseInt(n, 10)] ?? '');
+    return s.replace(/\u0001Q(\d+)\u0001/g, (_, n) => this.quoted[parseInt(n, DECIMAL_RADIX)] ?? '');
   }
 
   private isValidEntityType(type: string): boolean {

@@ -6,6 +6,7 @@ import { LayoutEngine, LayoutResult } from './layout/LayoutEngine.mjs'
 import { assignEdgeLanes, resolveLabelOverlap, type NodeCenter, type NodeRect } from './layout/edgeLanes.mjs'
 import { measureEdgeLabel } from './layout/measureNode.mjs'
 import { StyleParser } from './puml/StyleParser.mjs'
+import { DECIMAL_RADIX } from "./constants.mjs"
 import type { ParsedStyles, StyleOverride } from './puml/StyleParser.mjs'
 
 // C4 element type -> the element-kind name used by UpdateElementStyle().
@@ -103,7 +104,7 @@ async function layoutData2mx(layoutData: LayoutResult, pumlElements: EntityDescr
     for (const e of layoutData.edges) {
       const m = /^rel(\d+)$/.exec(e.name ?? '')
       if (m && e.points && e.points.length > 0) {
-        layoutEdgeByRelIdx.set(parseInt(m[1], 10), e.points)
+        layoutEdgeByRelIdx.set(parseInt(m[1], DECIMAL_RADIX), e.points)
       }
     }
   }

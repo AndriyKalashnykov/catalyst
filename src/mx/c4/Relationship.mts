@@ -1,4 +1,4 @@
-import { RELATIONSHIP_LABEL_PX } from './theme.mjs';
+import { RELATIONSHIP_LABEL_PX, PALETTE, MX, SHAPE } from './theme.mjs';
 class Relastionship {
     static async label() {
         // Bold line = the relationship verb (c4Name, e.g. "Uses"); second line
@@ -27,17 +27,17 @@ class Relastionship {
     static style() {
         const styles: Record<string, unknown> = {
             endArrow: 'blockThin',
-            html: 1,
+            html: MX.ON,
             fontSize: RELATIONSHIP_LABEL_PX,
-            fontColor: '#404040',
-            strokeWidth: 1,
+            fontColor: PALETTE.REL_FONT,
+            strokeWidth: SHAPE.STROKE_WIDTH_REL,
             endFill: 1,
-            strokeColor: '#828282',
-            metaEdit: 1,
-            endSize: 14,
-            startSize: 14,
+            strokeColor: PALETTE.REL_STROKE,
+            metaEdit: MX.ON,
+            endSize: SHAPE.REL_ARROW_SIZE,
+            startSize: SHAPE.REL_ARROW_SIZE,
             jumpStyle: 'arc',
-            jumpSize: 16,
+            jumpSize: SHAPE.REL_JUMP_SIZE,
             rounded: 0,
             edgeStyle: 'orthogonalEdgeStyle',
             // NO hardcoded entryX/entryY/exitX/exitY. catalyst supports TB/BT/

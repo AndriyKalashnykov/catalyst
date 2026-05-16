@@ -161,3 +161,41 @@ export const PALETTE = {
   REL_FONT: '#404040',
   REL_STROKE: '#828282',
 } as const
+
+/**
+ * mxGraph shape/edge geometry numerics the templates set verbatim
+ * (rounded-rect corner radius, stroke widths, edge arrow/jump
+ * decorator sizes). NOT measurements — fixed mxGraph style values,
+ * named so the bare literal does not recur unexplained at call sites
+ * (same rationale as {@link MX}). Values are the existing literals
+ * verbatim — byte-identical.
+ *  - `ARC_SIZE` 10: element rounded-rect corner; `ARC_SIZE_COMPONENT`
+ *    6: Component's tighter corner (a deliberate C4 visual cue).
+ *  - `STROKE_WIDTH_REL` 1: relationship edge; `STROKE_WIDTH_EMPHASIS`
+ *    2: Enterprise_Boundary's heavier frame.
+ *  - `REL_ARROW_SIZE` 14: edge end/startArrow size; `REL_JUMP_SIZE`
+ *    16: line-jump arc size.
+ */
+export const SHAPE = {
+  ARC_SIZE: 10,
+  ARC_SIZE_COMPONENT: 6,
+  STROKE_WIDTH_REL: 1,
+  STROKE_WIDTH_EMPHASIS: 2,
+  REL_ARROW_SIZE: 14,
+  REL_JUMP_SIZE: 16,
+} as const
+
+/**
+ * Per-C4-type minimum leaf box `[width, height]` — the conventional
+ * C4-PlantUML / Structurizr element dimensions `measureNode` floors
+ * at so a short-label shape does not render cramped; it grows past
+ * these when the measured text is larger (see `measureNode` for the
+ * floor-vs-measure contract). Documented domain constants; values
+ * verbatim from the prior inline literals — byte-identical.
+ */
+export const C4_MIN = {
+  SYSTEM: [220, 140],
+  CONTAINER: [200, 120],
+  COMPONENT: [180, 100],
+  NODE: [160, 90],
+} as const

@@ -1,7 +1,7 @@
 import { EntityDescriptor } from '../puml/EntityDescriptor.interface.mjs'
 import { textWidth, renderedLineHeight, spaceAdvance, wrap } from '../text/TextMetrics.mjs'
 import { splitLabelLines, wrapEdgeLabelLines } from '../text/labelLines.mjs'
-import { ELEMENT_TITLE_PX, ELEMENT_BODY_PX, RELATIONSHIP_LABEL_PX, CYLINDER3_CAP_PX } from '../mx/c4/theme.mjs'
+import { ELEMENT_TITLE_PX, ELEMENT_BODY_PX, RELATIONSHIP_LABEL_PX, CYLINDER3_CAP_PX, C4_MIN } from '../mx/c4/theme.mjs'
 
 /**
  * The `*Db` C4 types whose template emits drawio `shape=cylinder3`
@@ -77,10 +77,10 @@ export function measureNode(entity: EntityDescriptor): { width: number; height: 
   // labels still grow the box past them via the measured values above.
   const t = entity.type
   const [minW, minH] =
-    t.startsWith('System') || t.startsWith('Person') ? [220, 140]
-    : t.startsWith('Container') ? [200, 120]
-    : t.startsWith('Component') ? [180, 100]
-    : [160, 90]                                        // Node / other leaves
+    t.startsWith('System') || t.startsWith('Person') ? C4_MIN.SYSTEM
+    : t.startsWith('Container') ? C4_MIN.CONTAINER
+    : t.startsWith('Component') ? C4_MIN.COMPONENT
+    : C4_MIN.NODE                                      // Node / other leaves
 
   return { width: Math.max(textW, minW), height: Math.max(textH, minH) }
 }

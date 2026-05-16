@@ -1,4 +1,4 @@
-import { ELEMENT_TITLE_PX, ELEMENT_BODY_PX } from './theme.mjs';
+import { ELEMENT_TITLE_PX, ELEMENT_BODY_PX, PALETTE, MX, SHAPE } from './theme.mjs';
 class SystemExt {
     static async label() {
         const html = `<div style="font-size:${ELEMENT_BODY_PX}px;font-style:italic;color:#cccccc;">«%c4Type%»</div><div style="font-size:${ELEMENT_TITLE_PX}px;font-weight:bold;">%c4Name%</div><div style="font-size:${ELEMENT_BODY_PX}px;color:#cccccc;">%c4Description%</div>`;
@@ -19,16 +19,16 @@ class SystemExt {
         const styles: Record<string, unknown> = {
             rounded: 1,
             whiteSpace: 'wrap',
-            html: 1,
+            html: MX.ON,
             labelBackgroundColor: 'none',
-            fillColor: '#8C8496',
-            fontColor: '#ffffff',
+            fillColor: PALETTE.SYSTEM_EXT_FILL,
+            fontColor: PALETTE.ELEMENT_FONT,
             align: 'center',
             verticalAlign: 'middle',
-            arcSize: 10,
-            strokeColor: '#736782',
-            metaEdit: 1,
-            resizable: 1,
+            arcSize: SHAPE.ARC_SIZE,
+            strokeColor: PALETTE.SYSTEM_EXT_STROKE,
+            metaEdit: MX.ON,
+            resizable: MX.ON,
         }
         return Object.entries(styles).map(([key, value]) => `${key}=${value}`).join(';');
     }

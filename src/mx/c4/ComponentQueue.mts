@@ -1,4 +1,4 @@
-import { ELEMENT_TITLE_PX, ELEMENT_BODY_PX } from './theme.mjs';
+import { ELEMENT_TITLE_PX, ELEMENT_BODY_PX, PALETTE, MX } from './theme.mjs';
 class ComponentQueue {
     static async label() {
         const html = `<div style="font-size:${ELEMENT_BODY_PX}px;font-style:italic;color:#cccccc;">«%c4Type%»</div><div style="font-size:${ELEMENT_TITLE_PX}px;font-weight:bold;">%c4Name%</div><div style="font-size:${ELEMENT_BODY_PX}px;color:#cccccc;">%c4Technology%</div><div style="font-size:${ELEMENT_BODY_PX}px;color:#cccccc;">%c4Description%</div>`;
@@ -19,15 +19,15 @@ class ComponentQueue {
         const styles: Record<string, unknown> = {
             shape: 'mxgraph.c4.queue',
             whiteSpace: 'wrap',
-            html: 1,
+            html: MX.ON,
             labelBackgroundColor: 'none',
-            fillColor: '#63BEF2',
-            fontColor: '#ffffff',
-            strokeColor: '#2086C9',
+            fillColor: PALETTE.COMPONENT_FILL,
+            fontColor: PALETTE.ELEMENT_FONT,
+            strokeColor: PALETTE.COMPONENT_STROKE,
             align: 'center',
             verticalAlign: 'middle',
-            metaEdit: 1,
-            resizable: 1,
+            metaEdit: MX.ON,
+            resizable: MX.ON,
         }
         return Object.entries(styles).map(([key, value]) => `${key}=${value}`).join(';');
     }

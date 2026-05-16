@@ -1,4 +1,5 @@
 import { MxGeometry } from "../mx/MxGeometry.mjs"
+import { DECIMAL_RADIX } from "../constants.mjs"
 import { MxPoint } from "../mx/MxPoint.mjs"
 
 interface Point {
@@ -108,7 +109,7 @@ class RelParser {
                 target: m[3].trim(),
             };
             if (kind === 'Distance') {
-                if (m[4] !== undefined) entry.distance = parseInt(m[4], 10);
+                if (m[4] !== undefined) entry.distance = parseInt(m[4], DECIMAL_RADIX);
             } else {
                 entry.direction = ({ Up: 'U', U: 'U', Down: 'D', D: 'D', Left: 'L', L: 'L', Right: 'R', R: 'R' } as const)[kind];
             }
