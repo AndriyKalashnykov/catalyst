@@ -270,15 +270,70 @@ Everything below is researched, not speculative. Sizes are honest.
 > acceptance gate runs at the next release-chain consumption (per the
 > standard catalyst→puml2drawio→ibm-wm flow), as with every prior fix.
 
-1. **#25 — dense nested-boundary title collision (BIG, compound
-
-   layout).** `titlePadding` reserves the band per compound node
-   (children no longer overlap the title; title inset off the stroke —
-   both shipped #34), but ELK packs sibling nested boundaries with
-   minimal inter-boundary gap so their top title bands still collide in
-   `topology-deep-nesting`. Needs title-band-aware spacing between
-   sibling compound nodes (ELK compound spacing / extra padding).
-   Design-first; same gates as #24.
+1. **#25 — dense nested-boundary title collision (BIG; DESIGN
+   COMPLETE 2026-05-16, ready to implement).**
+   **Root cause (code-traced):** `titlePadding()`
+   (`src/layout/LayoutEngine.mts` ~L84-93, ≈31u = 2 title lines +
+   inset) is applied as `elk.padding[top=..]` PER compound (~L127-129)
+   — that correctly reserves a compound's OWN title band so its
+   children don't overlap it (the #34 parent→child fix). It does
+   **nothing** for the gap BETWEEN two sibling compounds: that gap is
+   the uniform `elk.spacing.nodeNode` (hierarchical: user `nodesep`,
+   default ~50u, ~L112) measured box-to-box, with no term for the
+   title band each sibling renders just inside its own top stroke
+   (`Boundary.mts`/`EnterpriseBoundary.mts` `spacingTop`,
+   `verticalAlign:top`). When ELK packs sibling/parent-adjacent
+   nested boundaries tight (`topology-deep-nesting`: `ent` ▸ `plat` ▸
+   `core`), a child boundary's top title band abuts/overlaps the band
+   above it. The Context path's `declump` already sets
+   `elk.spacing.nodeNode = titlePadding().top` (~L320) — but ONLY for
+   the `sporeOverlap` leaf de-collide, NOT hierarchical compounds.
+   **Gating GAP (must fix FIRST — BLOCKING):** NO existing test
+   catches this. `layout-quality.test.mts` (~L69-79) and
+   `compound-boundary.test.mts` (~L57-67) both iterate `r.nodes`
+   (leaves) ONLY — never `r.clusters`. Step 0: add a BLOCKING
+   `cluster title-band clearance` test — for every pair of compounds
+   that are siblings OR parent/child, assert the vertical gap between
+   one's box-top and the other's content ≥ `titlePadding().top`
+   (using `r.clusters` geometry). Without this no gate detects a #25
+   regression (mirrors the #24 discriminator-test addition).
+   **Design (hypothesis — Phase A MUST empirically pin the exact ELK
+   knob, not guess; version-discipline):** the candidate fix is to
+   raise the inter-compound spacing by the title-band height for
+   hierarchical layouts — either bump `elk.spacing.nodeNode` to
+   `max(nodesep, titlePadding().top)` when the graph has nested
+   compounds, OR set the ELK-correct per-compound/sibling key. Phase A
+   spike MUST query ELK's own registry (`new ELK().knownLayoutOptions()`)
+   plus the ELK `INCLUDE_CHILDREN` spacing docs to identify which
+   option actually governs the sibling-compound gap (candidates:
+   `elk.spacing.nodeNode`, `elk.spacing.componentComponent`,
+   `elk.layered.spacing.nodeNodeBetweenLayers`,
+   `elk.layered.considerModelOrder`, an `elk.padding` bump on the
+   PARENT) — read what each is FOR, spike each on `topology-deep-nesting`,
+   pick the one that fixes the band collision WITHOUT regressing the
+   normal 1-level-boundary case (`level-component`, the ibm-wm
+   `c4-container`/deployment). Do NOT reach for a guessed key.
+   **Scope guard:** change must touch ONLY the hierarchical/compound
+   path; Context (`stress`+declump) already handles overlap — assert
+   Context fixtures byte-identical. Risk: a global `nodeNode` bump
+   also widens leaf spacing → prefer the narrowest ELK key that
+   targets compound siblings only; if only the global knob works,
+   gate hard on the full gallery for leaf-spacing regressions.
+   **Phases:** 0 — add the cluster-clearance gate (it should FAIL on
+   `topology-deep-nesting` today, proving it detects the bug); A —
+   spike ELK options against the registry + render-compare
+   `topology-deep-nesting` until the gate passes and the band is
+   visibly clear; B — wire the chosen key behind the compound-only
+   scope guard; C — full gate.
+   **Gating (all BLOCKING, same regimen as #24):** the new
+   cluster-clearance test; `corpus-sanity` route-signature;
+   `layout-quality` leaf gate unchanged; parity/golden topology
+   byte-stable; Context-fixture no-delta; full 20-pair gallery
+   re-review at render-compare scale; #19 ibm-wm gate at next
+   release-chain consumption. Do NOT declare on tests — `make
+   render-compare` `topology-deep-nesting` (the defect) + a
+   single-level-boundary control (`level-component`) to prove no
+   regression to the common case.
 
 2. **C4-COVERAGE.md validation + backlog the gaps (user-requested,
    medium).** Validate every `✗`/`~` row in `docs/C4-COVERAGE.md`
