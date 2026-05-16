@@ -29,6 +29,24 @@ describe('measureEdgeLabel', () => {
     const broken = measureEdgeLabel('writes\\ncert and key to')
     expect(broken.height).toBeGreaterThan(oneLine.height)
   })
+
+  it('default (no cap) leaves a long label as one wide single line', () => {
+    const long = 'submits a payment authorization request and waits synchronously'
+    const uncapped = measureEdgeLabel(long)               // maxWidthPx = Infinity
+    const capped = measureEdgeLabel(long, undefined, 200) // endpoint-derived cap
+    // The cap trades width for height: narrower, taller, never wider than
+    // the cap + the font-derived padding (2 × space advance ≈ a few px).
+    expect(capped.width).toBeLessThan(uncapped.width)
+    expect(capped.width).toBeLessThanOrEqual(200 + 12)
+    expect(capped.height).toBeGreaterThan(uncapped.height)
+  })
+
+  it('a finite cap also wraps the technology line', () => {
+    const wide = measureEdgeLabel('calls', 'HTTPS / JSON over mutually-authenticated TLS 1.3')
+    const capped = measureEdgeLabel('calls', 'HTTPS / JSON over mutually-authenticated TLS 1.3', 160)
+    expect(capped.width).toBeLessThan(wide.width)
+    expect(capped.height).toBeGreaterThan(wide.height)
+  })
 })
 
 describe('Phase 2 — ELK reserves space for edge labels', () => {

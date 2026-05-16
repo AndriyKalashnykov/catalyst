@@ -48,6 +48,21 @@ export function lineHeight(fontSizePx: number, isBold = false): number {
  * metric, not an invented constant.
  */
 const MX_LINE_HEIGHT = 1.2
+
+/**
+ * mxGraph's default label font size, `DEFAULT_FONTSIZE = 11` — verified
+ * in the authoritative mxGraph source (`util/mxConstants.js`,
+ * `DEFAULT_FONTSIZE: 11`, `DEFAULT_FONTFAMILY: 'Arial,Helvetica'`) and
+ * its maxGraph successor (`DEFAULT_FONTSIZE = 11`). Any catalyst label
+ * `<div>` that does NOT set an explicit `font-size` (the Relationship
+ * verb/technology template) renders at THIS size, so its measurement
+ * MUST use it. A cited renderer constant — exactly like
+ * {@link MX_LINE_HEIGHT}, not an invented number. (The Arial/Helvetica
+ * default is also why the bundled metric-compatible Liberation Sans is
+ * the correct measurement font.)
+ */
+export const MX_DEFAULT_FONTSIZE = 11
+
 export function renderedLineHeight(fontSizePx: number): number {
   return fontSizePx * MX_LINE_HEIGHT
 }

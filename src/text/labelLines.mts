@@ -1,3 +1,5 @@
+import { wrap } from './TextMetrics.mjs'
+
 /**
  * C4-PlantUML uses `\n` inside quoted label / description / relationship
  * strings as an explicit line break (the escaped `\\n` form also occurs in
@@ -47,4 +49,35 @@ export function splitLabelLines(s: string | undefined): string[] {
  */
 export function htmlBreaks(escaped: string): string {
   return escaped.replace(LABEL_BREAK, '&lt;br/&gt;')
+}
+
+/**
+ * Visual lines of a relationship label: honour explicit PlantUML `\n`
+ * first (splitLabelLines), then greedy word-wrap each segment to
+ * `maxWidthPx`.
+ *
+ * A drawio edge label has no box, so a long single-line verb/technology
+ * is laid out as ONE un-wrappable line that overruns and overlaps the
+ * endpoint nodes (`rel-long-labels` gallery defect). `maxWidthPx` is NOT
+ * a constant — the caller derives it from the REAL measured widths of
+ * the edge's two endpoint nodes (the narrower of the two), i.e. "a
+ * label is never wider than the smallest box it sits between" — pure
+ * geometry, no magic number. `Infinity` (an endpoint width is unknown,
+ * e.g. a boundary/cluster) means "do not wrap", preserving prior
+ * behaviour for that edge.
+ *
+ * Single source of truth shared by measureEdgeLabel (ELK reserves the
+ * wrapped block) and the Mx emit (joins with the `\n` marker so
+ * c4Text → `<br/>` makes drawio render the same block) — they must
+ * agree, exactly like Phase 1's splitLabelLines.
+ */
+export function wrapEdgeLabelLines(
+  s: string | undefined,
+  fontSizePx: number,
+  isBold: boolean,
+  maxWidthPx: number,
+): string[] {
+  if (!Number.isFinite(maxWidthPx)) return splitLabelLines(s)
+  return splitLabelLines(s).flatMap((seg) =>
+    seg.trim() === '' ? [''] : wrap(seg, maxWidthPx, fontSizePx, isBold))
 }

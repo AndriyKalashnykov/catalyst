@@ -1,6 +1,6 @@
 import { EntityDescriptor } from '../puml/EntityDescriptor.interface.mjs'
-import { textWidth, renderedLineHeight, spaceAdvance, wrap } from '../text/TextMetrics.mjs'
-import { splitLabelLines } from '../text/labelLines.mjs'
+import { textWidth, renderedLineHeight, spaceAdvance, wrap, MX_DEFAULT_FONTSIZE } from '../text/TextMetrics.mjs'
+import { splitLabelLines, wrapEdgeLabelLines } from '../text/labelLines.mjs'
 
 /**
  * Text-measured leaf-node size (L3). Sizes a shape to its rendered label
@@ -70,19 +70,31 @@ export function measureNode(entity: EntityDescriptor): { width: number; height: 
  * `Relastionship.label()` emits:
  *   verb  — c4Name, 11px bold        (`text-align:center;font-weight:bold`)
  *   tech  — c4Technology, 11px       (`[Tech]`, only when present)
- * Both honour explicit PlantUML `\n` breaks (Phase 1). Returned dimensions
- * are attached to the ELK edge so the layout reserves real space for the
- * label instead of letting it collide with a node (the dominant
- * c4-context symptom). Padding is the font's own space advance.
+ * Both honour explicit PlantUML `\n` breaks (Phase 1) AND word-wrap to
+ * `maxWidthPx` — the caller passes the narrower endpoint node's MEASURED
+ * width (pure geometry, not a constant; `Infinity` = don't wrap). The
+ * returned dimensions are attached to the ELK edge so the layout
+ * reserves the exact wrapped block that Mx emits, instead of letting an
+ * over-long single line collide with a node. Padding is the font's own
+ * space advance.
  */
 export function measureEdgeLabel(
   verb: string,
   technology?: string,
+  maxWidthPx: number = Infinity,
 ): { width: number; height: number } {
-  const PX = 11
+  // The Relationship template sets NO font-size → mxGraph renders the
+  // verb/technology at its DEFAULT_FONTSIZE. Cited renderer constant,
+  // not a literal (see TextMetrics.MX_DEFAULT_FONTSIZE).
+  const PX = MX_DEFAULT_FONTSIZE
   const pad = spaceAdvance(PX, false)
-  const verbLines = splitLabelLines(verb)
-  const techLines = technology ? splitLabelLines(`[${technology}]`) : []
+  // Wrap to the caller-supplied endpoint-derived cap so a long
+  // verb/technology becomes a bounded multi-line block instead of one
+  // over-long line that overlaps the endpoint nodes (rel-long-labels
+  // gallery defect). Shared with the Mx emit via labelLines so ELK
+  // reserves exactly the block that renders.
+  const verbLines = wrapEdgeLabelLines(verb, PX, true, maxWidthPx)
+  const techLines = technology ? wrapEdgeLabelLines(`[${technology}]`, PX, false, maxWidthPx) : []
   const widthOf = (lines: string[], bold: boolean) =>
     lines.reduce((m, l) => Math.max(m, textWidth(l, PX, bold)), 0)
 

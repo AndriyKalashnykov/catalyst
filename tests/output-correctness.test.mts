@@ -105,3 +105,43 @@ describe('Phase 1 — PlantUML \\n becomes a real line break, never a literal', 
     expect(rel.c4Name).toBe('writes<br/>cert + key to');
   });
 });
+
+describe('Edge-label wrap — long verb is bounded, not smeared across nodes', () => {
+  it('wraps a long relationship verb to the endpoint-derived cap (whole path)', async () => {
+    // Two Components (narrow ~180px min). A very long verb between them
+    // would, un-wrapped, render as one line far wider than either box and
+    // overlap both. The endpoint-derived cap must wrap it → the emitted
+    // c4Name carries the pre-encoded &lt;br/&gt; at the wrap points.
+    const xml = await Catalyst.convert(C4('C4_Component.puml',
+      'Component(a, "A")\nComponent(b, "B")\n'
+      + 'Rel(a, b, "submits a payment authorization request and waits synchronously for settlement confirmation", "HTTPS / JSON over mutually-authenticated TLS 1.3")'));
+
+    const doc = await xml2js.parseStringPromise(xml);
+    expect(doc).toBeDefined();
+    const root = doc.mxfile.diagram[0].mxGraphModel[0].root[0];
+    const objs = (root.object ?? []) as { $: Record<string, string> }[];
+    const rel = objs.find((o) => o.$.c4Name?.startsWith('submits'))!.$;
+
+    // Wrapped: the long verb now contains real <br/> (decoded from the
+    // strict-safe &lt;br/&gt;), and NO wrapped line is the whole verb.
+    expect(rel.c4Name).toContain('<br/>');
+    expect(rel.c4Name).not.toContain('submits a payment authorization request and waits synchronously for settlement confirmation');
+    // The long technology line is wrapped the same way.
+    expect(rel.c4Technology).toContain('<br/>');
+    // Strict-XML: only the pre-encoded form in the raw attribute.
+    for (const m of xml.matchAll(/c4(?:Name|Technology)="([^"]*)"/g)) {
+      expect(m[1]).not.toMatch(/\\n/);
+    }
+  });
+
+  it('a short verb is NOT broken (no spurious <br/>)', async () => {
+    const xml = await Catalyst.convert(C4('C4_Component.puml',
+      'Component(a, "A")\nComponent(b, "B")\nRel(a, b, "Uses", "HTTPS")'));
+    const doc = await xml2js.parseStringPromise(xml);
+    const root = doc.mxfile.diagram[0].mxGraphModel[0].root[0];
+    const objs = (root.object ?? []) as { $: Record<string, string> }[];
+    const rel = objs.find((o) => o.$.c4Name === 'Uses')!.$;
+    expect(rel.c4Name).toBe('Uses');
+    expect(rel.c4Technology).toBe('[HTTPS]');
+  });
+});

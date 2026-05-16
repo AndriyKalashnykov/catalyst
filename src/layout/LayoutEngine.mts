@@ -155,9 +155,29 @@ class LayoutEngine {
     return scan(this.entities)
   }
 
+  /** alias → measured leaf width. Compound nodes (boundaries) are absent
+   *  on purpose: their final width is ELK-decided, so an edge touching one
+   *  gets no wrap cap (Infinity) — exactly the "unknown endpoint" case. */
+  private leafWidths(entities: EntityDescriptor[], out = new Map<string, number>()): Map<string, number> {
+    for (const e of entities) {
+      if (e.children && e.children.length) this.leafWidths(e.children, out)
+      else out.set(e.alias, measureNode(e).width)
+    }
+    return out
+  }
+
   private buildGraph(): ElkNode {
     const children = this.buildNodes(this.entities)
     this.applyHorizontalOrder(children)
+    // Edge-label wrap cap = the narrower of the two endpoint nodes'
+    // MEASURED widths (pure geometry — a label never wider than the
+    // smallest box it sits between; no magic constant). Unknown/cluster
+    // endpoint ⇒ Infinity ⇒ no wrap (prior behaviour for that edge).
+    const lw = this.leafWidths(this.entities)
+    const edgeCap = (a: string, b: string): number => {
+      const wa = lw.get(a), wb = lw.get(b)
+      return wa !== undefined && wb !== undefined ? Math.min(wa, wb) : Infinity
+    }
 
     // Visible relations as ELK edges. L1 U/D is engine-agnostic: feeding the
     // edge reversed makes the target rank above the source (the VISIBLE
@@ -171,7 +191,7 @@ class LayoutEngine {
       // r.label; the bracketed technology is r.description (C4-PlantUML's
       // swapped-field grammar — see layoutData2mx). `lay<i>` constraint
       // edges are invisible and intentionally get NO label.
-      const dim = measureEdgeLabel(r.label, r.description)
+      const dim = measureEdgeLabel(r.label, r.description, edgeCap(r.source, r.target))
       return {
         id: `rel${i}`,
         sources: [up ? r.target : r.source],
