@@ -297,14 +297,37 @@ Everything below is researched, not speculative. Sizes are honest.
 > Corp"/"Platform"/"Core Services" title bands now distinct and
 > clearly separated. #19 ibm-wm gate at next release-chain consumption.
 
-1. **C4-COVERAGE.md validation + backlog the gaps (user-requested,
-   medium).** Validate every `✗`/`~` row in `docs/C4-COVERAGE.md`
-   against current code (it predates the v1.5–1.6 work — e.g. it still
-   says Context uses `force`; it's `stress`+`sporeOverlap` now; the
-   Surface-delta section IS current). Fix the doc, and add every
-   genuinely-unimplemented `✗` (Deployment-node coverage rows, BiRel
-   variants, RelIndex/dynamic, sprites, properties, legend, sequence
-   diagrams) as concrete backlog items here.
+---
+
+> ✅ **C4-COVERAGE.md validation — DONE 2026-05-16.** Re-validated
+> every `✗`/`~` row against current code. Many predated v1.5 and were
+> stale → corrected in-doc: algorithm (`force`→`stress`+`sporeOverlap`
+> declump, +the #25 nested-compound→`layered` trigger, +#24 Context
+> waypoints); `RelIndex*` ✗→✓ (#45); `Rel_Up/Down/Left/Right` ✗→✓
+> and `BiRel`/`BiRel_*` ~/✗→✓ (regex already long-form-aware);
+> `Deployment_Node`/`Node`/`_L`/`_R` ✗→✓ (#25-hardened);
+> `Enterprise_Boundary` ~→✓ (dedicated template); the `*Queue`/`*Db`
+> "reuses ContainerDb" rows corrected to "own template, dedicated
+> shape; only per-type COLOUR is shared" (the residual `~`). The
+> corrected Tier-2/Tier-3 in `docs/C4-COVERAGE.md` IS the concrete
+> enumeration of genuine remaining gaps — not duplicated here. The
+> Deployment-node / BiRel / RelIndex items the original task named are
+> now ✓ (this session shipped them), so they are NOT backlogged.
+
+1. **C4 surface residual gaps (low — see `docs/C4-COVERAGE.md`
+   Tier-2/3, validated 2026-05-16).** The genuinely-unimplemented `✗`
+   surface, all low-value/no-parity-impact: `$sprite` (no drawio
+   sprite registry), `$shadowing`/custom `$lineStyle`/`SET_SKETCH_STYLE`,
+   legend (`SHOW_LEGEND`/`_FLOATING`/`_DYNAMIC`, `HIDE_STEREOTYPE`,
+   `SHOW_PERSON_OUTLINE/_PORTRAIT/_SPRITE`), `AddProperty`/property
+   tables, sequence display toggles (`SHOW_ELEMENT_DESCRIPTIONS`/
+   `SHOW_FOOT_BOXES`/`SHOW_INDEX`), `Container_Boundary` type
+   distinction (renders as generic `Boundary`), and per-type fill
+   colour for the `~` DB/Queue/_Ext rows. **Plus one gap NOT in the
+   matrix:** PlantUML `note` callouts are dropped entirely (found in
+   #19 — `ibm-wm layered-architecture` has 2; add a `note` row to
+   C4-COVERAGE when tackled). Pick up individually only when a
+   downstream diagram actually needs one; none block parity/golden.
 
 2. **Palette + MX-flag single-sourcing (medium, same theme as #34).**
    Colours (`fillColor`/`strokeColor`/`fontColor` hexes — the C4/
