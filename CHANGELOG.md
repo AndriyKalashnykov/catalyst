@@ -19,6 +19,13 @@ This project adheres to [Keep a CHANGELOG](http://keepachangelog.com/).
 
 ### Changed
 
+- **Layout Phase 4** — hierarchical (layered) C4 now uses
+  `nodePlacement.strategy = NETWORK_SIMPLEX`: ~32% fewer edge crossings
+  on the large `c4-container` (44→30), two deployment profiles also
+  improve, no diagram regresses, zero node overlap. The backlog's
+  per-boundary-subgraph hypothesis was empirically disproven
+  (`SEPARATE_CHILDREN` = 115 crossings, far worse) — no emit-model
+  change. See `docs/adr/0006`.
 - **Layout Phase 3** — C4 Context layout switched from the seed-based
   `org.eclipse.elk.force` to deterministic `org.eclipse.elk.stress`
   followed by an `org.eclipse.elk.sporeOverlap` declump pass:
