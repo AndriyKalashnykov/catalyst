@@ -1,17 +1,17 @@
 <mxfile version="20.1.4" type="atlas">
   <diagram id="catalyst-diagram" name="Page-1">
-    <mxGraphModel pageHeight="628" pageWidth="244">
+    <mxGraphModel pageHeight="621" pageWidth="244">
       <root>
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
         <object placeholders="1" c4Name="K8s Secret&lt;br/&gt;&lt;workload&gt;-tls" c4Type="ContainerDb" c4Technology="[Kubernetes]" c4Description="Holds the issued&lt;br/&gt;leaf certificate&lt;br/&gt;and private key" label="&lt;div style=&quot;font-size:11px;font-style:italic;color:#cccccc;&quot;&gt;«%c4Type%»&lt;/div&gt;&lt;div style=&quot;font-size:16px;font-weight:bold;&quot;&gt;%c4Name%&lt;/div&gt;&lt;div style=&quot;font-size:11px;color:#cccccc;&quot;&gt;%c4Technology%&lt;/div&gt;&lt;div style=&quot;font-size:11px;color:#cccccc;&quot;&gt;%c4Description%&lt;/div&gt;" id="secret">
           <mxCell style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;labelBackgroundColor=none;fillColor=#23A2D9;fontColor=#ffffff;strokeColor=#0E7DAD;align=center;verticalAlign=middle;metaEdit=1;resizable=1" parent="1" vertex="1">
-            <mxGeometry as="geometry" height="120" width="200" x="22" y="496"/>
+            <mxGeometry as="geometry" height="120" width="200" x="22" y="489"/>
           </mxCell>
         </object>
         <object placeholders="1" c4Name="Admin API" c4Type="Container" c4Technology="[Go]" c4Description="OpenAPI 3.1 REST:&lt;br/&gt;  POST /issue&lt;br/&gt;  POST /renew&lt;br/&gt;  GET  /status" label="&lt;div style=&quot;font-size:11px;font-style:italic;color:#cccccc;&quot;&gt;«%c4Type%»&lt;/div&gt;&lt;div style=&quot;font-size:16px;font-weight:bold;&quot;&gt;%c4Name%&lt;/div&gt;&lt;div style=&quot;font-size:11px;color:#cccccc;&quot;&gt;%c4Technology%&lt;/div&gt;&lt;div style=&quot;font-size:11px;color:#cccccc;&quot;&gt;%c4Description%&lt;/div&gt;" id="admin">
           <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontZize=11;labelBackgroundColor=none;fillColor=#23A2D9;fontColor=#ffffff;align=center;verticalAlign=top;arcSize=10;strokeColor=#0E7DAD;metaEdit=1;resizable=1" parent="1" vertex="1">
-            <mxGeometry as="geometry" height="121" width="200" x="22" y="257"/>
+            <mxGeometry as="geometry" height="121" width="200" x="22" y="254"/>
           </mxCell>
         </object>
         <object placeholders="1" c4Name="Operator" c4Type="Person" c4Technology="" c4Description="Drives certificate&lt;br/&gt;lifecycle operations" label="&lt;div style=&quot;font-size:11px;font-style:italic;color:#cccccc;&quot;&gt;«%c4Type%»&lt;/div&gt;&lt;div style=&quot;font-size:16px;font-weight:bold;&quot;&gt;%c4Name%&lt;/div&gt;&lt;div style=&quot;font-size:11px;color:#cccccc;&quot;&gt;%c4Description%&lt;/div&gt;" id="op">
