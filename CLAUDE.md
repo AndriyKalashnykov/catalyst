@@ -138,6 +138,35 @@ Everything below is researched, not speculative. Sizes are honest.
 > concerns are pre-existing items 4/5; the dropped-`note` feature gap
 > is tracked via item 6 C4-COVERAGE).
 
+---
+
+> ✅ **#23 gallery visual review — COMPLETE 14/14 (2026-05-16).**
+> Gallery regenerated from current `main` (committed copy WAS stale —
+> predated v1.5→v1.6.1; fresh renders committed PR #41). Method:
+> render-compare-scale crops (Pillow `/tmp/legible.py` + `/tmp/crop.py`;
+> ImageMagick absent) — never the down-scaled committed PNG (the
+> layered-rect lesson). **PASS (9):** edge-tags-styling (tag fill/dash
+> correct; minor: `«critical»` tag stereotype text not shown, only
+> `«System»`), level-component, rel-layout-constraints (`Lay_` → no
+> visible edge ✓), rel-bidirectional (#33 antiparallel lanes work),
+> rel-directional (up/down/left/right placement ✓), rel-tech-vs-notech
+> (tech/no-tech labels ✓; same minor #24 antiparallel-junction
+> tightness as rel-bidirectional), edge-empty-descriptions (empty
+> desc handled cleanly), topology-disconnected (separate non-
+> overlapping clusters ✓), topology-linear-chain (clean pipeline).
+> **CONCERN = known pre-existing #24/#25, NOT new:** level-system-
+> landscape (edge labels overlap nodes/boundary in the force layout,
+> Enterprise_Boundary title tightness), topology-wide-rank
+> (distributed hub fan, repeated `dispatch` labels near box edges) —
+> both are items 4 (#24) / 5 (#25); plus the earlier pre-reviewed
+> rel-long-labels (FIXED #32), topology-deep-nesting (FIXED-partial
+> #34), topology-cyclic / -hub-spoke / rel-parallel-duplicate (#24
+> limitation). **NEW real defects surfaced → backlog items 1
+> (`edge-multiline-labels` cylinder-cap overflow), 2
+> (`edge-unicode-specialchars` `<…>` strip), 3 (`level-dynamic`
+> RelIndex-number drop).** #23 is CLOSED; no further review needed —
+> only the 3 fixes (items 1–3) remain, each render-compare-gated.
+
 1. **`measureNode` does NOT reserve the cylinder elliptical-cap
    height → long content overflows/clips at the bottom ellipse of
    `*Db` shapes (NEW, from #23; render-compare/measurement-CONFIRMED,
@@ -184,26 +213,22 @@ Everything below is researched, not speculative. Sizes are honest.
    precisely to lock this). Not overflow/collision but it is content
    loss — HIGH.
 
-3. **#23 — gallery review IN PROGRESS (8 / 14 done 2026-05-16).**
-   Gallery regenerated from current `main` (committed copy WAS stale —
-   predated v1.5→v1.6.1; fresh renders committed this pass). Reviewed
-   via render-compare-scale crops (Pillow `/tmp/legible.py`,
-   `/tmp/crop.py`; ImageMagick absent). **PASS:** edge-tags-styling
-   (tag fill/dash styling correct; minor: `«critical»` tag stereotype
-   text not shown, only `«System»`), level-component, rel-layout-
-   constraints (Lay_ → no visible edge ✓), rel-bidirectional (#33
-   antiparallel lanes work; minor busy A–C junction). **DEFECTS (now
-   items 1 & 2):** edge-unicode-specialchars (`<…>` strip — item 2),
-   edge-multiline-labels (cylinder cap overflow — item 1; #32 multi-
-   line edge-label wrap itself works fine). **STILL UNVIEWED (6):**
-   edge-empty-descriptions, level-dynamic, level-system-landscape,
-   rel-directional, rel-tech-vs-notech, topology-disconnected,
-   topology-linear-chain (+ re-check wide-rank vs the #24 limitation).
-   Procedure & verdicts above; finish the 6, fold any new real defect
-   into the backlog, then `make gallery` (already regenerated) and the
-   gallery review item is closeable. Pre-reviewed earlier (still
-   valid): rel-long-labels FIXED #32; topology-deep-nesting FIXED-
-   partial #34; wide-rank/cyclic/parallel = #24 limitation.
+3. **C4 Dynamic `RelIndex` step numbers are DROPPED → sequence
+   ordering lost (NEW, from #23 `level-dynamic`; real-fix, HIGH —
+   a Dynamic diagram is meaningless without its order).** PlantUML
+   renders the numbered flow "**1:** opens / **2:** GET /orders
+   `[JSON/HTTPS]` / **3:** SELECT `[SQL]`"; catalyst renders the same
+   edges UNNUMBERED ("opens / GET /orders / SELECT"). The whole point
+   of `C4_Dynamic` / `RelIndex(n, ...)` is the ordinal; catalyst keeps
+   the verb+tech but discards the index prefix. Same lossy-surface
+   family as item 2 (`<…>` strip) and the dropped-`note` callouts.
+   Fix: trace `RelIndex` parsing in `src/puml/*` — the index is parsed
+   (topology is right) but not prepended to the emitted edge label;
+   prepend the parsed index as an `n:`-style prefix to the verb line in the
+   Relationship label path (`src/mx/c4/Relationship.mts` / the edge
+   emit in `catalyst.mts`). Layout itself is clean (no overflow/
+   collision). Add a corpus assertion on `level-dynamic` (the fixture
+   exists to lock this).
 
 4. **#24 — deterministic Context-edge routing (BIG, design-first).**
    Root cause (researched): non-laned edges get NO catalyst waypoint →
