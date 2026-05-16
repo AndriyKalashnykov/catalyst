@@ -24,8 +24,9 @@ build: ## Compile TypeScript -> dist/
 	npm run build
 
 .PHONY: lint
-lint: ## oxlint src/
+lint: ## oxlint src/ + markdownlint (parity with CI's lint job)
 	npm run lint
+	npm run mdlint
 
 .PHONY: test
 test: ## Run the full vitest suite (parity + golden + units)

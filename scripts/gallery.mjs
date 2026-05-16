@@ -153,7 +153,13 @@ for (const [title, prefix, blurb] of CLASSES) {
     lines.push('');
   }
 }
-writeFileSync(join(OUT, 'README.md'), lines.join('\n') + '\n');
+// Collapse any accidental run of blank lines to a single one and end with
+// exactly one trailing newline — markdownlint MD012 (no multiple consecutive
+// blank lines) is enforced by `npm run mdlint` in CI.
+writeFileSync(
+  join(OUT, 'README.md'),
+  lines.join('\n').replace(/\n{3,}/g, '\n\n').replace(/\s+$/, '') + '\n',
+);
 
 console.log(`\ngallery: ${join(OUT, 'README.md')}`);
 console.log(`  ${fixtures.length} fixtures · images in ${IMG} · drawio in ${DRAWIO_DIR}`);

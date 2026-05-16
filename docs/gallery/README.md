@@ -528,4 +528,3 @@ Rel(s, q, "→ enqueue ←", "AMQP/0.9.1")
 ```
 
 </details>
-
