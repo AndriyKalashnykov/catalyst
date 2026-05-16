@@ -1,6 +1,6 @@
 class PersonExt {
     static async label() {
-        const html = `<div style="font-size:16px;font-weight:bold;">%c4Name%</div><div>[%c4Type%]</div><div style="font-size:11px;color:#cccccc;">%c4Description%</div>`;
+        const html = `<div style="font-size:11px;font-style:italic;color:#cccccc;">«%c4Type%»</div><div style="font-size:16px;font-weight:bold;">%c4Name%</div><div style="font-size:11px;color:#cccccc;">%c4Description%</div>`;
         const minifiedHtml = html.replace(/>\s+</g, '><');
         return this.encodeHtmlEntities(minifiedHtml);
     }
@@ -23,7 +23,7 @@ class PersonExt {
             fillColor: '#686868',
             fontColor: '#ffffff',
             strokeColor: '#4D4D4D',
-            verticalAlign: 'top',
+            verticalAlign: 'middle',
             whiteSpace: 'wrap',
             metaEdit: 1,
             resizable: 1,

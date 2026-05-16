@@ -1,6 +1,6 @@
 class ComponentExt {
     static async label() {
-        const html = `<div style="font-size:16px;font-weight:bold;">%c4Name%</div><div>[%c4Type%:%c4Technology%]</div><div style="font-size:11px;color:#cccccc;">%c4Description%</div>`;
+        const html = `<div style="font-size:11px;font-style:italic;color:#cccccc;">«%c4Type%»</div><div style="font-size:16px;font-weight:bold;">%c4Name%</div><div style="font-size:11px;color:#cccccc;">%c4Technology%</div><div style="font-size:11px;color:#cccccc;">%c4Description%</div>`;
         const minifiedHtml = html.replace(/>\s+</g, '><');
         return this.encodeHtmlEntities(minifiedHtml);
     }
@@ -23,7 +23,7 @@ class ComponentExt {
             fillColor: '#B3B3B3',
             fontColor: '#ffffff',
             align: 'center',
-            verticalAlign: 'top',
+            verticalAlign: 'middle',
             arcSize: 6,
             strokeColor: '#8A8A8A',
             metaEdit: 1,

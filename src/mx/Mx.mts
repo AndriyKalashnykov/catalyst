@@ -206,7 +206,13 @@ class Mx {
                 placeholders: 1,
                 c4Name: c4Text(name),
                 c4Type,
-                c4Technology: c4Text(technology || ''),
+                // Pre-bracket the VALUE (mirrors addMxC4Relationship) so the
+                // element templates use a bare `%c4Technology%` — rendering
+                // "[Tech]" when present and an empty <div> when absent,
+                // never a "[]" tofu box. The C4-PlantUML element layout
+                // shows technology on its OWN line, not fused into the
+                // stereotype.
+                c4Technology: technology ? c4Text(`[${technology}]`) : '',
                 c4Description: c4Text(description || ''),
                 label,
                 id: alias,

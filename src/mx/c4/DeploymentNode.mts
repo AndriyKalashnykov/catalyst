@@ -2,7 +2,7 @@ class DeploymentNode {
     static async label() {
         // Deployment nodes show the $type (e.g. "Linux VM", "K8s cluster") in the
         // header, not $technology like Containers do.
-        const html = `<div style="font-size:14px;font-weight:bold;">%c4Name%</div><div>[%c4Type%]</div><div style="font-size:11px;color:#666666;">%c4Description%</div>`;
+        const html = `<div style="font-size:11px;font-style:italic;color:#666666;">«%c4Type%»</div><div style="font-size:14px;font-weight:bold;">%c4Name%</div><div style="font-size:11px;color:#666666;">%c4Description%</div>`;
         const minifiedHtml = html.replace(/>\s+</g, '><');
         return this.encodeHtmlEntities(minifiedHtml);
     }
@@ -26,7 +26,7 @@ class DeploymentNode {
             strokeColor: '#444444',
             fontColor: '#444444',
             align: 'center',
-            verticalAlign: 'top',
+            verticalAlign: 'middle',
             fontStyle: 0,
             fontSize: 12,
             metaEdit: 1,

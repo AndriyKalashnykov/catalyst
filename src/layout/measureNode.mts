@@ -6,12 +6,14 @@ import { splitLabelLines } from '../text/labelLines.mjs'
  * Text-measured leaf-node size (L3). Sizes a shape to its rendered label
  * using REAL font metrics (fontkit + bundled Liberation Sans, via
  * TextMetrics) — no estimated ratios. Models the exact label HTML the c4
- * shape classes emit:
- *   title  — c4Name, 16px bold     (`font-size:16px;font-weight:bold`)
- *   meta   — `[Type: Tech]`, 11px  (no font-size set → mxGraph default 11)
- *   descr  — c4Description, 11px    (`font-size:11px`), word-wrapped
+ * shape classes emit, in C4-PlantUML canonical order (stereotype on top):
+ *   stereo — `«Type»`, 11px italic   (the stereotype line, always present)
+ *   title  — c4Name, 16px bold       (`font-size:16px;font-weight:bold`)
+ *   tech   — `[Technology]`, 11px     (ONLY when the entity has technology)
+ *   descr  — c4Description, 11px      (`font-size:11px`), word-wrapped
  * Padding is the font's own space advance (a real metric, not an invented
- * constant); height is the sum of real per-line heights.
+ * constant); height is the sum of real per-line heights at the renderer's
+ * line box (TextMetrics.renderedLineHeight = mxGraph 1.2).
  */
 export function measureNode(entity: EntityDescriptor): { width: number; height: number } {
   const TITLE_PX = 16, BODY_PX = 11
@@ -22,12 +24,13 @@ export function measureNode(entity: EntityDescriptor): { width: number; height: 
   const titleLines = splitLabelLines(entity.label ?? entity.alias)
   const titleW = titleLines.reduce(
     (m, l) => Math.max(m, textWidth(l, TITLE_PX, true)), 0)
-  const meta = entity.technology
-    ? `[${entity.type}: ${entity.technology}]`
-    : `[${entity.type}]`
-  const metaW = textWidth(meta, BODY_PX, false)
+  // Stereotype line «Type» (always emitted, 11px). Technology, when present,
+  // is its OWN bracketed line (11px) — matches the restructured templates.
+  const stereoW = textWidth(`«${entity.type}»`, BODY_PX, false)
+  const hasTech = !!entity.technology
+  const techW = hasTech ? textWidth(`[${entity.technology}]`, BODY_PX, false) : 0
 
-  const contentW = Math.max(titleW, metaW)
+  const contentW = Math.max(titleW, stereoW, techW)
   // Honour explicit breaks first, then word-wrap each segment to the box
   // width. An intentionally-blank segment (`a\n\nb`) keeps a real empty
   // line so its vertical space is reserved.
@@ -36,10 +39,11 @@ export function measureNode(entity: EntityDescriptor): { width: number; height: 
   const longestDescW = descLines.reduce(
     (m, l) => Math.max(m, textWidth(l, BODY_PX, false)), 0)
 
-  const textW = Math.ceil(Math.max(titleW, metaW, longestDescW) + 2 * pad)
+  const textW = Math.ceil(Math.max(titleW, stereoW, techW, longestDescW) + 2 * pad)
   const textH = Math.ceil(
+    renderedLineHeight(BODY_PX) +                      // «Type» stereotype
     titleLines.length * renderedLineHeight(TITLE_PX) + // title (1+ lines)
-    renderedLineHeight(BODY_PX) +                      // meta
+    (hasTech ? renderedLineHeight(BODY_PX) : 0) +      // [Technology] (if any)
     descLines.length * renderedLineHeight(BODY_PX) +   // wrapped description
     2 * pad)                                           // top/bottom breathing
 
