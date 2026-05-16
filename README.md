@@ -58,7 +58,7 @@ registry). Pin a tag:
 
 ```bash
 # add to a project (npm resolves it under the package name "catalyst")
-npm install github:AndriyKalashnykov/catalyst#v1.4.0
+npm install github:AndriyKalashnykov/catalyst#v1.5.0
 
 # development of catalyst itself
 make deps      # npm ci
