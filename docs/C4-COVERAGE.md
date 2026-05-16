@@ -4,6 +4,9 @@ Tracks catalyst's export coverage against the [C4-PlantUML v2.13.0](https://gith
 
 Legend: `✓` full, `~` partial (rendered but not with dedicated styling), `✗` silently dropped, `!` crashes parser.
 
+**States re-validated against code 2026-05-16** (post v1.5–1.6 plus the cylinder-cap (#43) / `<…>`-literal (#44) / RelIndex (#45) / Context-edge (#24) / nested-compound (#25) work). Several rows that predated v1.5 were
+stale and are corrected below.
+
 ## Surface delta v2.10.0 → v2.13.0 (verified 2026-05-16)
 
 Enumerated diff of the stdlib `!procedure` definitions across both tags:
@@ -44,13 +47,13 @@ done
 | `Person` | `Person($alias, $label, $descr="", $sprite="", $tags="", $link="")` | ✓ |
 | `Person_Ext` | same | ✓ |
 | `System` | `System($alias, $label, $descr="", $sprite="", $tags="", $link="")` | ✓ |
-| `SystemDb` | same | ~ (reuses ContainerDb cylinder styling) |
-| `SystemQueue` | same | ~ (reuses ContainerDb cylinder) |
+| `SystemDb` | same | ~ (own template, `cylinder3` — same cylinder styling family as ContainerDb; no per-type colour) |
+| `SystemQueue` | same | ~ (own template, dedicated `mxgraph.c4.queue` shape; no per-type colour) |
 | `System_Ext` | same | ✓ |
 | `SystemDb_Ext` | same | ~ (grey SystemExt) |
 | `SystemQueue_Ext` | same | ~ (grey SystemExt) |
 | `System_Boundary` | `System_Boundary($alias, $label, $tags="", $link="")` | ✓ |
-| `Enterprise_Boundary` | same | ~ (renders as generic Boundary) |
+| `Enterprise_Boundary` | same | ✓ (dedicated `EnterpriseBoundary` template — distinct 13px title) |
 
 ### Container level
 
@@ -58,7 +61,7 @@ done
 |---|---|
 | `Container` | ✓ |
 | `ContainerDb` | ✓ (dedicated cylinder) |
-| `ContainerQueue` | ~ (reuses ContainerDb) |
+| `ContainerQueue` | ~ (dedicated `mxgraph.c4.queue` shape; no per-type colour) |
 | `Container_Ext` | ~ (grey SystemExt) |
 | `ContainerDb_Ext` | ~ (grey SystemExt — loses cylinder) |
 | `ContainerQueue_Ext` | ~ (grey SystemExt) |
@@ -69,8 +72,8 @@ done
 | Primitive | State |
 |---|---|
 | `Component` | ✓ |
-| `ComponentDb` | ~ (reuses ContainerDb) |
-| `ComponentQueue` | ~ (reuses ContainerDb) |
+| `ComponentDb` | ~ (own template, `cylinder3`; no per-type colour) |
+| `ComponentQueue` | ~ (dedicated `mxgraph.c4.queue` shape; no per-type colour) |
 | `Component_Ext` | ~ (grey SystemExt) |
 | `ComponentDb_Ext` | ~ (grey SystemExt) |
 | `ComponentQueue_Ext` | ~ (grey SystemExt) |
@@ -79,10 +82,10 @@ done
 
 | Primitive | Spec | State |
 |---|---|---|
-| `Deployment_Node` | `Deployment_Node($alias, $label, $type="", $descr="", $sprite="", $tags="", $link="")` | ✗ |
-| `Deployment_Node_L` / `_R` | same | ✗ |
-| `Node` | same | ✗ |
-| `Node_L` / `_R` | same | ✗ |
+| `Deployment_Node` | `Deployment_Node($alias, $label, $type="", $descr="", $sprite="", $tags="", $link="")` | ✓ (dedicated template; deep nesting via `layered`; #25 hardened) |
+| `Deployment_Node_L` / `_R` | same | ✓ |
+| `Node` | same | ✓ (dispatched to `DeploymentNode`) |
+| `Node_L` / `_R` | same | ✓ |
 
 ### Sequence level
 
@@ -101,10 +104,10 @@ done
 | `Rel_Back` | ✓ (captured by regex; arrow direction not reversed yet) |
 | `Rel_Neighbor` / `Rel_Back_Neighbor` | ~ (captured, rendered as plain Rel) |
 | `Rel_U` / `Rel_D` / `Rel_L` / `Rel_R` | ✓ (captured; hint ignored) |
-| `Rel_Up` / `Rel_Down` / `Rel_Left` / `Rel_Right` | ✗ (regex doesn't match long-form) |
-| `BiRel` | ~ (captured as unidirectional; should emit bidirectional arrow) |
-| `BiRel_U/D/L/R` / `BiRel_Up/Down/Left/Right` / `BiRel_Neighbor` | ✗ |
-| `RelIndex*` series (dynamic) | ✗ |
+| `Rel_Up` / `Rel_Down` / `Rel_Left` / `Rel_Right` | ✓ (long-form captured by `relationPattern`; direction via `directionOf`) |
+| `BiRel` | ✓ (bidirectional — `startArrow=blockThin` emitted, `Mx.mts`) |
+| `BiRel_U/D/L/R` / `BiRel_Up/Down/Left/Right` / `BiRel_Neighbor` | ✓ (captured by `relationPattern`; bidirectional) |
+| `RelIndex*` series (dynamic) | ✓ (#45 — leading ordinal preserved as an `n:`-style verb prefix; topology + index rendered) |
 
 ## Layout hints
 
@@ -164,22 +167,40 @@ The parity test asserts: every entity → a shape with matching `c4Type`; every 
 
 dagre 3.0.0 was replaced by **elkjs**: its documented option surface (wiki + spike) has no aspect/wrapping/same-rank/in-layer-order control; elkjs does. Algorithm is chosen per the **C4 spec level** of the source (a semantic fact, not a heuristic):
 
-- **Container / Component / Deployment** (hierarchical) → `org.eclipse.elk.layered` (flow + orthogonal routing + compound nesting). c4-exhaustive aspect ≈ 1.2.
-- **Context** (people/systems only — hub-and-spoke) → `org.eclipse.elk.force` (balanced; ibmwm-c4-context aspect 7.9 → ~1.1, 0 overlaps). A context overview is not a flow diagram, so straight edges are appropriate.
+- **Hierarchical** → `org.eclipse.elk.layered` (flow + orthogonal
+  routing + compound nesting). Triggered by EITHER (a) a
+  Container/Component/Node/Deployment_Node entity, OR (b) a **nested
+  compound** — a boundary inside a boundary (#25: only `layered`
+  honors `elk.padding` for nested-compound title bands; `stress`
+  ignores it).
+- **Context** (people/systems only, ≤1-level boundaries — hub-and-
+  spoke) → `org.eclipse.elk.stress` + an `org.eclipse.elk.sporeOverlap`
+  declump post-pass (deterministic, crossing-minimal, zero node
+  overlap — replaced the old seed-based `force`). Non-laned solo
+  Context edges get a catalyst-emitted centre-midpoint waypoint so
+  drawio routes deterministically and labels anchor predictably
+  (#24); laned/antiparallel edges use the lane waypoint+offset fan.
 
 | Item | State |
 |---|---|
 | **L1 U/D** | ✓ (layered path) — engine-agnostic edge reversal ranks the target above/below |
 | **L1 L/R** | ~ honored only when the two nodes already land on the same rank (safe post-pass; cross-rank L/R is impossible in any layered engine incl. PlantUML/dot). Parsed + fed as ELK model-order influence otherwise |
-| **L2 edge routing** | ✓ ELK-computed `sections` → drawio waypoints (layered path; force uses straight edges) |
+| **L2 edge routing** | ✓ layered: ELK-computed `sections` → drawio waypoints; Context (`stress`): catalyst-emitted centre-midpoint waypoint for non-laned solo edges (#24) + lane fan for laned/antiparallel |
 | **L3 node sizing** | ✓ real font metrics — fontkit + bundled Liberation Sans (no estimated ratios) |
 | **L4 nesting** | ✓ ELK native hierarchical/compound (boundaries, Deployment_Node), any depth |
-| **L5 aspect** | ✓ spec-driven force/layered selection (the wide-star ribbon is fixed) |
+| **L5 aspect** | ✓ spec-driven `stress`/`layered` selection (the wide-star ribbon is fixed) |
 
 ### Tier 2 — remaining visual fidelity
 
-1. Dedicated shape classes for `SystemDb`, `SystemQueue`, `ContainerQueue`, `Component*` variants, `Container_Ext`/`Component_Ext`/`SystemDb_Ext` (proper colour distinction — currently `~`, see tables above).
-2. Boundary type distinction: `Container_Boundary` rendered as generic `Boundary` (`~`); `Enterprise_Boundary` already distinct.
+1. Per-type **colour** distinction for the `~` rows: `SystemDb`/
+   `ComponentDb` (own `cylinder3` templates, ContainerDb-family
+   colour), `*Queue` (own `mxgraph.c4.queue` shape, shared colour),
+   and the `_Ext` variants (`SystemDb_Ext`/`ContainerDb_Ext` lose the
+   cylinder → grey `SystemExt`). The shapes are dedicated now; only
+   the per-type fill/stroke colour is shared — that is the residual
+   `~`.
+2. Boundary type distinction: `Container_Boundary` rendered as
+   generic `Boundary` (`~`); `Enterprise_Boundary` now distinct (✓).
 3. `$sprite` → drawio shape decorator (no drawio sprite registry; parsing never breaks).
 
 ### Tier 3 — nice-to-have
