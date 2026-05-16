@@ -20,7 +20,7 @@
  * Env (all overridable, documented defaults):
  *   PLANTUML_VERSION   default 1.2026.2
  *   PLANTUML_JAR       default <outDir>/plantuml.jar (downloaded if absent)
- *   DRAWIO_EXPORT_IMAGE default rlespinasse/drawio-export:latest
+ *   DRAWIO_EXPORT_IMAGE default rlespinasse/drawio-export:v4.51.0
  *   DRAWIO_EXPORT_SCALE default 2
  */
 import { execFileSync } from 'node:child_process';
@@ -31,7 +31,7 @@ import { Catalyst } from '../dist/catalyst.mjs';
 const SRC = resolve(process.argv[2] ?? 'tests/fixtures/c4-exhaustive.puml');
 const OUT = resolve(process.argv[3] ?? 'build/render-compare');
 const PLANTUML_VERSION = process.env.PLANTUML_VERSION ?? '1.2026.2';
-const DRAWIO_IMAGE = process.env.DRAWIO_EXPORT_IMAGE ?? 'rlespinasse/drawio-export:latest';
+const DRAWIO_IMAGE = process.env.DRAWIO_EXPORT_IMAGE ?? 'rlespinasse/drawio-export:v4.51.0';
 const DRAWIO_SCALE = process.env.DRAWIO_EXPORT_SCALE ?? '2';
 
 const name = basename(SRC).replace(/\.puml$/, '');

@@ -25,10 +25,11 @@
   "customManagers": [
     {
       "customType": "regex",
-      "description": "Makefile PLANTUML_VERSION default, tracked via the inline `# renovate:` comment. currentValue is a semver-shaped string (the PlantUML 1.YYYY.x scheme); the allowedVersions packageRule below filters out PlantUML's legacy 8xxx Maven versions.",
+      "description": "Makefile tool pins tracked via inline `# renovate:` comments. Two matchStrings: (1) a bare semver value (PLANTUML_VERSION — Maven jar curl-downloaded by render-compare.mjs, so datasource=maven NOT docker: the plantuml Docker image carries 1.2026.3 while Maven Central only has 1.2026.2, the ADR-0003 incident — track the artifact the tooling actually fetches); (2) a full docker image:tag value (DRAWIO_EXPORT_IMAGE), capturing only the tag as currentValue. The allowedVersions packageRule filters PlantUML's legacy 8xxx Maven versions; the docker packageRule keeps the tag tag-only.",
       "managerFilePatterns": ["/^Makefile$/"],
       "matchStrings": [
-        "# renovate: datasource=(?<datasource>[^\\s]+) depName=(?<depName>[^\\s]+)( versioning=(?<versioning>[^\\s]+))?\\n[A-Z_]+\\s*\\?=\\s*(?<currentValue>\\d[\\w.+-]*)"
+        "# renovate: datasource=(?<datasource>[^\\s]+) depName=(?<depName>[^\\s]+)( versioning=(?<versioning>[^\\s]+))?\\n[A-Z_]+\\s*\\?=\\s*(?<currentValue>\\d[\\w.+-]*)\\n",
+        "# renovate: datasource=(?<datasource>[^\\s]+) depName=(?<depName>[^\\s]+)( versioning=(?<versioning>[^\\s]+))?\\n[A-Z_]+\\s*\\?=\\s*[^:\\s]+:(?<currentValue>v?\\d[\\w.+-]*)"
       ]
     },
     {
@@ -81,6 +82,13 @@
       "automerge": false,
       "minimumReleaseAge": "1 day",
       "labels": ["dependencies", "c4-plantuml-stdlib"]
+    },
+    {
+      "description": "Keep the Makefile drawio-export docker pin tag-only — config:best-practices transitively enables docker:pinDigests which would rewrite it to tag@sha256 and break the customManager regex (which expects a semver-shaped tag). The image is consumed via `docker run` at render time, which resolves the digest for the tag anyway. (GitHub Actions still get SHA-pinned via helpers:pinGitHubActionDigests in config:best-practices.)",
+      "matchManagers": ["custom.regex"],
+      "matchFileNames": ["Makefile"],
+      "matchDatasources": ["docker"],
+      "pinDigests": false
     },
     {
       "description": "Group GitHub Actions into one PR",

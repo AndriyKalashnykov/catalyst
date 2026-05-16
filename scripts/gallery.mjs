@@ -21,7 +21,7 @@
  * Env (all overridable, documented defaults — mirrors render-compare.mjs):
  *   PLANTUML_VERSION    default 1.2026.2
  *   PLANTUML_JAR        default <OUT>/plantuml.jar (downloaded if absent)
- *   DRAWIO_EXPORT_IMAGE default rlespinasse/drawio-export:latest
+ *   DRAWIO_EXPORT_IMAGE default rlespinasse/drawio-export:v4.51.0
  *   DRAWIO_EXPORT_SCALE default 2
  *   CORPUS_DIR          default tests/fixtures/corpus
  *   GALLERY_OUT         default docs/gallery
@@ -32,7 +32,7 @@ import { basename, join, resolve } from 'node:path';
 import { Catalyst } from '../dist/catalyst.mjs';
 
 const PLANTUML_VERSION = process.env.PLANTUML_VERSION ?? '1.2026.2';
-const DRAWIO_IMAGE = process.env.DRAWIO_EXPORT_IMAGE ?? 'rlespinasse/drawio-export:latest';
+const DRAWIO_IMAGE = process.env.DRAWIO_EXPORT_IMAGE ?? 'rlespinasse/drawio-export:v4.51.0';
 const DRAWIO_SCALE = process.env.DRAWIO_EXPORT_SCALE ?? '2';
 const CORPUS_DIR = resolve(process.env.CORPUS_DIR ?? 'tests/fixtures/corpus');
 const OUT = resolve(process.env.GALLERY_OUT ?? 'docs/gallery');
