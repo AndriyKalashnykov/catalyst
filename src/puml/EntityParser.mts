@@ -8,6 +8,7 @@ class EntityParser {
   /** Restore `\u0001Q<n>\u0001` placeholders produced by parse() back to their original strings. */
   private restoreQuoted(s: string | undefined): string | undefined {
     if (s === undefined) return undefined;
+    // eslint-disable-next-line no-control-regex -- U+0001 is the intentional load-bearing sentinel for quote-strip placeholders from parse(), not text input
     return s.replace(/\u0001Q(\d+)\u0001/g, (_, n) => this.quoted[parseInt(n, 10)] ?? '');
   }
 
