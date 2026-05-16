@@ -1,0 +1,112 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:best-practices",
+    ":semanticCommitType(chore)"
+  ],
+  "enabledManagers": ["npm", "github-actions", "mise", "custom.regex"],
+  "commitMessagePrefix": "chore(deps): ",
+  "commitMessageAction": "update",
+  "labels": ["dependencies"],
+  "prConcurrentLimit": 50,
+  "prHourlyLimit": 0,
+  "platformAutomerge": true,
+  "automerge": true,
+  "automergeType": "pr",
+  "automergeStrategy": "squash",
+  "ignoreTests": false,
+  "lockFileMaintenance": {
+    "enabled": true,
+    "automerge": true
+  },
+  "npm": {
+    "minimumReleaseAge": "3 days"
+  },
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Makefile tool pins tracked via inline `# renovate:` comments. Two matchStrings: (1) a bare semver value (PLANTUML_VERSION — Maven jar curl-downloaded by render-compare.mjs, so datasource=maven NOT docker: the plantuml Docker image carries 1.2026.3 while Maven Central only has 1.2026.2, the ADR-0003 incident — track the artifact the tooling actually fetches); (2) a full docker image:tag value (DRAWIO_EXPORT_IMAGE), capturing only the tag as currentValue. The allowedVersions packageRule filters PlantUML's legacy 8xxx Maven versions; the docker packageRule keeps the tag tag-only.",
+      "managerFilePatterns": ["/^Makefile$/"],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>[^\\s]+) depName=(?<depName>[^\\s]+)( versioning=(?<versioning>[^\\s]+))?\\n[A-Z_]+\\s*\\?=\\s*(?<currentValue>\\d[\\w.+-]*)\\n",
+        "# renovate: datasource=(?<datasource>[^\\s]+) depName=(?<depName>[^\\s]+)( versioning=(?<versioning>[^\\s]+))?\\n[A-Z_]+\\s*\\?=\\s*[^:\\s]+:(?<currentValue>v?\\d[\\w.+-]*)"
+      ]
+    },
+    {
+      "customType": "regex",
+      "description": "Keep the render-tooling scripts' PLANTUML_VERSION fallback default in lock-step with the Makefile (they MUST mirror — the Makefile recipe sets the env, the script literal is the no-env fallback). Same Maven datasource.",
+      "managerFilePatterns": ["/^scripts/(render-compare|gallery)\\.mjs$/"],
+      "matchStrings": [
+        "process\\.env\\.PLANTUML_VERSION\\s*\\?\\?\\s*'(?<currentValue>\\d[\\w.+-]*)'"
+      ],
+      "depNameTemplate": "net.sourceforge.plantuml:plantuml",
+      "datasourceTemplate": "maven"
+    },
+    {
+      "customType": "regex",
+      "description": "C4-PlantUML stdlib pin in the `!include` URL across every .puml fixture/sample and the docs/README that embed it. Tracked by GitHub release tag (plantuml-stdlib/C4-PlantUML cuts vX.Y.Z tags).",
+      "managerFilePatterns": [
+        "/\\.puml$/",
+        "/^README\\.md$/",
+        "/^docs/.*\\.md$/",
+        "/^tests/.*\\.mts$/"
+      ],
+      "matchStrings": [
+        "C4-PlantUML/(?<currentValue>v\\d[\\w.+-]*)/"
+      ],
+      "depNameTemplate": "plantuml-stdlib/C4-PlantUML",
+      "datasourceTemplate": "github-tags"
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "labels": ["security"],
+    "automerge": true,
+    "minimumReleaseAge": "0 days"
+  },
+  "packageRules": [
+    {
+      "description": "Wait 3 days before automerging major updates",
+      "matchUpdateTypes": ["major"],
+      "minimumReleaseAge": "3 days"
+    },
+    {
+      "description": "PlantUML on Maven Central carries BOTH the current 1.YYYY.x scheme and a legacy 8xxx scheme (maven-metadata <latest> resolves to the old 8059). Constrain to the modern dotted-year scheme so Renovate proposes 1.2026.x, never an 8xxx regression. Also keep it tag-only (no digest — it is a Maven jar coordinate, not a docker ref).",
+      "matchDatasources": ["maven"],
+      "matchPackageNames": ["net.sourceforge.plantuml:plantuml"],
+      "allowedVersions": "/^\\d\\.\\d{4}\\.\\d+$/"
+    },
+    {
+      "description": "C4-PlantUML stdlib bump — open a PR but do NOT automerge: the parser's isComponent skip-list is kept in sync with a specific stdlib procedure surface, so a stdlib major could need a parser review.",
+      "matchManagers": ["custom.regex"],
+      "matchDepNames": ["plantuml-stdlib/C4-PlantUML"],
+      "automerge": false,
+      "minimumReleaseAge": "1 day",
+      "labels": ["dependencies", "c4-plantuml-stdlib"]
+    },
+    {
+      "description": "Keep the Makefile drawio-export docker pin tag-only — config:best-practices transitively enables docker:pinDigests which would rewrite it to tag@sha256 and break the customManager regex (which expects a semver-shaped tag). The image is consumed via `docker run` at render time, which resolves the digest for the tag anyway. (GitHub Actions still get SHA-pinned via helpers:pinGitHubActionDigests in config:best-practices.)",
+      "matchManagers": ["custom.regex"],
+      "matchFileNames": ["Makefile"],
+      "matchDatasources": ["docker"],
+      "pinDigests": false
+    },
+    {
+      "description": "Group GitHub Actions into one PR",
+      "matchManagers": ["github-actions"],
+      "groupName": "GitHub Actions"
+    },
+    {
+      "description": "Group devDependencies non-major updates",
+      "matchDepTypes": ["devDependencies"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "dev-dependencies",
+      "automerge": true
+    },
+    {
+      "description": "Group type definitions",
+      "matchPackageNames": ["/^@types\\//"],
+      "groupName": "type-definitions",
+      "automerge": true
+    }
+  ]
+}
