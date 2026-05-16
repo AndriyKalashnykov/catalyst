@@ -8,6 +8,25 @@ This project adheres to [Keep a CHANGELOG](http://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Added
+
+- **Layout Phase 2** — measured edge-label dimensions are fed to ELK so
+  the layout reserves real space for each relationship label. Eliminates
+  the dominant c4-context symptom where a label rectangle was laid on top
+  of a node box. New `measureEdgeLabel()` (font-metric, honours Phase 1
+  `\n` breaks); `LayoutEdge.label` surfaces ELK's placed label rect.
+- `docs/adr/` (ADRs 0001–0004) and `docs/UPGRADE-NOTES.md`.
+
+### Changed
+
+- **Layout Phase 1** — PlantUML `\n` in names/descriptions/relationships
+  is translated to a real `<br/>` line break (was emitted literally and
+  mis-measured as one giant line, overflowing the box into neighbours).
+- Toolchain modernized to latest: TypeScript 6.0 (`tsconfig`
+  `moduleResolution: bundler` + `rootDir`), vitest 4.1.6, oxlint 1.65,
+  `PLANTUML_VERSION` 1.2024.7 → 1.2026.2, C4-PlantUML stdlib pin
+  v2.10.0 → v2.13.0, mise (`.mise.toml`, node 26).
+
 ## [1.4.1] - 2026-05-16
 
 ### Removed

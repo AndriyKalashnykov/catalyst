@@ -2,7 +2,7 @@ import ELK from 'elkjs/lib/elk.bundled.js'
 import type { ElkNode, ElkExtendedEdge } from 'elkjs/lib/elk-api.js'
 import { EntityDescriptor } from '../puml/EntityDescriptor.interface.mjs'
 import { lineHeight, spaceAdvance } from '../text/TextMetrics.mjs'
-import { measureNode } from './measureNode.mjs'
+import { measureNode, measureEdgeLabel } from './measureNode.mjs'
 
 interface LayoutNode {
   id: string
@@ -21,6 +21,9 @@ interface LayoutEdge {
   target: string
   name?: string
   points?: { x: number; y: number }[]
+  /** ELK-computed label rectangle (absolute), when the edge carried a
+   *  measured label. Lets callers/tests verify it clears every node. */
+  label?: { x: number; y: number; width: number; height: number }
 }
 
 interface LayoutResult {
@@ -163,7 +166,18 @@ class LayoutEngine {
     // order above. `rel<i>` name lets layoutData2mx pull the routed polyline.
     const edges: ElkExtendedEdge[] = this.relations.map((r, i) => {
       const up = r.direction === 'U'
-      return { id: `rel${i}`, sources: [up ? r.target : r.source], targets: [up ? r.source : r.target] }
+      // Phase 2: feed the measured label rectangle to ELK so it reserves
+      // space and routes/places nodes clear of the label. The verb is
+      // r.label; the bracketed technology is r.description (C4-PlantUML's
+      // swapped-field grammar — see layoutData2mx). `lay<i>` constraint
+      // edges are invisible and intentionally get NO label.
+      const dim = measureEdgeLabel(r.label, r.description)
+      return {
+        id: `rel${i}`,
+        sources: [up ? r.target : r.source],
+        targets: [up ? r.source : r.target],
+        labels: [{ text: r.label, width: dim.width, height: dim.height }],
+      }
     })
     // Layout-only Lay_* edges: present for ELK ranking, NOT in pumlRelations,
     // so layoutData2mx never draws them (it only emits `rel<n>` geometry +
@@ -173,6 +187,20 @@ class LayoutEngine {
       edges.push({ id: `lay${i}`, sources: [up ? c.target : c.source], targets: [up ? c.source : c.target] })
     })
 
+    // Phase 2: edge-label spacing, font-derived (not invented constants).
+    // The edges already carry measured label rectangles; these options tell
+    // ELK how far to keep a label from its own edge and from nodes, so a
+    // label is never laid on top of a box. Applied to BOTH algorithms —
+    // `spacing.edgeLabel`/`spacing.edgeNode` are core options honoured by
+    // layered and force/stress alike.
+    const labelGap = String(Math.ceil(spaceAdvance(11, false)))
+    const lineGap = String(Math.ceil(lineHeight(11, false)))
+    const edgeLabelOpts: Record<string, string> = {
+      'elk.spacing.edgeLabel': labelGap,
+      'elk.spacing.edgeNode': lineGap,
+      'elk.edgeLabels.inline': 'false',
+    }
+
     const hierarchical = this.isHierarchical()
     const layoutOptions: Record<string, string> = hierarchical
       ? {
@@ -181,6 +209,11 @@ class LayoutEngine {
           'elk.direction': 'DOWN',
           'elk.hierarchyHandling': 'INCLUDE_CHILDREN',
           'elk.edgeRouting': 'ORTHOGONAL',
+          ...edgeLabelOpts,
+          // Layered places edge labels and reserves a band for them; CENTER
+          // keeps the verb on the connector midpoint (matches catalyst's
+          // own label anchor) while still reserving vertical space.
+          'elk.layered.edgeLabels.sideSelection': 'ALWAYS_DOWN',
           // `elk.layered.wrapping.*` was tried and removed: ELK's docs state
           // wrapping splits a long *sequence of layers* into side-by-side
           // chunks — NOT a single over-wide rank — and it empirically
@@ -199,7 +232,8 @@ class LayoutEngine {
           // overview is not a flow diagram). graphOpts (rankdir/spacing) do
           // not apply to force and are intentionally not spread here.
           'elk.algorithm': 'org.eclipse.elk.force',
-          'elk.hierarchyHandling': 'INCLUDE_CHILDREN'
+          'elk.hierarchyHandling': 'INCLUDE_CHILDREN',
+          ...edgeLabelOpts
         }
 
     return { id: 'root', layoutOptions, children, edges }
@@ -266,7 +300,13 @@ class LayoutEngine {
       if (!src) continue
       const s = e.sections?.[0]
       const pts = s ? [s.startPoint, ...(s.bendPoints ?? []), s.endPoint] : []
-      edges.push({ source: src.source, target: src.target, name: e.id, points: pts })
+      // Phase 2: surface ELK's placed label rectangle (absolute for
+      // top-level edges) so callers/tests can verify it clears every node.
+      const lbl = (e as { labels?: { x?: number; y?: number; width?: number; height?: number }[] }).labels?.[0]
+      const label = lbl && lbl.width
+        ? { x: lbl.x ?? 0, y: lbl.y ?? 0, width: lbl.width ?? 0, height: lbl.height ?? 0 }
+        : undefined
+      edges.push({ source: src.source, target: src.target, name: e.id, points: pts, label })
     }
 
     return {
