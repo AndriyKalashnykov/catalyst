@@ -1,6 +1,7 @@
+import { ELEMENT_TITLE_PX, ELEMENT_BODY_PX } from './theme.mjs';
 class PersonExt {
     static async label() {
-        const html = `<div style="font-size:11px;font-style:italic;color:#cccccc;">«%c4Type%»</div><div style="font-size:16px;font-weight:bold;">%c4Name%</div><div style="font-size:11px;color:#cccccc;">%c4Description%</div>`;
+        const html = `<div style="font-size:${ELEMENT_BODY_PX}px;font-style:italic;color:#cccccc;">«%c4Type%»</div><div style="font-size:${ELEMENT_TITLE_PX}px;font-weight:bold;">%c4Name%</div><div style="font-size:${ELEMENT_BODY_PX}px;color:#cccccc;">%c4Description%</div>`;
         const minifiedHtml = html.replace(/>\s+</g, '><');
         return this.encodeHtmlEntities(minifiedHtml);
     }

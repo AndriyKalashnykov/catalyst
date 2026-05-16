@@ -1,6 +1,9 @@
+import { ENTERPRISE_BOUNDARY_TITLE_PX, BOUNDARY_BODY_PX } from './theme.mjs';
+import { spaceAdvance } from '../../text/TextMetrics.mjs';
+
 class EnterpriseBoundary {
     static async label() {
-        const html = `<div style="font-weight:bold;font-size:13px;">%c4Name%</div><div style="font-size:11px;">[%c4Type%]</div>`;
+        const html = `<div style="font-weight:bold;font-size:${ENTERPRISE_BOUNDARY_TITLE_PX}px;">%c4Name%</div><div style="font-size:${BOUNDARY_BODY_PX}px;">[%c4Type%]</div>`;
         const minifiedHtml = html.replace(/>\s+</g, '><');
         return this.encodeHtmlEntities(minifiedHtml);
     }
@@ -28,7 +31,10 @@ class EnterpriseBoundary {
             fontColor: '#222222',
             align: 'center',
             verticalAlign: 'top',
-            fontSize: 13,
+            // Inset the title below the dashed top stroke (font-derived;
+            // 13px bold Name) — see Boundary.style().
+            spacingTop: Math.ceil(spaceAdvance(ENTERPRISE_BOUNDARY_TITLE_PX, true)),
+            fontSize: ENTERPRISE_BOUNDARY_TITLE_PX,
             metaEdit: 1,
             resizable: 1,
             container: 1,

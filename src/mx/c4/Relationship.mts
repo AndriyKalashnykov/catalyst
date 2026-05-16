@@ -1,3 +1,4 @@
+import { RELATIONSHIP_LABEL_PX } from './theme.mjs';
 class Relastionship {
     static async label() {
         // Bold line = the relationship verb (c4Name, e.g. "Uses"); second line
@@ -27,7 +28,7 @@ class Relastionship {
         const styles: Record<string, unknown> = {
             endArrow: 'blockThin',
             html: 1,
-            fontSize: 10,
+            fontSize: RELATIONSHIP_LABEL_PX,
             fontColor: '#404040',
             strokeWidth: 1,
             endFill: 1,
