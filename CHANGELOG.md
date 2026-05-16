@@ -19,6 +19,11 @@ This project adheres to [Keep a CHANGELOG](http://keepachangelog.com/).
 
 ### Changed
 
+- **Layout Phase 3** — C4 Context layout switched from the seed-based
+  `org.eclipse.elk.force` to deterministic `org.eclipse.elk.stress`
+  followed by an `org.eclipse.elk.sporeOverlap` declump pass:
+  crossing-minimal (0 vs 3 on the real c4-context) with zero node
+  overlap. See `docs/adr/0005`.
 - **Layout Phase 1** — PlantUML `\n` in names/descriptions/relationships
   is translated to a real `<br/>` line break (was emitted literally and
   mis-measured as one giant line, overflowing the box into neighbours).

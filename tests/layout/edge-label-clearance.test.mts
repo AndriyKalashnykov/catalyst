@@ -32,11 +32,16 @@ describe('measureEdgeLabel', () => {
 })
 
 describe('Phase 2 — ELK reserves space for edge labels', () => {
-  it('a long-labelled edge gets a label rect that clears every node', async () => {
+  // Hierarchical (has Containers) so the LAYERED pipeline runs — that is
+  // the pipeline whose contract is "ELK reserves measured label space and
+  // places the label clear of nodes". The Context pipeline (Phase 3:
+  // stress + sporeOverlap) owns its own placement and is covered by the
+  // crossing/overlap gate instead.
+  it('a long-labelled edge gets a label rect that clears every node (layered)', async () => {
     const entities = [
-      { type: 'System', alias: 'A', label: 'Order Service', technology: '', description: 'places orders' },
-      { type: 'System', alias: 'B', label: 'Payment Service', technology: '', description: 'settles payments' },
-      { type: 'System', alias: 'C', label: 'Ledger', technology: '', description: 'records entries' },
+      { type: 'Container', alias: 'A', label: 'Order Service', technology: 'Go', description: 'places orders' },
+      { type: 'Container', alias: 'B', label: 'Payment Service', technology: 'Go', description: 'settles payments' },
+      { type: 'Container', alias: 'C', label: 'Ledger', technology: 'Go', description: 'records entries' },
     ]
     const relations = [
       { source: 'A', target: 'B', label: 'submits a payment authorization request and waits synchronously for settlement confirmation', description: 'HTTPS / JSON over mutually-authenticated TLS 1.3' },

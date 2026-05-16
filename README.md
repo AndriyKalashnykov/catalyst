@@ -32,7 +32,7 @@ flowchart LR
   P[".puml<br/>(PlantUML C4 syntax)"] --> A["Catalyst.convert()"]
   subgraph A[" "]
     direction LR
-    PR[parse entities + relations] --> EL["ELK layout<br/>(layered / force)"] --> MX[emit draw.io XML]
+    PR[parse entities + relations] --> EL["ELK layout<br/>(layered / stress)"] --> MX[emit draw.io XML]
   end
   A --> D[".drawio"]
 ```
@@ -43,7 +43,7 @@ flowchart LR
 |-----------|-----------|
 | Language | TypeScript 6.0, ES2024 (`.mts` ESM) |
 | Runtime | Node.js 26 (ES2024+), mise-managed (`.mise.toml`) |
-| Layout engine | elkjs (Eclipse Layout Kernel) — `layered` + `force` |
+| Layout engine | elkjs (Eclipse Layout Kernel) — `layered` + `stress` (+`sporeOverlap` declump) |
 | Text metrics | fontkit + bundled Liberation Sans (SIL OFL) |
 | Serialization | xml2js |
 | Tests | Vitest — unit, structural parity, golden snapshot, layout quality, corpus sanity |
@@ -142,10 +142,13 @@ not a heuristic):
 
 - **Container / Component / Deployment** (hierarchical) → `org.eclipse.elk.layered`
   — layered flow, orthogonal routed connectors, native compound nesting.
-- **Context** (people/systems only — hub-and-spoke) → `org.eclipse.elk.force`
-  — balanced placement (a Context overview is not a flow diagram; a layered
-  engine, including PlantUML's own Graphviz/dot, spreads a star into a wide
-  ribbon).
+- **Context** (people/systems only — hub-and-spoke) → `org.eclipse.elk.stress`
+  followed by an `org.eclipse.elk.sporeOverlap` declump pass — crossing-
+  minimal, deterministic placement with zero node overlap (a Context
+  overview is not a flow diagram; a layered engine, including PlantUML's own
+  Graphviz/dot, spreads a star into a wide ribbon). `stress` replaced the
+  seed-based `force` (0 vs 3 crossings on the real c4-context; see
+  `docs/adr/0005`).
 
 Node sizes are measured from the real label font (fontkit + bundled
 Liberation Sans), floored at the conventional C4 element-box size so rendered
