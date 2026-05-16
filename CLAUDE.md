@@ -239,18 +239,61 @@ Everything below is researched, not speculative. Sizes are honest.
 > now RESOLVED.** Remaining lossy-surface gap: PlantUML `note`
 > callouts still unimplemented (tracked via item 3 C4-COVERAGE).
 
-1. **#24 — deterministic Context-edge routing (BIG, design-first).**
-   Root cause (researched): non-laned edges get NO catalyst waypoint →
-   drawio orthogonally auto-routes them and anchors the label on that
-   route; on `stress`/`force` ELK neither routes nor places labels, so
-   catalyst can't predict the anchor. `resolveLabelOverlap` (#33) only
-   fixes the "midpoint INSIDE a node" subset. Plan: for non-laned
-   Context edges emit an explicit deterministic polyline (straight
-   border-to-border or an obstacle-aware single bend) so the label
-   anchor is catalyst-known, then `resolveLabelOverlap` against THAT.
-   Generalises the proven lane waypoint+offset to solo edges. Risk:
-   changes routing broadly — gate via corpus-sanity route signatures +
-   layout-quality + full 20-pair gallery + the #19 ibm-wm gate.
+1. **#24 — deterministic Context-edge routing (BIG; DESIGN COMPLETE
+   2026-05-16, ready to implement).**
+   **Root cause (code-traced):** in `src/catalyst.mts` `layoutData2mx`
+   the non-laned branch emits NO waypoint for a solo edge and computes
+   the label offset from the *assumed* straight midpoint
+   `((A.c+B.c)/2)` via `resolveLabelOverlap` (`src/layout/edgeLanes.mts`
+   167-212). But with no catalyst waypoint, **drawio orthogonally
+   auto-routes the edge itself** and anchors the label on *its* route —
+   so catalyst's predicted anchor ≠ the rendered anchor. On Context
+   (`LayoutEngine.mts` `org.eclipse.elk.stress`, ~L284) ELK returns
+   only a 2-point start→end section (no bends) and **no label
+   placement**, so there is nothing to read back — the prediction is
+   unfalsifiable and usually wrong. (Hierarchical = `layered` +
+   `ORTHOGONAL`: ELK *does* return bend points + label rects, read back
+   in `LayoutEngine.mts` ~L376-393 into `LayoutEdge.points/label` — so
+   hierarchical solo edges are already deterministic and MUST be left
+   alone.) `resolveLabelOverlap` (#33) only nudges a label off a node
+   it overlaps; it does not make the route deterministic.
+   **Design (the proven laned mechanism, generalised to solo edges):**
+   the laned branch already emits catalyst-computed interior waypoints
+   (`poly.slice(1,-1)` perpendicular-shifted) + an absolute `offset`
+   mxPoint and renders deterministically. Do the same for a solo
+   Context edge: emit an explicit **border-to-border 2-point polyline**
+   — intersect the A→B centre line with each endpoint's border rect
+   (all of `nodeCenter` `{cx,cy,hw,hh}` is available at emit time,
+   `catalyst.mts` ~L76-94) and emit those two points as Array points.
+   drawio then draws exactly that segment (no auto-route), so the
+   label anchor IS the geometric midpoint catalyst already assumes →
+   `resolveLabelOverlap`'s precondition becomes *true* instead of
+   approximate, and its existing perpendicular de-collision now lands
+   correctly. If a straight segment crosses a third node (detect via
+   the same `obstacles` boxes already built at `catalyst.mts` ~L167),
+   insert ONE deterministic bend (offset perpendicular past the
+   obstacle, mirrors the lane shift) — add this Phase-2 only if the
+   gallery shows a real crossing; start straight-only.
+   **Scope guard (BLOCKING — prevents the "changes routing broadly"
+   risk):** apply the synthetic polyline ONLY when ALL hold: (a) edge
+   is non-laned, (b) layout is Context/`stress` (NOT hierarchical),
+   (c) ELK returned no usable bends for it. Hierarchical + laned edges
+   keep their current path byte-identical. Add a guard test asserting
+   no waypoint/route-signature delta on a hierarchical fixture.
+   **Phases:** A (spike, no commit) — implement border-to-border on a
+   1-edge + a label-on-node Context fixture, `make render-compare`
+   prove the label now anchors where catalyst predicts; B — wire into
+   the non-laned branch behind the scope guard; C — full gate.
+   **Gating (all BLOCKING, per the proven discipline):**
+   `corpus-sanity` route-signature stays distinct per same-node-pair
+   group (`tests/corpus-sanity.test.mts` ~L119-131); `layout-quality`
+   unchanged (routing moves no nodes — `tests/layout-quality.test.mts`);
+   parity/golden topology byte-stable (no edge/node delta); the
+   hierarchical no-delta guard; full 20-pair gallery re-review at
+   render-compare scale; the #19 ibm-wm acceptance gate. Do NOT declare
+   on tests — `make render-compare` the Context fixtures
+   (`rel-*`, `topology-hub-spoke`, `level-system-landscape`) AND the
+   ibm-wm `c4-context`/deployment pair.
 
 2. **#25 — dense nested-boundary title collision (BIG, compound
    layout).** `titlePadding` reserves the band per compound node
