@@ -23,7 +23,7 @@ import { Relastionship } from './c4/Relationship.mjs';
 import { StyleParser } from '../puml/StyleParser.mjs';
 import type { StyleOverride } from '../puml/StyleParser.mjs';
 import { htmlBreaks, wrapEdgeLabelLines } from '../text/labelLines.mjs';
-import { MX_DEFAULT_FONTSIZE } from '../text/TextMetrics.mjs';
+import { RELATIONSHIP_LABEL_PX } from './c4/theme.mjs';
 
 /**
  * xml2js escapes `&`, `<`, `"` in attribute values but leaves `>` raw
@@ -253,7 +253,7 @@ class Mx {
                 // `&lt;br/&gt;`) so drawio renders the SAME bounded
                 // multi-line block measureEdgeLabel reserved in ELK — a
                 // long verb no longer overruns onto the endpoint nodes.
-                c4Name: c4Text(wrapEdgeLabelLines(name, MX_DEFAULT_FONTSIZE, true, maxLabelWidthPx).join('\n')),
+                c4Name: c4Text(wrapEdgeLabelLines(name, RELATIONSHIP_LABEL_PX, true, maxLabelWidthPx).join('\n')),
                 c4Type: type,
                 // Pre-bracket the technology in the VALUE so the label template
                 // (which is just `%c4Technology%`, no literal brackets) renders
@@ -261,7 +261,7 @@ class Mx {
                 // a bare "[]" tofu box. Wrapped the same way as the verb (same
                 // mxGraph default font size + endpoint-derived width cap).
                 c4Technology: technology
-                    ? c4Text(wrapEdgeLabelLines(`[${technology}]`, MX_DEFAULT_FONTSIZE, false, maxLabelWidthPx).join('\n'))
+                    ? c4Text(wrapEdgeLabelLines(`[${technology}]`, RELATIONSHIP_LABEL_PX, false, maxLabelWidthPx).join('\n'))
                     : '',
                 c4Description: c4Text(description || ''),
                 label: await Relastionship.label()

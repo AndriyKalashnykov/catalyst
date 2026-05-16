@@ -1,8 +1,9 @@
+import { DEPLOYMENT_TITLE_PX, ELEMENT_BODY_PX } from './theme.mjs';
 class DeploymentNode {
     static async label() {
         // Deployment nodes show the $type (e.g. "Linux VM", "K8s cluster") in the
         // header, not $technology like Containers do.
-        const html = `<div style="font-size:11px;font-style:italic;color:#666666;">«%c4Type%»</div><div style="font-size:14px;font-weight:bold;">%c4Name%</div><div style="font-size:11px;color:#666666;">%c4Description%</div>`;
+        const html = `<div style="font-size:${ELEMENT_BODY_PX}px;font-style:italic;color:#666666;">«%c4Type%»</div><div style="font-size:${DEPLOYMENT_TITLE_PX}px;font-weight:bold;">%c4Name%</div><div style="font-size:${ELEMENT_BODY_PX}px;color:#666666;">%c4Description%</div>`;
         const minifiedHtml = html.replace(/>\s+</g, '><');
         return this.encodeHtmlEntities(minifiedHtml);
     }

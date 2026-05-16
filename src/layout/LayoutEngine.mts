@@ -1,7 +1,7 @@
 import ELK from 'elkjs/lib/elk.bundled.js'
 import type { ElkNode, ElkExtendedEdge } from 'elkjs/lib/elk-api.js'
 import { EntityDescriptor } from '../puml/EntityDescriptor.interface.mjs'
-import { lineHeight, spaceAdvance } from '../text/TextMetrics.mjs'
+import { spaceAdvance, renderedLineHeight, MX_DEFAULT_FONTSIZE } from '../text/TextMetrics.mjs'
 import { measureNode, measureEdgeLabel } from './measureNode.mjs'
 
 interface LayoutNode {
@@ -60,13 +60,29 @@ class LayoutEngine {
   private constraints: Lay[] = []
   private graphOpts: Record<string, string> = {}
 
-  /** Boundary title band — derived from the real title line height (16px
-   * bold) via TextMetrics, plus a font-derived inset (space advance). Not an
-   * invented constant. ELK reserves it as the parent's top padding. */
+  /**
+   * Compound-node (boundary / Deployment_Node) top title band that ELK
+   * reserves as `elk.padding[top]`. It MUST be ≥ the boundary label's
+   * full RENDERED height, else the title overlaps the dashed border and
+   * nested children (the `topology-deep-nesting` defect).
+   *
+   * The boundary templates emit TWO lines — Name (bold; 13px is the
+   * tallest, EnterpriseBoundary) then `[Type]` (the mxGraph default
+   * size) — at the renderer's 1.2 line box (`renderedLineHeight`, the
+   * cited mxGraph constant), plus one font-derived space-advance inset
+   * so the text is not flush on the stroke. Every term is a real
+   * renderer/font metric — no invented constant. (Previously this
+   * reserved only ONE fontkit `lineHeight(16)` ≈ 23px while the real
+   * 2-line render needs ≈ 28px → the overlap.)
+   */
   private titlePadding(): { top: number; side: number } {
+    const EB_TITLE_PX = 13 // EnterpriseBoundary Name font-size (the taller of the two boundary templates' explicit CSS)
     return {
-      top: Math.ceil(lineHeight(16, true) + spaceAdvance(16, true)),
-      side: Math.ceil(spaceAdvance(11, false))
+      top: Math.ceil(
+        renderedLineHeight(EB_TITLE_PX) +              // Name line
+        renderedLineHeight(MX_DEFAULT_FONTSIZE) +      // [Type] line
+        spaceAdvance(EB_TITLE_PX, true)),              // font-derived inset off the border
+      side: Math.ceil(spaceAdvance(MX_DEFAULT_FONTSIZE, false))
     }
   }
 
@@ -214,7 +230,7 @@ class LayoutEngine {
     // `spacing.edgeLabel`/`spacing.edgeNode` are core options honoured by
     // layered and force/stress alike.
     const labelGap = String(Math.ceil(spaceAdvance(11, false)))
-    const lineGap = String(Math.ceil(lineHeight(11, false)))
+    const lineGap = String(Math.ceil(renderedLineHeight(MX_DEFAULT_FONTSIZE)))
     const edgeLabelOpts: Record<string, string> = {
       'elk.spacing.edgeLabel': labelGap,
       'elk.spacing.edgeNode': lineGap,

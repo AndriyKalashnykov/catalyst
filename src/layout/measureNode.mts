@@ -1,6 +1,7 @@
 import { EntityDescriptor } from '../puml/EntityDescriptor.interface.mjs'
-import { textWidth, renderedLineHeight, spaceAdvance, wrap, MX_DEFAULT_FONTSIZE } from '../text/TextMetrics.mjs'
+import { textWidth, renderedLineHeight, spaceAdvance, wrap } from '../text/TextMetrics.mjs'
 import { splitLabelLines, wrapEdgeLabelLines } from '../text/labelLines.mjs'
+import { ELEMENT_TITLE_PX, ELEMENT_BODY_PX, RELATIONSHIP_LABEL_PX } from '../mx/c4/theme.mjs'
 
 /**
  * Text-measured leaf-node size (L3). Sizes a shape to its rendered label
@@ -16,7 +17,7 @@ import { splitLabelLines, wrapEdgeLabelLines } from '../text/labelLines.mjs'
  * line box (TextMetrics.renderedLineHeight = mxGraph 1.2).
  */
 export function measureNode(entity: EntityDescriptor): { width: number; height: number } {
-  const TITLE_PX = 16, BODY_PX = 11
+  const TITLE_PX = ELEMENT_TITLE_PX, BODY_PX = ELEMENT_BODY_PX
   const pad = spaceAdvance(TITLE_PX, true)            // font-derived padding unit
 
   // Title may carry explicit PlantUML `\n` breaks — measure each rendered
@@ -83,10 +84,11 @@ export function measureEdgeLabel(
   technology?: string,
   maxWidthPx: number = Infinity,
 ): { width: number; height: number } {
-  // The Relationship template sets NO font-size → mxGraph renders the
-  // verb/technology at its DEFAULT_FONTSIZE. Cited renderer constant,
-  // not a literal (see TextMetrics.MX_DEFAULT_FONTSIZE).
-  const PX = MX_DEFAULT_FONTSIZE
+  // The Relationship label `<div>`s set NO inline font-size, so the
+  // verb/technology renders at the Relationship CELL `fontSize` —
+  // Relationship.style() sets that to 10 (NOT mxGraph's default 11).
+  // Measuring at the true rendered size; single-sourced in c4/theme.
+  const PX = RELATIONSHIP_LABEL_PX
   const pad = spaceAdvance(PX, false)
   // Wrap to the caller-supplied endpoint-derived cap so a long
   // verb/technology becomes a bounded multi-line block instead of one

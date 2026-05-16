@@ -10,20 +10,21 @@ This project adheres to [Keep a CHANGELOG](http://keepachangelog.com/).
 
 ### Fixed
 
-- **Single-edge label de-collision** (`resolveLabelOverlap`,
-  renderer-side, geometry-exact). When a non-laned edge's label rect at
-  the A↔B centre-line midpoint lands *inside* an unrelated node box, the
-  label is pushed the **minimal** perpendicular distance (an axis-contact
-  boundary — no spacing constant, no sampling) until it clears every
-  obstacle; emitted via the same offset-mxPoint the lane fan uses.
-  No-ops (and emits nothing) when the midpoint is already clear, so it
-  cannot regress a diagram that was fine. Known limitation (tracked):
-  on `stress`/`force` Context layouts drawio *orthogonally auto-routes*
-  non-laned edges and anchors the label on that route, not on the
-  straight centre line — labels that hug a box *edge* (vs. sit *inside*
-  a box) there need catalyst to emit a deterministic Context route, a
-  larger separate change.
-
+- **Edge labels were measured at the wrong font size (real bug).**
+  `Relationship.style()` sets a cell-level `fontSize: 10` and the
+  Relationship label `<div>`s set no inline size, so edge labels render
+  at **10px**; `measureEdgeLabel` had been anchored to mxGraph's default
+  11 (an earlier "cited `MX_DEFAULT_FONTSIZE`" that missed the cell
+  override), over-measuring every edge label ~10 % (ELK over-reserved,
+  wrong wrap cap). Now measured at the true 10.
+- **C4 typography single-sourced** (`src/mx/c4/theme.mjs`). The element
+  16/11, Deployment 14, Enterprise-Boundary 13, Boundary 12, body 11
+  and Relationship 10 sizes were bare literals duplicated across ~17
+  shape templates *and* `measureNode`/`measureEdgeLabel`/`titlePadding`
+  (the silent-drift that caused the bug above). Now one cited/annotated
+  module consumed by both the templates and the measurement; mxGraph
+  flag enums named (`MX.FONT_NORMAL`/`ON`/…). Output byte-identical for
+  unchanged sizes.
 - **Long relationship labels no longer overrun the endpoint nodes.**
   A drawio edge label has no box, so a long single-line verb/technology
   was laid out as one un-wrappable line smeared across both endpoint
@@ -34,12 +35,25 @@ This project adheres to [Keep a CHANGELOG](http://keepachangelog.com/).
   endpoint ⇒ no wrap). `measureEdgeLabel` (ELK reservation) and the Mx
   emit share one wrap routine (`labelLines.wrapEdgeLabelLines`), so the
   rendered block equals the space ELK reserved.
-- The edge-label font size is now the **cited** mxGraph
-  `DEFAULT_FONTSIZE` (`TextMetrics.MX_DEFAULT_FONTSIZE`, verified in the
-  authoritative source) instead of a bare `11` literal — the
-  Relationship template sets no `font-size`, so it renders at the
-  renderer default; measurement is anchored to that constant (same
-  rigor as `MX_LINE_HEIGHT`).
+- **Single-edge label de-collision** (`resolveLabelOverlap`,
+  renderer-side, geometry-exact). When a non-laned edge's label rect at
+  the A↔B centre-line midpoint lands *inside* an unrelated node box, the
+  label is pushed the **minimal** perpendicular distance (an axis-contact
+  boundary — no spacing constant, no sampling) until it clears every
+  obstacle; emitted via the same offset-mxPoint the lane fan uses.
+  No-ops when the midpoint is already clear (cannot regress a fine
+  diagram). Tracked limitation: on `stress`/`force` Context layouts
+  drawio *orthogonally auto-routes* non-laned edges and anchors the
+  label on that route — "label on a box *edge*" needs deterministic
+  Context routing (a larger separate change).
+- **Boundary title** no longer renders on the dashed top stroke
+  (`spacingTop` = the font's own space-advance at the title size, a real
+  metric) and `titlePadding` now reserves the full **2-line** boundary
+  label at the renderer line box (was one fontkit line ≈ 23px vs the
+  real ≈ 33px) so children no longer overlap the title. Tracked
+  limitation: in *dense deeply-nested* diagrams, horizontally-adjacent
+  nested-boundary titles can still visually collide — a deeper
+  compound-layout spacing concern.
 
 ## [1.6.0] - 2026-05-16
 
