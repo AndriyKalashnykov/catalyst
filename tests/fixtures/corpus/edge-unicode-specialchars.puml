@@ -1,5 +1,5 @@
 @startuml edge-unicode-specialchars
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.10.0/C4_Container.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Container.puml
 title Edge cases — Unicode & special chars
 Person(u, "Ünïcödé Üser 日本語", "Ñame with áccénts & symbols")
 System(s, "Café <Backend>", "Handles <angle> & ampersand input")

@@ -10,8 +10,8 @@
 '
 ' Keep this file in lockstep with docs/C4-COVERAGE.md.
 ' ---------------------------------------------------------------------------
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.10.0/C4_Deployment.puml
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.10.0/C4_Component.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Deployment.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Component.puml
 
 title C4-PlantUML exhaustive surface — every element, boundary, relationship and styling primitive
 

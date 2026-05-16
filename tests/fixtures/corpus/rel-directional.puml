@@ -1,5 +1,5 @@
 @startuml rel-directional
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.10.0/C4_Container.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Container.puml
 title Relationships — directional hints (_U/_D/_L/_R)
 System(hub, "Hub")
 System(n, "North")

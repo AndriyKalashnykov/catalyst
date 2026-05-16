@@ -1,6 +1,6 @@
 # Catalyst — PlantUML C4 → draw.io converter.
 # Tunables mirror scripts/render-compare.mjs env defaults (?= lets env/CI override).
-PLANTUML_VERSION    ?= 1.2024.7
+PLANTUML_VERSION    ?= 1.2026.3
 DRAWIO_EXPORT_IMAGE ?= rlespinasse/drawio-export:latest
 DRAWIO_EXPORT_SCALE ?= 2
 RENDER_SRC          ?= tests/fixtures/c4-exhaustive.puml
@@ -16,7 +16,8 @@ help: ## List targets
 	  | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-16s\033[0m %s\n",$$1,$$2}'
 
 .PHONY: deps
-deps: ## Install dependencies (npm ci)
+deps: ## Install dependencies (mise-managed Node + npm ci)
+	mise install
 	npm ci
 
 .PHONY: build

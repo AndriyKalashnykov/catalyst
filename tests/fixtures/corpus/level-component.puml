@@ -1,5 +1,5 @@
 @startuml level-component
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.10.0/C4_Component.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Component.puml
 title C4 Level — Component
 Container_Boundary(api, "API Application") {
   Component(ctrl, "Order Controller", "Spring MVC", "Handles HTTP order endpoints")

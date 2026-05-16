@@ -25,7 +25,7 @@ Stresses the ELK layout engine: rank ordering, fan-out, wide ranks, cycles, disc
 
 ```plantuml
 @startuml topology-cyclic
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.10.0/C4_Context.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Context.puml
 title Topology — cyclic (A→B→C→A)
 System(a, "Scheduler")
 System(b, "Executor")
@@ -48,7 +48,7 @@ Rel(c, a, "requeues")
 
 ```plantuml
 @startuml topology-deep-nesting
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.10.0/C4_Context.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Context.puml
 title Topology — deep boundary nesting
 Enterprise_Boundary(ent, "Acme Corp") {
   System_Boundary(plat, "Platform") {
@@ -78,7 +78,7 @@ Rel(auth, usr, "looks up")
 
 ```plantuml
 @startuml topology-disconnected
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.10.0/C4_Context.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Context.puml
 title Topology — disconnected components
 System(a1, "Auth Service")
 System(a2, "Token Store")
@@ -102,7 +102,7 @@ System(lonely, "Standalone Cron")
 
 ```plantuml
 @startuml topology-hub-spoke
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.10.0/C4_Context.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Context.puml
 title Topology — hub & spoke (fan-out / force-layout case)
 System(hub, "Event Bus", "Central broker")
 System(s1, "Orders")
@@ -132,7 +132,7 @@ Rel(hub, s6, "routes to")
 
 ```plantuml
 @startuml topology-linear-chain
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.10.0/C4_Context.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Context.puml
 title Topology — linear chain (rank ordering)
 System(a, "Ingest", "Receives raw events")
 System(b, "Validate", "Schema + auth checks")
@@ -158,7 +158,7 @@ Rel(d, e, "exposes", "SQL")
 
 ```plantuml
 @startuml topology-wide-rank
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.10.0/C4_Context.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Context.puml
 title Topology — wide rank (ribbon stress)
 System(src, "API Gateway")
 System(w1, "Worker 1")
@@ -196,7 +196,7 @@ Bidirectional, directional hints, with/without technology, long labels, layout-o
 
 ```plantuml
 @startuml rel-bidirectional
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.10.0/C4_Container.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Container.puml
 title Relationships — bidirectional
 System(a, "Service A")
 System(b, "Service B")
@@ -219,7 +219,7 @@ Rel(c, a, "callbacks", "webhook")
 
 ```plantuml
 @startuml rel-directional
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.10.0/C4_Container.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Container.puml
 title Relationships — directional hints (_U/_D/_L/_R)
 System(hub, "Hub")
 System(n, "North")
@@ -245,7 +245,7 @@ Rel_R(hub, e, "right")
 
 ```plantuml
 @startuml rel-layout-constraints
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.10.0/C4_Container.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Container.puml
 title Relationships — Lay_ constraints produce NO visible edge
 System(a, "Alpha")
 System(b, "Beta")
@@ -270,7 +270,7 @@ Lay_Distance(c, d, 2)
 
 ```plantuml
 @startuml rel-long-labels
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.10.0/C4_Container.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Container.puml
 title Relationships — very long labels
 System(a, "Order Service")
 System(b, "Payment Service")
@@ -290,7 +290,7 @@ Rel(a, b, "submits a payment authorization request and waits synchronously for s
 
 ```plantuml
 @startuml rel-parallel-duplicate
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.10.0/C4_Container.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Container.puml
 title Relationships — parallel duplicates + antiparallel (lane separation)
 System(a, "Service A")
 System(b, "Service B")
@@ -312,7 +312,7 @@ Rel_Back(b, a, "callback", "webhook")
 
 ```plantuml
 @startuml rel-tech-vs-notech
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.10.0/C4_Container.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Container.puml
 title Relationships — with vs without technology (regression: no "[]" tofu)
 System(a, "Producer")
 System(b, "Consumer")
@@ -339,7 +339,7 @@ One canonical diagram per C4 abstraction (Component, Dynamic, System Landscape).
 
 ```plantuml
 @startuml level-component
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.10.0/C4_Component.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Component.puml
 title C4 Level — Component
 Container_Boundary(api, "API Application") {
   Component(ctrl, "Order Controller", "Spring MVC", "Handles HTTP order endpoints")
@@ -365,7 +365,7 @@ Rel(svc, cache, "caches", "Lettuce")
 
 ```plantuml
 @startuml level-dynamic
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.10.0/C4_Dynamic.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Dynamic.puml
 title C4 Level — Dynamic (numbered RelIndex)
 Person(user, "User")
 System(web, "Web App")
@@ -389,7 +389,7 @@ RelIndex(3, api, db, "SELECT", "SQL")
 
 ```plantuml
 @startuml level-system-landscape
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.10.0/C4_Context.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Context.puml
 title C4 Level — System Landscape
 Enterprise_Boundary(e, "Retailer") {
   Person(cust, "Customer", "Buys products")
@@ -423,7 +423,7 @@ Tags / dashed rels, Unicode & XML-special chars, label-only entities, a ~30-node
 
 ```plantuml
 @startuml edge-empty-descriptions
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.10.0/C4_Container.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Container.puml
 title Edge cases — labels only, no descriptions/technology
 Person(u, "User")
 System(a, "Service A")
@@ -447,7 +447,7 @@ Rel(b, c, "queues")
 
 ```plantuml
 @startuml edge-large-graph
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.10.0/C4_Container.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Container.puml
 title Edge cases — large diagram (~30 nodes)
 Person(user, "End User")
 System_Boundary(sys, "Platform") {
@@ -515,7 +515,7 @@ Rel(svc6, ext6, "integrates", "REST")
 
 ```plantuml
 @startuml edge-tags-styling
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.10.0/C4_Container.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Container.puml
 title Edge cases — tags, UpdateRelStyle, dashed
 AddElementTag("critical", $bgColor="#c0392b", $fontColor="#ffffff")
 AddRelTag("async", $lineColor="#8e44ad", $lineStyle=DashedLine())
@@ -539,7 +539,7 @@ Rel(b, c, "emits events", "Kafka", $tags="async")
 
 ```plantuml
 @startuml edge-unicode-specialchars
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.10.0/C4_Container.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Container.puml
 title Edge cases — Unicode & special chars
 Person(u, "Ünïcödé Üser 日本語", "Ñame with áccénts & symbols")
 System(s, "Café <Backend>", "Handles <angle> & ampersand input")

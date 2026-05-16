@@ -1,5 +1,5 @@
 @startuml rel-bidirectional
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.10.0/C4_Container.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Container.puml
 title Relationships — bidirectional
 System(a, "Service A")
 System(b, "Service B")
