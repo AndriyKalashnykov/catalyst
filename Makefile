@@ -57,3 +57,13 @@ gallery: build ## Dual-render the use-case corpus into docs/gallery (needs java+
 
 .PHONY: ci
 ci: build lint test ## Local CI pipeline (build + lint + tests)
+
+.PHONY: ci-run
+ci-run: deps ## Run the real .github/workflows/ci.yml locally via act (mise-managed; needs Docker)
+	@docker container prune -f 2>/dev/null || true
+	@ACT_PORT=$$(shuf -i 40000-59999 -n 1); \
+	ARTIFACT_PATH=$$(mktemp -d -t act-artifacts.XXXXXX); \
+	act push --workflows .github/workflows/ci.yml \
+		--container-architecture linux/amd64 \
+		--artifact-server-port "$$ACT_PORT" \
+		--artifact-server-path "$$ARTIFACT_PATH"
