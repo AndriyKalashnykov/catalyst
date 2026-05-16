@@ -54,6 +54,9 @@ release-chain step (the BLOCKING visual acceptance gate).
   ADR-0005; CHANGELOG. Local visual gate PASS on ibm-wm c4-context
   (compact, 0 overlaps, no tangle vs baseline). force=21 / stress=0 /
   pipeline≈5 on the synthetic spike.
-- Phase 4 (native compound boundary layout): README + C4-COVERAGE
-  boundary cells; ADR; largest diagram-shape change → full gallery +
-  ibm-wm regen.
+- Phase 4 (NETWORK_SIMPLEX node placement — NOT per-boundary subgraphs):
+  done — PR pending. Backlog hypothesis (SEPARATE_CHILDREN) empirically
+  disproven (115 vs 44 crossings); real fix is a one-option node-placement
+  change, zero emit-model change, zero regression (full-corpus spike).
+  README layout-engine line + ADR-0006 + CHANGELOG. Local visual gate
+  PASS on ibm-wm c4-container (44→30 crossings, containment correct).

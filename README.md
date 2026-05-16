@@ -141,7 +141,9 @@ elkjs is selected per the **C4 spec level** of the source (a semantic fact,
 not a heuristic):
 
 - **Container / Component / Deployment** (hierarchical) → `org.eclipse.elk.layered`
-  — layered flow, orthogonal routed connectors, native compound nesting.
+  with `NETWORK_SIMPLEX` node placement — layered flow, orthogonal routed
+  connectors, native compound nesting (~32% fewer crossings on a large
+  multi-boundary Container vs the default placement; see `docs/adr/0006`).
 - **Context** (people/systems only — hub-and-spoke) → `org.eclipse.elk.stress`
   followed by an `org.eclipse.elk.sporeOverlap` declump pass — crossing-
   minimal, deterministic placement with zero node overlap (a Context

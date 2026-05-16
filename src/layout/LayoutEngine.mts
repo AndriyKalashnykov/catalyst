@@ -223,6 +223,17 @@ class LayoutEngine {
           // L1 L/R: bias within-layer order by model order WITHOUT overriding
           // edge ranking (forceNodeModelOrder rejected — it flattens ranks).
           'elk.layered.considerModelOrder.strategy': 'NODES_AND_EDGES',
+          // Phase 4: NETWORK_SIMPLEX node placement (over the BRANDES_KOEPF
+          // default). Full-corpus spike (catalyst fixtures + all 10 ibm-wm
+          // diagrams): ZERO regressions, strictly better — real c4-container
+          // 44→30 crossings, c4-deployment-profile-b 19→16, -c 17→13, all
+          // others unchanged, 0 node overlaps everywhere. NOTE: the
+          // backlog's "lay each boundary as a SEPARATE subgraph" hypothesis
+          // was empirically DISPROVEN (SEPARATE_CHILDREN = 115 crossings on
+          // c4-container, far worse than 44) — the real lever for the big
+          // flat-compound Container tangle is node placement, not hierarchy
+          // mode. No emit-model change needed (flat+absolute stays).
+          'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX',
           ...this.graphOpts
         }
       : {
