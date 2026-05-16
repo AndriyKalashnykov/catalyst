@@ -89,3 +89,75 @@ export const MX = {
   ON: 1,
   OFF: 0,
 } as const
+
+/**
+ * The catalyst C4 element palette — single source for every
+ * `fillColor`/`strokeColor`/`fontColor` the 17 shape templates emit
+ * (previously duplicated as scattered hex literals; the same
+ * cross-template value-drift class as the 10px edge-label bug —
+ * cf. memory `renderer-style-cascade`).
+ *
+ * PROVENANCE (fact-checked 2026-05-16, NOT guessed): these are
+ * catalyst's OWN established palette, present since the project's
+ * first functional commit (`c615e0d`). They are C4-MODEL-aligned —
+ * a darkening-then-lightening blue ramp Person→System→Container→
+ * Component, greys for `_Ext`, dark grey for boundaries, matching
+ * the C4 visual convention — but they are **NOT byte-identical to
+ * C4-PlantUML v2.13.0's `$*_BG/BORDER_COLOR`** (verified against
+ * `C4.puml`/`C4_Context.puml@v2.13.0`): e.g. catalyst System
+ * `#1061B0`/`#0D5091` vs C4-PlantUML `#1168BD`/`#3C7FC0`; catalyst
+ * `System_Ext` `#8C8496` vs C4 `#999999`. SOME do coincide (Person
+ * `#08427B`/`#073B6F` == C4 `PERSON_*`; `Person_Ext` fill `#686868`
+ * == C4 `EXTERNAL_PERSON_BG_COLOR`; the white element font
+ * `#ffffff` == C4 `ELEMENT_FONT_COLOR`; boundary stroke `#666666`/
+ * `#444444` == C4 `ARROW_COLOR`/`BOUNDARY_COLOR`). Re-paletting to
+ * exactly match C4-PlantUML is a deliberate VISUAL change and is
+ * explicitly OUT OF SCOPE here — this is a byte-identical
+ * single-sourcing refactor only.
+ *
+ * Case is significant and preserved verbatim: the element font is
+ * lowercase `#ffffff` (14 templates) while the Deployment_Node FILL
+ * is uppercase `#FFFFFF` — distinct roles, distinct constants, so
+ * the emitted style string stays byte-for-byte unchanged.
+ */
+export const PALETTE = {
+  // Filled element fonts (white on the coloured shapes).
+  ELEMENT_FONT: '#ffffff',          // == C4-PlantUML ELEMENT_FONT_COLOR
+  // Person (C4-PlantUML PERSON_* — coincides).
+  PERSON_FILL: '#08427B',
+  PERSON_STROKE: '#073B6F',
+  // External Person (fill == C4 EXTERNAL_PERSON_BG; stroke is catalyst's).
+  PERSON_EXT_FILL: '#686868',
+  PERSON_EXT_STROKE: '#4D4D4D',
+  // System / SystemDb / SystemQueue (catalyst-specific blue).
+  SYSTEM_FILL: '#1061B0',
+  SYSTEM_STROKE: '#0D5091',
+  // External System (catalyst-specific muted purple-grey).
+  SYSTEM_EXT_FILL: '#8C8496',
+  SYSTEM_EXT_STROKE: '#736782',
+  // Container / ContainerDb / ContainerQueue.
+  CONTAINER_FILL: '#23A2D9',
+  CONTAINER_STROKE: '#0E7DAD',
+  // External Container.
+  CONTAINER_EXT_FILL: '#9B9B9B',
+  CONTAINER_EXT_STROKE: '#7F7F7F',
+  // Component / ComponentDb / ComponentQueue.
+  COMPONENT_FILL: '#63BEF2',
+  COMPONENT_STROKE: '#2086C9',
+  // External Component.
+  COMPONENT_EXT_FILL: '#B3B3B3',
+  COMPONENT_EXT_STROKE: '#8A8A8A',
+  // Deployment_Node — white fill (UPPERCASE, distinct from ELEMENT_FONT).
+  DEPLOYMENT_NODE_FILL: '#FFFFFF',
+  DEPLOYMENT_NODE_STROKE: '#444444',
+  DEPLOYMENT_NODE_FONT: '#444444',
+  // Generic Boundary (stroke == C4 ARROW_COLOR).
+  BOUNDARY_STROKE: '#666666',
+  BOUNDARY_FONT: '#333333',
+  // Enterprise_Boundary (stroke == C4 BOUNDARY_COLOR).
+  ENTERPRISE_BOUNDARY_STROKE: '#444444',
+  ENTERPRISE_BOUNDARY_FONT: '#222222',
+  // Relationship edge.
+  REL_FONT: '#404040',
+  REL_STROKE: '#828282',
+} as const
