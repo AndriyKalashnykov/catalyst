@@ -29,7 +29,7 @@ download the jar from **Maven Central**, whose latest is `1.2026.2`
 (`1.2026.3` 404s — typical Central mirroring lag). A `1.2026.3` default
 produced a corrupt 554-byte jar and broke the visual gate. Default is
 **1.2026.2** — the latest the downloader can actually resolve. Lesson:
-pin to the artifact the tooling can fetch, not the upstream release tag.
+pin to the artifact the tooling can fetch, not the GitHub release tag.
 
 ## Consequences
 

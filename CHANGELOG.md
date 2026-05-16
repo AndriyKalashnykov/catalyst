@@ -15,7 +15,7 @@ This project adheres to [Keep a CHANGELOG](http://keepachangelog.com/).
   the dominant c4-context symptom where a label rectangle was laid on top
   of a node box. New `measureEdgeLabel()` (font-metric, honours Phase 1
   `\n` breaks); `LayoutEdge.label` surfaces ELK's placed label rect.
-- `docs/adr/` (ADRs 0001–0004) and `docs/UPGRADE-NOTES.md`.
+- `docs/adr/` (Architecture Decision Records) and `docs/UPGRADE-NOTES.md`.
 
 ### Changed
 

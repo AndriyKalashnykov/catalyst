@@ -23,7 +23,9 @@ Docs/diagrams updated in lock-step:
 - `docs/gallery/README.md` — embedded `!include` pins → v2.13.0
   (regenerate via `make gallery` so the rendered PNGs match the bumped
   PlantUML + stdlib).
-- ADRs 0001–0004 added under `docs/adr/`.
+- Architecture Decision Records added under `docs/adr/` (0001, 0003–0006;
+  0002 was withdrawn — the repo is treated as standalone, so the ADR
+  documenting upstream isolation is intentionally not retained).
 
 Open follow-ups (not blocking the layout phases):
 

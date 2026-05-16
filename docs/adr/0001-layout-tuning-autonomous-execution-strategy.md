@@ -16,8 +16,8 @@ release chain "per phase **or per grouped phase**".
 
 Constraints discovered this session:
 
-- catalyst is a fork; the original OSS parent `localgod/catalyst` is
-  off-limits (upstream remote removed — see ADR 0002).
+- `AndriyKalashnykov/catalyst` is an independently-maintained,
+  standalone repository (no upstream-sync workflow).
 - The full acceptance signal needs a 3-repo release chain
   (catalyst → puml2drawio → ibm-wm) plus Docker+Java PNG rendering.
 - All three repos and docker+java are available locally.

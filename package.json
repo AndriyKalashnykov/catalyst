@@ -21,12 +21,12 @@
     },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/localgod/catalyst"
+        "url": "git+https://github.com/AndriyKalashnykov/catalyst"
     },
     "author": "",
     "license": "MIT",
     "bugs": {
-        "url": "https://github.com/localgod/catalyst/issues"
+        "url": "https://github.com/AndriyKalashnykov/catalyst/issues"
     },
     "homepage": "https://catalyst.mindfield.dk",
     "keywords": [

@@ -14,18 +14,19 @@ required. The **consumer surface** is a one-call API
 (`Catalyst.convert(puml, options)`) plus `parseEntities` / `parseRelations`,
 installed as a git dependency. The **engine surface** uses
 [elkjs](https://github.com/kieler/elkjs) (Eclipse Layout Kernel) with
-spec-driven algorithm selection — `layered` for hierarchical C4
-(Container/Component/Deployment), `force` for hub-and-spoke Context — real
+spec-driven algorithm selection — `layered` (+`NETWORK_SIMPLEX`) for
+hierarchical C4 (Container/Component/Deployment), `stress`
+(+`sporeOverlap`) for hub-and-spoke Context — real
 font-metric node sizing, and structural-parity + golden-snapshot +
 layout-quality test gates.
 
-> **Project status:** independently maintained. Originated as a fork of
-> [localgod/catalyst](https://github.com/localgod/catalyst) (MIT) but has
-> substantially diverged — the layout engine was replaced (dagre → elkjs),
-> with real font-metric sizing, spec-driven algorithm selection, and
-> structural parity/snapshot/layout-quality gates. It does **not** track
-> upstream (which is inactive); upstream attribution is retained in
-> [LICENSE](LICENSE). Not published to npm — consumed as a git dependency.
+> **Project status:** independently maintained. The layout engine is
+> elkjs with real font-metric node sizing and spec-driven algorithm
+> selection (`layered`/`NETWORK_SIMPLEX` for hierarchical C4,
+> `stress`/`sporeOverlap` for Context), with structural-parity,
+> golden-snapshot and layout-quality test gates. Third-party
+> copyright/license terms are retained in [LICENSE](LICENSE). Not
+> published to npm — consumed as a git dependency.
 
 ```mermaid
 flowchart LR
@@ -240,8 +241,7 @@ Contributions welcome — open a PR or an issue.
 
 ## License
 
-Released under the [MIT License](LICENSE). This project originated from
-[localgod/catalyst](https://github.com/localgod/catalyst); the original
-copyright and license terms are retained in [LICENSE](LICENSE). The bundled
+Released under the [MIT License](LICENSE). Third-party copyright and
+license terms are retained in [LICENSE](LICENSE). The bundled
 Liberation Sans fonts (used for text measurement) are under the SIL Open
 Font License 1.1 — see [src/assets/fonts/LICENSE](src/assets/fonts/LICENSE).
