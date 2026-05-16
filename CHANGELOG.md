@@ -10,6 +10,20 @@ This project adheres to [Keep a CHANGELOG](http://keepachangelog.com/).
 
 ### Fixed
 
+- **Single-edge label de-collision** (`resolveLabelOverlap`,
+  renderer-side, geometry-exact). When a non-laned edge's label rect at
+  the A↔B centre-line midpoint lands *inside* an unrelated node box, the
+  label is pushed the **minimal** perpendicular distance (an axis-contact
+  boundary — no spacing constant, no sampling) until it clears every
+  obstacle; emitted via the same offset-mxPoint the lane fan uses.
+  No-ops (and emits nothing) when the midpoint is already clear, so it
+  cannot regress a diagram that was fine. Known limitation (tracked):
+  on `stress`/`force` Context layouts drawio *orthogonally auto-routes*
+  non-laned edges and anchors the label on that route, not on the
+  straight centre line — labels that hug a box *edge* (vs. sit *inside*
+  a box) there need catalyst to emit a deterministic Context route, a
+  larger separate change.
+
 - **Long relationship labels no longer overrun the endpoint nodes.**
   A drawio edge label has no box, so a long single-line verb/technology
   was laid out as one un-wrappable line smeared across both endpoint
