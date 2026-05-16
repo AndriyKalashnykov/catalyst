@@ -70,6 +70,10 @@ This project adheres to [Keep a CHANGELOG](http://keepachangelog.com/).
   `tsconfig.json` exclude, and `mdlint --ignore slides`.
 - Gitpod configuration (`.gitpod.yml` and `.gitpod/automations.yaml`) —
   it was largely slides-driven and the project does not use Gitpod.
+- `.devcontainer/` (Dev Container / "Ona" Gitpod-Flex image) — same
+  ecosystem as the removed Gitpod config; the project does not use
+  containerized/Codespaces dev. `.vscode/` is kept (project-relevant
+  editor settings, decoupled).
 
 ### Fixed
 
