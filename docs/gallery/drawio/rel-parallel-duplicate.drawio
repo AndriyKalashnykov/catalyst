@@ -20,7 +20,7 @@
               <Array as="points">
                 <mxPoint x="268" y="290"/>
               </Array>
-              <mxPoint x="21" y="191" as="offset"/>
+              <mxPoint x="-16" y="154" as="offset"/>
             </mxGeometry>
           </mxCell>
         </object>
@@ -40,7 +40,7 @@
               <Array as="points">
                 <mxPoint x="330" y="228"/>
               </Array>
-              <mxPoint x="-21" y="-191" as="offset"/>
+              <mxPoint x="16" y="-154" as="offset"/>
             </mxGeometry>
           </mxCell>
         </object>
