@@ -136,7 +136,7 @@ Everything below is researched, not speculative. Sizes are honest.
 > after the fix lands" item is dropped (no fix lands; #19 conclusion:
 > **no NEW v1.6.1 regression in any of the 7**; the deployment-profile
 > concerns: #24 routing now fixed; #25 is item 1; the dropped-`note`
-> gap is tracked via item 2 C4-COVERAGE).
+> gap is tracked via item 1 C4-COVERAGE).
 
 ---
 
@@ -237,7 +237,7 @@ Everything below is researched, not speculative. Sizes are honest.
 > 3: SELECT `[SQL]`", matching PlantUML; layout/cylinder unregressed.
 > **All 3 #23 defects (cylinder-cap #43, `<…>`-strip #44, RelIndex)
 > now RESOLVED.** Remaining lossy-surface gap: PlantUML `note`
-> callouts still unimplemented (tracked via item 2 C4-COVERAGE).
+> callouts still unimplemented (tracked via item 1 C4-COVERAGE).
 
 ---
 
@@ -270,72 +270,34 @@ Everything below is researched, not speculative. Sizes are honest.
 > acceptance gate runs at the next release-chain consumption (per the
 > standard catalyst→puml2drawio→ibm-wm flow), as with every prior fix.
 
-1. **#25 — dense nested-boundary title collision (BIG; DESIGN
-   COMPLETE 2026-05-16, ready to implement).**
-   **Root cause (code-traced):** `titlePadding()`
-   (`src/layout/LayoutEngine.mts` ~L84-93, ≈31u = 2 title lines +
-   inset) is applied as `elk.padding[top=..]` PER compound (~L127-129)
-   — that correctly reserves a compound's OWN title band so its
-   children don't overlap it (the #34 parent→child fix). It does
-   **nothing** for the gap BETWEEN two sibling compounds: that gap is
-   the uniform `elk.spacing.nodeNode` (hierarchical: user `nodesep`,
-   default ~50u, ~L112) measured box-to-box, with no term for the
-   title band each sibling renders just inside its own top stroke
-   (`Boundary.mts`/`EnterpriseBoundary.mts` `spacingTop`,
-   `verticalAlign:top`). When ELK packs sibling/parent-adjacent
-   nested boundaries tight (`topology-deep-nesting`: `ent` ▸ `plat` ▸
-   `core`), a child boundary's top title band abuts/overlaps the band
-   above it. The Context path's `declump` already sets
-   `elk.spacing.nodeNode = titlePadding().top` (~L320) — but ONLY for
-   the `sporeOverlap` leaf de-collide, NOT hierarchical compounds.
-   **Gating GAP (must fix FIRST — BLOCKING):** NO existing test
-   catches this. `layout-quality.test.mts` (~L69-79) and
-   `compound-boundary.test.mts` (~L57-67) both iterate `r.nodes`
-   (leaves) ONLY — never `r.clusters`. Step 0: add a BLOCKING
-   `cluster title-band clearance` test — for every pair of compounds
-   that are siblings OR parent/child, assert the vertical gap between
-   one's box-top and the other's content ≥ `titlePadding().top`
-   (using `r.clusters` geometry). Without this no gate detects a #25
-   regression (mirrors the #24 discriminator-test addition).
-   **Design (hypothesis — Phase A MUST empirically pin the exact ELK
-   knob, not guess; version-discipline):** the candidate fix is to
-   raise the inter-compound spacing by the title-band height for
-   hierarchical layouts — either bump `elk.spacing.nodeNode` to
-   `max(nodesep, titlePadding().top)` when the graph has nested
-   compounds, OR set the ELK-correct per-compound/sibling key. Phase A
-   spike MUST query ELK's own registry (`new ELK().knownLayoutOptions()`)
-   plus the ELK `INCLUDE_CHILDREN` spacing docs to identify which
-   option actually governs the sibling-compound gap (candidates:
-   `elk.spacing.nodeNode`, `elk.spacing.componentComponent`,
-   `elk.layered.spacing.nodeNodeBetweenLayers`,
-   `elk.layered.considerModelOrder`, an `elk.padding` bump on the
-   PARENT) — read what each is FOR, spike each on `topology-deep-nesting`,
-   pick the one that fixes the band collision WITHOUT regressing the
-   normal 1-level-boundary case (`level-component`, the ibm-wm
-   `c4-container`/deployment). Do NOT reach for a guessed key.
-   **Scope guard:** change must touch ONLY the hierarchical/compound
-   path; Context (`stress`+declump) already handles overlap — assert
-   Context fixtures byte-identical. Risk: a global `nodeNode` bump
-   also widens leaf spacing → prefer the narrowest ELK key that
-   targets compound siblings only; if only the global knob works,
-   gate hard on the full gallery for leaf-spacing regressions.
-   **Phases:** 0 — add the cluster-clearance gate (it should FAIL on
-   `topology-deep-nesting` today, proving it detects the bug); A —
-   spike ELK options against the registry + render-compare
-   `topology-deep-nesting` until the gate passes and the band is
-   visibly clear; B — wire the chosen key behind the compound-only
-   scope guard; C — full gate.
-   **Gating (all BLOCKING, same regimen as #24):** the new
-   cluster-clearance test; `corpus-sanity` route-signature;
-   `layout-quality` leaf gate unchanged; parity/golden topology
-   byte-stable; Context-fixture no-delta; full 20-pair gallery
-   re-review at render-compare scale; #19 ibm-wm gate at next
-   release-chain consumption. Do NOT declare on tests — `make
-   render-compare` `topology-deep-nesting` (the defect) + a
-   single-level-boundary control (`level-component`) to prove no
-   regression to the common case.
+---
 
-2. **C4-COVERAGE.md validation + backlog the gaps (user-requested,
+> ✅ **#25 dense nested-boundary title collision — FIXED 2026-05-16.**
+> **Root cause (spike-corrected — the design's "hierarchical sibling
+> packing" was imprecise):** `topology-deep-nesting` has only
+> System/Person leaves, so `isHierarchical()` was false →
+> `org.eclipse.elk.stress`. Instrumenting the real ELK graph proved
+> `stress` does NOT honor `elk.padding` for compound nesting (bumping
+> `elk.padding[top]` 33→100 moved the nested child **0u**; a clean
+> `layered` repro honored it exactly). So nested boundaries sat 12u
+> apart vs the 33u title band → bands collided. **Fix
+> (`src/layout/LayoutEngine.mts`):** a second structural, spec-grounded
+> `isHierarchical()` trigger — a **nested compound** (boundary-in-
+> boundary) is hierarchical regardless of leaf types and MUST use
+> `layered` (which reserves the per-compound title band). Single-level
+> boundaries stay Context. **Proven (not tests-alone):** Step-0
+> BLOCKING gate added FIRST (`tests/layout/compound-title-clearance.mts`
+> — recomputes the required clearance from the same primitives
+> `titlePadding()` uses; FAILED on `topology-deep-nesting` 12u<33u
+> pre-fix, now 236u≫33u); 287/287 incl. that gate + corpus-sanity +
+> parity + golden + layout-quality + compound-boundary; `make ci`
+> clean; **scope proven** — only `topology-deep-nesting` changed in
+> the 20-fixture gallery (all Context/single-level/hierarchical
+> fixtures byte-identical); `make render-compare` visual — "Acme
+> Corp"/"Platform"/"Core Services" title bands now distinct and
+> clearly separated. #19 ibm-wm gate at next release-chain consumption.
+
+1. **C4-COVERAGE.md validation + backlog the gaps (user-requested,
    medium).** Validate every `✗`/`~` row in `docs/C4-COVERAGE.md`
    against current code (it predates the v1.5–1.6 work — e.g. it still
    says Context uses `force`; it's `stress`+`sporeOverlap` now; the
@@ -344,7 +306,7 @@ Everything below is researched, not speculative. Sizes are honest.
    variants, RelIndex/dynamic, sprites, properties, legend, sequence
    diagrams) as concrete backlog items here.
 
-3. **Palette + MX-flag single-sourcing (medium, same theme as #34).**
+2. **Palette + MX-flag single-sourcing (medium, same theme as #34).**
    Colours (`fillColor`/`strokeColor`/`fontColor` hexes — the C4/
    Structurizr palette) are still scattered literals across the 17
    shape files; and the `MX.*` flag enums in `theme.mjs` exist but the
@@ -354,7 +316,7 @@ Everything below is researched, not speculative. Sizes are honest.
    `MX` enums at the call sites. Byte-identical output; verify via
    golden + a render diff.
 
-4. **Sequence-diagram support (deferred feature, large, design-first).**
+3. **Sequence-diagram support (deferred feature, large, design-first).**
    catalyst fail-louds on `C4_Sequence`/PlantUML sequence. New
    subsystem (parser + deterministic non-ELK layout + umlLifeline
    emit). Full design context in memory `open-followups` item 4.

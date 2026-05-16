@@ -169,12 +169,33 @@ class LayoutEngine {
    * are hierarchical/flow and belong in `layered`. The discriminator is the
    * C4 spec's own diagram-level definition — the set of entity types present
    * — read straight from the parsed model.
+   *
+   * SECOND structural trigger (#25): a **nested compound** — a boundary
+   * inside a boundary (compound-in-compound). `stress` is force-directed
+   * and does NOT honor `elk.padding` for compound nesting, so a nested
+   * boundary's title band collides with its parent's (proved by spike:
+   * bumping `elk.padding[top]` 33→100 under `stress` moved the child 0u;
+   * the same graph under `layered` honors the padding exactly — child at
+   * exactly the padding distance). Only `layered` reserves the
+   * per-compound title band, so a diagram whose boundaries nest ≥2 deep
+   * is structurally hierarchical regardless of leaf types and MUST use
+   * `layered`. A single-level boundary (a compound holding only leaves)
+   * stays Context — `stress`+declump handles it and `layered` would
+   * ribbon it.
    */
   private isHierarchical(): boolean {
     const deeper = /^(Container|Component|Node|Deployment_Node)/
     const scan = (es: EntityDescriptor[]): boolean =>
       es.some(e => deeper.test(e.type) || (e.children ? scan(e.children) : false))
-    return scan(this.entities)
+    // Compound-in-compound: walk carrying "already inside a compound?" —
+    // true the moment a compound child is itself found within another.
+    const nestedCompound = (es: EntityDescriptor[], inCompound: boolean): boolean =>
+      es.some(e => {
+        const isCompound = !!(e.children && e.children.length)
+        if (isCompound && inCompound) return true
+        return e.children ? nestedCompound(e.children, isCompound) : false
+      })
+    return scan(this.entities) || nestedCompound(this.entities, false)
   }
 
   /** alias → measured leaf width. Compound nodes (boundaries) are absent
