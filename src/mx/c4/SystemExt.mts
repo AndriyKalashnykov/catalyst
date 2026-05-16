@@ -1,6 +1,6 @@
 class SystemExt {
     static async label() {
-        const html = `<div style="font-size:16px;font-weight:bold;">%c4Name%</div><div>[%c4Type%]</div><div style="font-size:11px;color:#cccccc;">%c4Description%</div>`;
+        const html = `<div style="font-size:11px;font-style:italic;color:#cccccc;">«%c4Type%»</div><div style="font-size:16px;font-weight:bold;">%c4Name%</div><div style="font-size:11px;color:#cccccc;">%c4Description%</div>`;
         const minifiedHtml = html.replace(/>\s+</g, '><');
         return this.encodeHtmlEntities(minifiedHtml);
     }
@@ -23,7 +23,7 @@ class SystemExt {
             fillColor: '#8C8496',
             fontColor: '#ffffff',
             align: 'center',
-            verticalAlign: 'top',
+            verticalAlign: 'middle',
             arcSize: 10,
             strokeColor: '#736782',
             metaEdit: 1,
