@@ -1,10 +1,9 @@
 MIT License
 
 Copyright (c) the catalyst contributors
-  (this project originated from https://github.com/localgod/catalyst)
 Copyright (c) 2026 Andriy Kalashnykov and contributors
-  (independently-maintained derivative; substantial divergence incl. the
-   dagre -> elkjs layout-engine replacement)
+  (independently maintained; elkjs layout engine, real font-metric
+   sizing, structural-parity / golden-snapshot / layout-quality gates)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

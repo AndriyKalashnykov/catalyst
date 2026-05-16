@@ -175,8 +175,7 @@ This project adheres to [Keep a CHANGELOG](http://keepachangelog.com/).
 ### Added
 
 - Structural parity test + deterministic draw.io golden snapshot gate;
-  exhaustive C4-PlantUML fixture. Independently maintained (originated
-  from localgod/catalyst; now substantially diverged).
+  exhaustive C4-PlantUML fixture. Independently maintained.
 - LayoutEngine class to handle graph positioning
 - Enhanced CI workflow with additional testing steps
 - Library API with `Catalyst.convert()`, `Catalyst.parseEntities()`, and `Catalyst.parseRelations()` methods
