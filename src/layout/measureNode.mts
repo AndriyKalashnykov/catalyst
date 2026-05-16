@@ -1,7 +1,16 @@
 import { EntityDescriptor } from '../puml/EntityDescriptor.interface.mjs'
 import { textWidth, renderedLineHeight, spaceAdvance, wrap } from '../text/TextMetrics.mjs'
 import { splitLabelLines, wrapEdgeLabelLines } from '../text/labelLines.mjs'
-import { ELEMENT_TITLE_PX, ELEMENT_BODY_PX, RELATIONSHIP_LABEL_PX } from '../mx/c4/theme.mjs'
+import { ELEMENT_TITLE_PX, ELEMENT_BODY_PX, RELATIONSHIP_LABEL_PX, CYLINDER3_CAP_PX } from '../mx/c4/theme.mjs'
+
+/**
+ * The `*Db` C4 types whose template emits drawio `shape=cylinder3`
+ * (see `src/mx/Mx.mts` dispatch + `src/mx/c4/{Container,System,Component}Db.mts`).
+ * `_Ext` DB variants render as the grey rectangle (`*Ext` templates),
+ * NOT a cylinder, so they are deliberately excluded. The cylinder
+ * draws an elliptical cap at top AND bottom that text must not occupy.
+ */
+const CYLINDER3_TYPES = new Set(['SystemDb', 'ContainerDb', 'ComponentDb'])
 
 /**
  * Text-measured leaf-node size (L3). Sizes a shape to its rendered label
@@ -41,12 +50,22 @@ export function measureNode(entity: EntityDescriptor): { width: number; height: 
     (m, l) => Math.max(m, textWidth(l, BODY_PX, false)), 0)
 
   const textW = Math.ceil(Math.max(titleW, stereoW, techW, longestDescW) + 2 * pad)
+  // `cylinder3` (the `*Db` types) draws an elliptical cap of
+  // CYLINDER3_CAP_PX at BOTH ends; that band is text-unsafe (top cap
+  // crowds the stereotype line, bottom cap clips the last description
+  // line — the #23 `edge-multiline-labels` K8s-Secret defect). The
+  // rectangular text model is correct for the BODY; reserve the two
+  // caps on top so the body alone holds the text. Cited renderer-shape
+  // metric (theme.mjs), proven by render-compare — not a guess.
+  const capReserve =
+    CYLINDER3_TYPES.has(entity.type) ? 2 * CYLINDER3_CAP_PX : 0
   const textH = Math.ceil(
     renderedLineHeight(BODY_PX) +                      // «Type» stereotype
     titleLines.length * renderedLineHeight(TITLE_PX) + // title (1+ lines)
     (hasTech ? renderedLineHeight(BODY_PX) : 0) +      // [Technology] (if any)
     descLines.length * renderedLineHeight(BODY_PX) +   // wrapped description
-    2 * pad)                                           // top/bottom breathing
+    2 * pad +                                          // top/bottom breathing
+    capReserve)                                        // cylinder3 caps (0 for non-Db)
 
   // Floor at the established C4 element box convention. fontkit measures the
   // raw glyph box, but the drawio C4 shape RENDERS larger (CSS line-height,

@@ -98,8 +98,8 @@ Everything below is researched, not speculative. Sizes are honest.
 > boundary's `[…]` subtitle: Customer Site ▸ Kubernetes Cluster ▸
 > namespace:policy/cert-manager/…); "Mounts read-only"×N edge labels
 > cluster/overlap near the top. Body content is clean (no in-box
-> overflow, no box-on-box). These ARE backlog items 4 (#24 edge-label
-> placement) + 5 (#25 nested-boundary-title spacing); byte-identical
+> overflow, no box-on-box). These ARE backlog items 3 (#24 edge-label
+> placement) + 4 (#25 nested-boundary-title spacing); byte-identical
 > to the v1.5.0-era render so the release did not introduce them.
 > **layered-architecture — PASS (revised; see the resolved-note
 > below).** The original "text overflows the box bottom" verdict was a
@@ -107,9 +107,9 @@ Everything below is researched, not speculative. Sizes are honest.
 > `make render-compare` at proper scale proves the text is CONTAINED
 > (sdk ends ~7u above box bottom, clm ~14u). Residual genuine gap:
 > catalyst drops PlantUML `note` callouts entirely (2 missing here) —
-> unimplemented-feature, tracked via item 6. **Net #19: no NEW v1.6.1
+> unimplemented-feature, tracked via item 5. **Net #19: no NEW v1.6.1
 > regression in any of the 7;** deployment-profile concerns are
-> pre-existing items 4/5.
+> pre-existing items 3/4.
 
 ---
 
@@ -135,8 +135,8 @@ Everything below is researched, not speculative. Sizes are honest.
 > hypothesis until render-compare confirms it. The moot "re-run #19
 > after the fix lands" item is dropped (no fix lands; #19 conclusion:
 > **no NEW v1.6.1 regression in any of the 7**; the deployment-profile
-> concerns are pre-existing items 4/5; the dropped-`note` feature gap
-> is tracked via item 6 C4-COVERAGE).
+> concerns are pre-existing items 3/4; the dropped-`note` feature gap
+> is tracked via item 5 C4-COVERAGE).
 
 ---
 
@@ -158,45 +158,43 @@ Everything below is researched, not speculative. Sizes are honest.
 > landscape (edge labels overlap nodes/boundary in the force layout,
 > Enterprise_Boundary title tightness), topology-wide-rank
 > (distributed hub fan, repeated `dispatch` labels near box edges) —
-> both are items 4 (#24) / 5 (#25); plus the earlier pre-reviewed
+> both are items 3 (#24) / 4 (#25); plus the earlier pre-reviewed
 > rel-long-labels (FIXED #32), topology-deep-nesting (FIXED-partial
 > #34), topology-cyclic / -hub-spoke / rel-parallel-duplicate (#24
 > limitation). **NEW real defects surfaced → backlog items 1
 > (`edge-multiline-labels` cylinder-cap overflow), 2
 > (`edge-unicode-specialchars` `<…>` strip), 3 (`level-dynamic`
 > RelIndex-number drop).** #23 is CLOSED; no further review needed —
-> only the 3 fixes (items 1–3) remain, each render-compare-gated.
+> the cylinder-cap fix LANDED (see next note); the remaining 2 fixes
+> (now items 1–2: `<…>` strip, RelIndex-number drop) are
+> render-compare-gated.
 
-1. **`measureNode` does NOT reserve the cylinder elliptical-cap
-   height → long content overflows/clips at the bottom ellipse of
-   `*Db` shapes (NEW, from #23; render-compare/measurement-CONFIRMED,
-   real-fix design-gated).** `shape=cylinder3` (ContainerDb / SystemDb
-   / ComponentDb) draws top+bottom ellipses that consume ~15–20u each;
-   `measureNode` sizes every type with the rectangular text model +
-   the generic `[minW,minH]` floor, reserving NO cap height.
-   **Controlled proof (identical 3× zoom, same `shape=cylinder3`):**
-   `level-component`/Order Cache (~4 content lines, H=100) — last line
-   "Hot order lookups" comfortably inside ✓; `edge-multiline-labels`/
-   K8s Secret (~7 lines: 2-line name + tech + 3-line desc, H=120) —
-   last line "and private key" clipped at/below the bottom ellipse ✗.
-   Content-dependent, not a heuristic artifact (the short control fits;
-   the long one clips). Also explains the c4-cli #19 "K8s Secret
-   cylinder tight to boundary" note (same cause, milder). Fix shape:
-   in `measureNode`, when the entity maps to a cylinder shape
-   (the `*Db` types — confirm the exact set via `src/mx/c4/*Db.mts`
-   `shape=`), add a cap reservation to the height = 2 × the drawio
-   `cylinder3` ellipse-axis (a CITED drawio shape metric — read it
-   from the cylinder3 stencil/`mxShapeCylinder` `size`/`maxSize`, NOT
-   an invented constant; drawio's default cylinder `size` is a real
-   documented value). **BLOCKING discipline (the layered-rect lesson
-   applies):** prove with `make render-compare` for
-   `edge-multiline-labels` AND a controlled short/long cylinder pair;
-   golden/265 stay green (cylinders growing taller is monotonic-safe
-   per the layout-quality rule); do NOT declare on tests. Verify the
-   short control (Order Cache) does not regress (must still fit, not
-   become huge).
+---
 
-2. **Literal `<…>` text is silently STRIPPED from C4 names /
+> ✅ **Cylinder elliptical-cap overflow — FIXED 2026-05-16 (was item
+> 1).** Root cause confirmed and resolved: drawio `shape=cylinder3`
+> (`SystemDb`/`ContainerDb`/`ComponentDb`) draws an elliptical cap of
+> `CYLINDER3_CAP_PX` at both ends; `measureNode` used the rectangular
+> text model with no cap reservation, so long content clipped at the
+> bottom ellipse. Fix: `src/mx/c4/theme.mts` adds the cited constant
+> `CYLINDER3_CAP_PX = 15` (drawio `CylinderShape3.prototype.size`,
+> `Shapes.js`; drawn extent `max(0, min(h*0.5, size))` → 15 for the
+> ≥90 floor — version-discipline-cited, not invented);
+> `src/layout/measureNode.mts` reserves `2 × CYLINDER3_CAP_PX` for the
+> exact 3 cylinder3 types (`_Ext` DB variants are grey rectangles,
+> excluded). **Proven by `make render-compare` (BLOCKING gate, not
+> tests-alone) + visual at 3× + controlled short/long pair:** K8s
+> Secret (`edge-multiline-labels`) clipped → contained (H 120→144,
+> "and private key" visibly inside); Order Cache control unchanged
+> (H=100, no balloon, no regression); all 6 `edge-large-graph` DBs
+> contained; `level-dynamic` Database (SystemDb) clean (a +48u
+> heuristic reading was a measurement false-alarm — `cyan()` detector
+> doesn't match SystemDb's darker fill; visual is the ground truth,
+> the #19 lesson re-applied). 265/265 tests green; only
+> `edge-multiline-labels` gallery output changed (the one box that
+> genuinely needed to grow — minimal, regression-free by construction).
+
+1. **Literal `<…>` text is silently STRIPPED from C4 names /
    descriptions (NEW, from #23; data loss, real-fix).** PlantUML
    renders angle-bracketed literals verbatim; catalyst drops them
    entirely. **Evidence:** `edge-unicode-specialchars` — PUML "Café
@@ -213,7 +211,7 @@ Everything below is researched, not speculative. Sizes are honest.
    precisely to lock this). Not overflow/collision but it is content
    loss — HIGH.
 
-3. **C4 Dynamic `RelIndex` step numbers are DROPPED → sequence
+2. **C4 Dynamic `RelIndex` step numbers are DROPPED → sequence
    ordering lost (NEW, from #23 `level-dynamic`; real-fix, HIGH —
    a Dynamic diagram is meaningless without its order).** PlantUML
    renders the numbered flow "**1:** opens / **2:** GET /orders
@@ -230,7 +228,7 @@ Everything below is researched, not speculative. Sizes are honest.
    collision). Add a corpus assertion on `level-dynamic` (the fixture
    exists to lock this).
 
-4. **#24 — deterministic Context-edge routing (BIG, design-first).**
+3. **#24 — deterministic Context-edge routing (BIG, design-first).**
    Root cause (researched): non-laned edges get NO catalyst waypoint →
    drawio orthogonally auto-routes them and anchors the label on that
    route; on `stress`/`force` ELK neither routes nor places labels, so
@@ -243,7 +241,7 @@ Everything below is researched, not speculative. Sizes are honest.
    changes routing broadly — gate via corpus-sanity route signatures +
    layout-quality + full 20-pair gallery + the #19 ibm-wm gate.
 
-5. **#25 — dense nested-boundary title collision (BIG, compound
+4. **#25 — dense nested-boundary title collision (BIG, compound
    layout).** `titlePadding` reserves the band per compound node
    (children no longer overlap the title; title inset off the stroke —
    both shipped #34), but ELK packs sibling nested boundaries with
@@ -252,7 +250,7 @@ Everything below is researched, not speculative. Sizes are honest.
    sibling compound nodes (ELK compound spacing / extra padding).
    Design-first; same gates as #24.
 
-6. **C4-COVERAGE.md validation + backlog the gaps (user-requested,
+5. **C4-COVERAGE.md validation + backlog the gaps (user-requested,
    medium).** Validate every `✗`/`~` row in `docs/C4-COVERAGE.md`
    against current code (it predates the v1.5–1.6 work — e.g. it still
    says Context uses `force`; it's `stress`+`sporeOverlap` now; the
@@ -261,7 +259,7 @@ Everything below is researched, not speculative. Sizes are honest.
    variants, RelIndex/dynamic, sprites, properties, legend, sequence
    diagrams) as concrete backlog items here.
 
-7. **Palette + MX-flag single-sourcing (medium, same theme as #34).**
+6. **Palette + MX-flag single-sourcing (medium, same theme as #34).**
    Colours (`fillColor`/`strokeColor`/`fontColor` hexes — the C4/
    Structurizr palette) are still scattered literals across the 17
    shape files; and the `MX.*` flag enums in `theme.mjs` exist but the
@@ -271,7 +269,7 @@ Everything below is researched, not speculative. Sizes are honest.
    `MX` enums at the call sites. Byte-identical output; verify via
    golden + a render diff.
 
-8. **Sequence-diagram support (deferred feature, large, design-first).**
+7. **Sequence-diagram support (deferred feature, large, design-first).**
    catalyst fail-louds on `C4_Sequence`/PlantUML sequence. New
    subsystem (parser + deterministic non-ELK layout + umlLifeline
    emit). Full design context in memory `open-followups` item 4.

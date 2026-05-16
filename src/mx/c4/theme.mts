@@ -57,6 +57,22 @@ export const BOUNDARY_BODY_PX = 11
 export const RELATIONSHIP_LABEL_PX = 10
 
 /**
+ * drawio `cylinder3` elliptical-cap vertical extent, in cell units.
+ * The `*Db` templates (`ContainerDb`/`SystemDb`/`ComponentDb`) emit
+ * `shape=cylinder3` and set NO `size=` style, so drawio applies its
+ * default. Source: drawio `CylinderShape3.prototype.size = 15` in
+ * jgraph/drawio `src/main/webapp/js/grapheditor/Shapes.js`; the drawn
+ * cap height is `Math.max(0, Math.min(h*0.5, size))` → exactly **15**
+ * for any cell taller than 30 (catalyst's cylinder floor is ≥ 90).
+ * A cited renderer-shape constant — like {@link MX} / the type scale,
+ * not an invented number; the value is empirically re-proven by the
+ * BLOCKING `make render-compare` gate, not by tests alone. The shape
+ * draws an ellipse cap at BOTH ends, so `measureNode` must reserve
+ * `2 × CYLINDER3_CAP_PX` of text-unsafe height for these types
+ * (top cap crowds the first line, bottom cap clips the last). */
+export const CYLINDER3_CAP_PX = 15
+
+/**
  * mxGraph style enums/flags used by the shape `style()` objects. These
  * are NOT measurements — they are fixed mxGraph API values. Naming them
  * documents intent at the call site (vs. a bare `0`/`1`).
