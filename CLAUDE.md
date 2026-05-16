@@ -98,8 +98,8 @@ Everything below is researched, not speculative. Sizes are honest.
 > boundary's `[…]` subtitle: Customer Site ▸ Kubernetes Cluster ▸
 > namespace:policy/cert-manager/…); "Mounts read-only"×N edge labels
 > cluster/overlap near the top. Body content is clean (no in-box
-> overflow, no box-on-box). These ARE backlog items 3 (#24 edge-label
-> placement) + 4 (#25 nested-boundary-title spacing); byte-identical
+> overflow, no box-on-box). These ARE backlog items 2 (#24 edge-label
+> placement) + 3 (#25 nested-boundary-title spacing); byte-identical
 > to the v1.5.0-era render so the release did not introduce them.
 > **layered-architecture — PASS (revised; see the resolved-note
 > below).** The original "text overflows the box bottom" verdict was a
@@ -107,9 +107,9 @@ Everything below is researched, not speculative. Sizes are honest.
 > `make render-compare` at proper scale proves the text is CONTAINED
 > (sdk ends ~7u above box bottom, clm ~14u). Residual genuine gap:
 > catalyst drops PlantUML `note` callouts entirely (2 missing here) —
-> unimplemented-feature, tracked via item 5. **Net #19: no NEW v1.6.1
+> unimplemented-feature, tracked via item 4. **Net #19: no NEW v1.6.1
 > regression in any of the 7;** deployment-profile concerns are
-> pre-existing items 3/4.
+> pre-existing items 2/3.
 
 ---
 
@@ -135,8 +135,8 @@ Everything below is researched, not speculative. Sizes are honest.
 > hypothesis until render-compare confirms it. The moot "re-run #19
 > after the fix lands" item is dropped (no fix lands; #19 conclusion:
 > **no NEW v1.6.1 regression in any of the 7**; the deployment-profile
-> concerns are pre-existing items 3/4; the dropped-`note` feature gap
-> is tracked via item 5 C4-COVERAGE).
+> concerns are pre-existing items 2/3; the dropped-`note` feature gap
+> is tracked via item 4 C4-COVERAGE).
 
 ---
 
@@ -158,7 +158,7 @@ Everything below is researched, not speculative. Sizes are honest.
 > landscape (edge labels overlap nodes/boundary in the force layout,
 > Enterprise_Boundary title tightness), topology-wide-rank
 > (distributed hub fan, repeated `dispatch` labels near box edges) —
-> both are items 3 (#24) / 4 (#25); plus the earlier pre-reviewed
+> both are items 2 (#24) / 3 (#25); plus the earlier pre-reviewed
 > rel-long-labels (FIXED #32), topology-deep-nesting (FIXED-partial
 > #34), topology-cyclic / -hub-spoke / rel-parallel-duplicate (#24
 > limitation). **NEW real defects surfaced → backlog items 1
@@ -194,24 +194,29 @@ Everything below is researched, not speculative. Sizes are honest.
 > `edge-multiline-labels` gallery output changed (the one box that
 > genuinely needed to grow — minimal, regression-free by construction).
 
-1. **Literal `<…>` text is silently STRIPPED from C4 names /
-   descriptions (NEW, from #23; data loss, real-fix).** PlantUML
-   renders angle-bracketed literals verbatim; catalyst drops them
-   entirely. **Evidence:** `edge-unicode-specialchars` — PUML "Café
-   **`<Backend>`**" / "Handles **`<angle>`** & ampersand input" →
-   catalyst "Café" / "Handles & ampersand input" (`<Backend>`/`<angle>`
-   gone); `edge-multiline-labels` & c4-cli #19 — "K8s Secret
-   `<workload>`-tls" → "K8s Secret -tls". The `Container.mts`
-   `encodeHtmlEntities` correctly does `<`→`&lt;`, so the loss is
-   UPSTREAM of the template — in the PUML parse / label pipeline
-   (`splitLabelLines`/`htmlBreaks`/`labelLines`, or a sprite/tag regex
-   eating `<…>`). Fix: trace where `<…>` is consumed pre-template;
-   preserve it as escaped-literal so it renders like PlantUML. Add a
-   corpus assertion (the `edge-unicode-specialchars` fixture exists
-   precisely to lock this). Not overflow/collision but it is content
-   loss — HIGH.
+---
 
-2. **C4 Dynamic `RelIndex` step numbers are DROPPED → sequence
+> ✅ **Literal `<…>` text STRIPPED from C4 names/descriptions —
+> FIXED 2026-05-16 (was item 1).** Root cause traced (not the
+> originally-guessed "PUML parse / sprite regex"): the value is
+> correctly XML-escaped for the `c4*` attribute, but draw.io
+> substitutes it into the `html=1` label `<div>`, so a raw `<x>`
+> is parsed by the browser as an empty HTML tag and VANISHES.
+> `c4Text` escaped `>` (`escGt`) but NOT `<`. Fix
+> (`src/mx/Mx.mts`): added `escLt` (`<`→`&amp;lt;`, the `<`
+> analogue of `escGt`'s `>`→`&gt;`; the extra `amp;` survives
+> xml2js + the `Mx.generate()` un-double pass so the final XML
+> attribute is `&amp;lt;` → draw.io XML-unescapes to `&lt;` →
+> browser renders a literal `<`); `c4Text = htmlBreaks(escLt(escGt(s)))`.
+> Proven: 265/265 (3 tests that had LOCKED the buggy raw-`<`
+> output corrected to the fixed `&lt;` contract + a generic
+> corpus-sanity lock on every fixture incl. `edge-unicode-specialchars`)
+> plus a **`make render-compare` visual**: catalyst now renders "Café
+> `<Backend>`" / "Handles `<angle>` & ampersand input" verbatim,
+> matching PlantUML; unicode/`&`/layout unregressed. `<br/>` line
+> breaks and literal `>` are unaffected (surgical).
+
+1. **C4 Dynamic `RelIndex` step numbers are DROPPED → sequence
    ordering lost (NEW, from #23 `level-dynamic`; real-fix, HIGH —
    a Dynamic diagram is meaningless without its order).** PlantUML
    renders the numbered flow "**1:** opens / **2:** GET /orders
@@ -228,7 +233,7 @@ Everything below is researched, not speculative. Sizes are honest.
    collision). Add a corpus assertion on `level-dynamic` (the fixture
    exists to lock this).
 
-3. **#24 — deterministic Context-edge routing (BIG, design-first).**
+2. **#24 — deterministic Context-edge routing (BIG, design-first).**
    Root cause (researched): non-laned edges get NO catalyst waypoint →
    drawio orthogonally auto-routes them and anchors the label on that
    route; on `stress`/`force` ELK neither routes nor places labels, so
@@ -241,7 +246,7 @@ Everything below is researched, not speculative. Sizes are honest.
    changes routing broadly — gate via corpus-sanity route signatures +
    layout-quality + full 20-pair gallery + the #19 ibm-wm gate.
 
-4. **#25 — dense nested-boundary title collision (BIG, compound
+3. **#25 — dense nested-boundary title collision (BIG, compound
    layout).** `titlePadding` reserves the band per compound node
    (children no longer overlap the title; title inset off the stroke —
    both shipped #34), but ELK packs sibling nested boundaries with
@@ -250,7 +255,7 @@ Everything below is researched, not speculative. Sizes are honest.
    sibling compound nodes (ELK compound spacing / extra padding).
    Design-first; same gates as #24.
 
-5. **C4-COVERAGE.md validation + backlog the gaps (user-requested,
+4. **C4-COVERAGE.md validation + backlog the gaps (user-requested,
    medium).** Validate every `✗`/`~` row in `docs/C4-COVERAGE.md`
    against current code (it predates the v1.5–1.6 work — e.g. it still
    says Context uses `force`; it's `stress`+`sporeOverlap` now; the
@@ -259,7 +264,7 @@ Everything below is researched, not speculative. Sizes are honest.
    variants, RelIndex/dynamic, sprites, properties, legend, sequence
    diagrams) as concrete backlog items here.
 
-6. **Palette + MX-flag single-sourcing (medium, same theme as #34).**
+5. **Palette + MX-flag single-sourcing (medium, same theme as #34).**
    Colours (`fillColor`/`strokeColor`/`fontColor` hexes — the C4/
    Structurizr palette) are still scattered literals across the 17
    shape files; and the `MX.*` flag enums in `theme.mjs` exist but the
@@ -269,7 +274,7 @@ Everything below is researched, not speculative. Sizes are honest.
    `MX` enums at the call sites. Byte-identical output; verify via
    golden + a render diff.
 
-7. **Sequence-diagram support (deferred feature, large, design-first).**
+6. **Sequence-diagram support (deferred feature, large, design-first).**
    catalyst fail-louds on `C4_Sequence`/PlantUML sequence. New
    subsystem (parser + deterministic non-ELK layout + umlLifeline
    emit). Full design context in memory `open-followups` item 4.

@@ -37,13 +37,32 @@ import { RELATIONSHIP_LABEL_PX } from './c4/theme.mjs';
 const escGt = (s: string): string => s.replace(/>/g, '&gt;')
 
 /**
- * Canonical encoder for every catalyst-authored c4* text attribute:
- * escape `>` (escGt), THEN turn PlantUML `\n` breaks into a pre-encoded
- * `&lt;br/&gt;` (htmlBreaks). Order matters — htmlBreaks must run on the
- * `>`-escaped string so the inserted break token survives escGt untouched
- * and the surrounding text's real `>` is still encoded.
+ * A literal `<` in user text (e.g. `Café <Backend>`, `K8s Secret
+ * <workload>-tls`) is substituted by draw.io into the `html=1` label
+ * `<div>`; the browser then parses `<Backend>` as an (unknown, empty)
+ * HTML tag and DROPS it — silent content loss vs PlantUML, which shows
+ * it verbatim (#23 `edge-unicode-specialchars`). Unlike `>` (harmless
+ * as literal text), `<` must reach the browser as the entity `&lt;`.
+ * Target final XML attribute: `&amp;lt;` → draw.io XML-unescapes to
+ * `&lt;` → substituted into the div → browser renders a literal `<`.
+ * To land `&amp;lt;` AFTER xml2js (`&`→`&amp;`) and the Mx.generate()
+ * un-double pass (`&amp;(lt|gt|…);`→`&$1;`), the pre-xml2js token must
+ * be `&amp;lt;` (xml2js → `&amp;amp;lt;`; un-double → `&amp;lt;`). This
+ * is the `<` analogue of escGt's `>`→`&gt;`; the extra `amp;` is why
+ * they differ (`>` may stay a literal char, `<` may not).
  */
-const c4Text = (s: string): string => htmlBreaks(escGt(s))
+const escLt = (s: string): string => s.replace(/</g, '&amp;lt;')
+
+/**
+ * Canonical encoder for every catalyst-authored c4* text attribute:
+ * escape `>` (escGt) and `<` (escLt), THEN turn PlantUML `\n` breaks
+ * into a pre-encoded `&lt;br/&gt;` (htmlBreaks). Order matters —
+ * htmlBreaks must run LAST so its break token (which contains no raw
+ * `<`/`>`) is not disturbed and the surrounding text's real `<`/`>`
+ * are both encoded; escGt/escLt are order-independent w.r.t. each
+ * other (`&gt;` has no `<`, `&amp;lt;` has no `>`).
+ */
+const c4Text = (s: string): string => htmlBreaks(escLt(escGt(s)))
 
 class Mx {
     doc: MxFile

@@ -4,7 +4,7 @@
       <root>
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
-        <object placeholders="1" c4Name="K8s Secret&lt;br/&gt;&lt;workload&gt;-tls" c4Type="ContainerDb" c4Technology="[Kubernetes]" c4Description="Holds the issued&lt;br/&gt;leaf certificate&lt;br/&gt;and private key" label="&lt;div style=&quot;font-size:11px;font-style:italic;color:#cccccc;&quot;&gt;«%c4Type%»&lt;/div&gt;&lt;div style=&quot;font-size:16px;font-weight:bold;&quot;&gt;%c4Name%&lt;/div&gt;&lt;div style=&quot;font-size:11px;color:#cccccc;&quot;&gt;%c4Technology%&lt;/div&gt;&lt;div style=&quot;font-size:11px;color:#cccccc;&quot;&gt;%c4Description%&lt;/div&gt;" id="secret">
+        <object placeholders="1" c4Name="K8s Secret&lt;br/&gt;&amp;lt;workload&gt;-tls" c4Type="ContainerDb" c4Technology="[Kubernetes]" c4Description="Holds the issued&lt;br/&gt;leaf certificate&lt;br/&gt;and private key" label="&lt;div style=&quot;font-size:11px;font-style:italic;color:#cccccc;&quot;&gt;«%c4Type%»&lt;/div&gt;&lt;div style=&quot;font-size:16px;font-weight:bold;&quot;&gt;%c4Name%&lt;/div&gt;&lt;div style=&quot;font-size:11px;color:#cccccc;&quot;&gt;%c4Technology%&lt;/div&gt;&lt;div style=&quot;font-size:11px;color:#cccccc;&quot;&gt;%c4Description%&lt;/div&gt;" id="secret">
           <mxCell style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;labelBackgroundColor=none;fillColor=#23A2D9;fontColor=#ffffff;strokeColor=#0E7DAD;align=center;verticalAlign=middle;metaEdit=1;resizable=1" parent="1" vertex="1">
             <mxGeometry as="geometry" height="144" width="200" x="22" y="489"/>
           </mxCell>
