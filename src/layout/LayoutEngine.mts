@@ -32,6 +32,12 @@ interface LayoutResult {
   clusters: LayoutNode[]
   width: number
   height: number
+  /** True when the Context (`org.eclipse.elk.stress`) algorithm was
+   *  used (people/systems only) rather than hierarchical `layered`.
+   *  #24 scope guard: only Context solo edges get the synthetic
+   *  centre-midpoint waypoint — hierarchical edges already carry a
+   *  deterministic ELK ORTHOGONAL route and MUST stay byte-identical. */
+  context: boolean
 }
 
 type Rel = { source: string; target: string; label: string; description: string; direction?: 'U' | 'D' | 'L' | 'R' }
@@ -397,7 +403,8 @@ class LayoutEngine {
       edges,
       clusters,
       width: Math.ceil(r.width ?? 0),
-      height: Math.ceil(r.height ?? 0)
+      height: Math.ceil(r.height ?? 0),
+      context: !this.isHierarchical(),
     }
   }
 

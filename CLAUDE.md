@@ -98,8 +98,8 @@ Everything below is researched, not speculative. Sizes are honest.
 > boundary's `[…]` subtitle: Customer Site ▸ Kubernetes Cluster ▸
 > namespace:policy/cert-manager/…); "Mounts read-only"×N edge labels
 > cluster/overlap near the top. Body content is clean (no in-box
-> overflow, no box-on-box). These ARE backlog items 1 (#24 edge-label
-> placement) + 2 (#25 nested-boundary-title spacing); byte-identical
+> overflow, no box-on-box). These ARE the #24 routing fix (now landed) + backlog item 1 (#25
+> nested-boundary-title spacing); byte-identical
 > to the v1.5.0-era render so the release did not introduce them.
 > **layered-architecture — PASS (revised; see the resolved-note
 > below).** The original "text overflows the box bottom" verdict was a
@@ -109,7 +109,7 @@ Everything below is researched, not speculative. Sizes are honest.
 > catalyst drops PlantUML `note` callouts entirely (2 missing here) —
 > unimplemented-feature, tracked via item 3. **Net #19: no NEW v1.6.1
 > regression in any of the 7;** deployment-profile concerns are
-> pre-existing items 1/2.
+> pre-existing: #24 (now fixed) + item 1 (#25).
 
 ---
 
@@ -135,8 +135,8 @@ Everything below is researched, not speculative. Sizes are honest.
 > hypothesis until render-compare confirms it. The moot "re-run #19
 > after the fix lands" item is dropped (no fix lands; #19 conclusion:
 > **no NEW v1.6.1 regression in any of the 7**; the deployment-profile
-> concerns are pre-existing items 1/2; the dropped-`note` feature gap
-> is tracked via item 3 C4-COVERAGE).
+> concerns: #24 routing now fixed; #25 is item 1; the dropped-`note`
+> gap is tracked via item 2 C4-COVERAGE).
 
 ---
 
@@ -158,7 +158,7 @@ Everything below is researched, not speculative. Sizes are honest.
 > landscape (edge labels overlap nodes/boundary in the force layout,
 > Enterprise_Boundary title tightness), topology-wide-rank
 > (distributed hub fan, repeated `dispatch` labels near box edges) —
-> both are items 1 (#24) / 2 (#25); plus the earlier pre-reviewed
+> are the #24 fix (landed) + item 1 (#25); plus the earlier pre-reviewed
 > rel-long-labels (FIXED #32), topology-deep-nesting (FIXED-partial
 > #34), topology-cyclic / -hub-spoke / rel-parallel-duplicate (#24
 > limitation). **NEW real defects surfaced → backlog items 1
@@ -237,65 +237,41 @@ Everything below is researched, not speculative. Sizes are honest.
 > 3: SELECT `[SQL]`", matching PlantUML; layout/cylinder unregressed.
 > **All 3 #23 defects (cylinder-cap #43, `<…>`-strip #44, RelIndex)
 > now RESOLVED.** Remaining lossy-surface gap: PlantUML `note`
-> callouts still unimplemented (tracked via item 3 C4-COVERAGE).
+> callouts still unimplemented (tracked via item 2 C4-COVERAGE).
 
-1. **#24 — deterministic Context-edge routing (BIG; DESIGN COMPLETE
-   2026-05-16, ready to implement).**
-   **Root cause (code-traced):** in `src/catalyst.mts` `layoutData2mx`
-   the non-laned branch emits NO waypoint for a solo edge and computes
-   the label offset from the *assumed* straight midpoint
-   `((A.c+B.c)/2)` via `resolveLabelOverlap` (`src/layout/edgeLanes.mts`
-   167-212). But with no catalyst waypoint, **drawio orthogonally
-   auto-routes the edge itself** and anchors the label on *its* route —
-   so catalyst's predicted anchor ≠ the rendered anchor. On Context
-   (`LayoutEngine.mts` `org.eclipse.elk.stress`, ~L284) ELK returns
-   only a 2-point start→end section (no bends) and **no label
-   placement**, so there is nothing to read back — the prediction is
-   unfalsifiable and usually wrong. (Hierarchical = `layered` +
-   `ORTHOGONAL`: ELK *does* return bend points + label rects, read back
-   in `LayoutEngine.mts` ~L376-393 into `LayoutEdge.points/label` — so
-   hierarchical solo edges are already deterministic and MUST be left
-   alone.) `resolveLabelOverlap` (#33) only nudges a label off a node
-   it overlaps; it does not make the route deterministic.
-   **Design (the proven laned mechanism, generalised to solo edges):**
-   the laned branch already emits catalyst-computed interior waypoints
-   (`poly.slice(1,-1)` perpendicular-shifted) + an absolute `offset`
-   mxPoint and renders deterministically. Do the same for a solo
-   Context edge: emit an explicit **border-to-border 2-point polyline**
-   — intersect the A→B centre line with each endpoint's border rect
-   (all of `nodeCenter` `{cx,cy,hw,hh}` is available at emit time,
-   `catalyst.mts` ~L76-94) and emit those two points as Array points.
-   drawio then draws exactly that segment (no auto-route), so the
-   label anchor IS the geometric midpoint catalyst already assumes →
-   `resolveLabelOverlap`'s precondition becomes *true* instead of
-   approximate, and its existing perpendicular de-collision now lands
-   correctly. If a straight segment crosses a third node (detect via
-   the same `obstacles` boxes already built at `catalyst.mts` ~L167),
-   insert ONE deterministic bend (offset perpendicular past the
-   obstacle, mirrors the lane shift) — add this Phase-2 only if the
-   gallery shows a real crossing; start straight-only.
-   **Scope guard (BLOCKING — prevents the "changes routing broadly"
-   risk):** apply the synthetic polyline ONLY when ALL hold: (a) edge
-   is non-laned, (b) layout is Context/`stress` (NOT hierarchical),
-   (c) ELK returned no usable bends for it. Hierarchical + laned edges
-   keep their current path byte-identical. Add a guard test asserting
-   no waypoint/route-signature delta on a hierarchical fixture.
-   **Phases:** A (spike, no commit) — implement border-to-border on a
-   1-edge + a label-on-node Context fixture, `make render-compare`
-   prove the label now anchors where catalyst predicts; B — wire into
-   the non-laned branch behind the scope guard; C — full gate.
-   **Gating (all BLOCKING, per the proven discipline):**
-   `corpus-sanity` route-signature stays distinct per same-node-pair
-   group (`tests/corpus-sanity.test.mts` ~L119-131); `layout-quality`
-   unchanged (routing moves no nodes — `tests/layout-quality.test.mts`);
-   parity/golden topology byte-stable (no edge/node delta); the
-   hierarchical no-delta guard; full 20-pair gallery re-review at
-   render-compare scale; the #19 ibm-wm acceptance gate. Do NOT declare
-   on tests — `make render-compare` the Context fixtures
-   (`rel-*`, `topology-hub-spoke`, `level-system-landscape`) AND the
-   ibm-wm `c4-context`/deployment pair.
+---
 
-2. **#25 — dense nested-boundary title collision (BIG, compound
+> ✅ **#24 deterministic Context-edge routing — FIXED 2026-05-16.**
+> Implemented per the design (Phases A/B/C all done). **Mechanism:**
+> the non-laned branch (`src/catalyst.mts`) now emits ONE waypoint at
+> the A↔B centre-midpoint **only when `LayoutResult.context === true`**
+> (new flag on `src/layout/LayoutEngine.mts`, `= !isHierarchical()`)
+> and neither endpoint is a cluster — drawio then routes straight
+> THROUGH it (no orthogonal auto-route), so the edge's path-midpoint
+> equals exactly what `resolveLabelOverlap` assumes and its
+> de-collision lands correctly. Simpler than the designed
+> border-to-border polyline (a single centre waypoint = the proven
+> laned solo-waypoint path with `lane.shift==0`) and sufficient — the
+> render-compare proof below confirms it. **Scope guard PROVEN
+> (entity-verified):** every fixture with real hierarchical entities
+> (edge-large-graph 18, level-component 4, edge-multiline-labels 2,
+> edge-empty-descriptions 1) is byte-identical; `rel-parallel-duplicate`
+> (Context but all-laned) byte-identical too — only non-laned Context
+> solo edges changed, exactly as designed. New BLOCKING discriminator
+> test in `tests/layout/context-stress.test.mts` (Context→true,
+> any-Container→false). **Gate (all green, not tests-alone):**
+> 265/265 incl. corpus-sanity route-signature + parity + golden +
+> layout-quality; hierarchical no-delta empirically proven; Phase-C
+> `make render-compare` visual sample — level-system-landscape
+> flagship "charges [HTTPS]"-on-Customer-box defect **FIXED** (label
+> now in clear space), rel-directional no-regression, topology-hub-spoke
+> **improved**, topology-wide-rank deterministic/no-regression; all
+> sampled labels clear of node interiors. The #19 ibm-wm `c4-context`
+> acceptance gate runs at the next release-chain consumption (per the
+> standard catalyst→puml2drawio→ibm-wm flow), as with every prior fix.
+
+1. **#25 — dense nested-boundary title collision (BIG, compound
+
    layout).** `titlePadding` reserves the band per compound node
    (children no longer overlap the title; title inset off the stroke —
    both shipped #34), but ELK packs sibling nested boundaries with
@@ -304,7 +280,7 @@ Everything below is researched, not speculative. Sizes are honest.
    sibling compound nodes (ELK compound spacing / extra padding).
    Design-first; same gates as #24.
 
-3. **C4-COVERAGE.md validation + backlog the gaps (user-requested,
+2. **C4-COVERAGE.md validation + backlog the gaps (user-requested,
    medium).** Validate every `✗`/`~` row in `docs/C4-COVERAGE.md`
    against current code (it predates the v1.5–1.6 work — e.g. it still
    says Context uses `force`; it's `stress`+`sporeOverlap` now; the
@@ -313,7 +289,7 @@ Everything below is researched, not speculative. Sizes are honest.
    variants, RelIndex/dynamic, sprites, properties, legend, sequence
    diagrams) as concrete backlog items here.
 
-4. **Palette + MX-flag single-sourcing (medium, same theme as #34).**
+3. **Palette + MX-flag single-sourcing (medium, same theme as #34).**
    Colours (`fillColor`/`strokeColor`/`fontColor` hexes — the C4/
    Structurizr palette) are still scattered literals across the 17
    shape files; and the `MX.*` flag enums in `theme.mjs` exist but the
@@ -323,7 +299,7 @@ Everything below is researched, not speculative. Sizes are honest.
    `MX` enums at the call sites. Byte-identical output; verify via
    golden + a render diff.
 
-5. **Sequence-diagram support (deferred feature, large, design-first).**
+4. **Sequence-diagram support (deferred feature, large, design-first).**
    catalyst fail-louds on `C4_Sequence`/PlantUML sequence. New
    subsystem (parser + deterministic non-ELK layout + umlLifeline
    emit). Full design context in memory `open-followups` item 4.
