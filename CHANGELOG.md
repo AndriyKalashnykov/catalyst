@@ -10,6 +10,22 @@ This project adheres to [Keep a CHANGELOG](http://keepachangelog.com/).
 
 ### Fixed
 
+- **Nested boundary title bands no longer collide with the first child
+  box.** `LayoutEngine.titlePadding()` reserved only the 2-line title
+  height (≈33u); a drawio-export probe render (pixel-measured) showed
+  the rendered `[type]` line bottom lands exactly there, so a nested
+  compound's first child was placed with ~1u clearance —
+  `topology-deep-nesting`'s `[system]` overran `API Gateway`/`Auth`.
+  Added one real-metric clearance line (`renderedLineHeight` of the
+  title font) so the reserved band is ≈49u with ~15–17u clearance,
+  matching PlantUML's SVG-measured ≈16–20u breathing. Only the 4
+  compound-bearing corpus fixtures change; 16 byte-identical. The #25
+  clearance test gained a non-tautological gate asserting the band
+  exceeds the empirically pixel-measured rendered-title bottom (the old
+  self-consistent formula passed while the diagram visibly collided).
+  New `scripts/factcheck-geometry.mjs` numeric harness (catalyst
+  emitted geometry vs PlantUML SVG ground truth) backs the gate.
+
 - **Multi-edge (parallel/antiparallel) labels now ride their own lane
   line instead of being flung off it.** The lane separator placed each
   label using a separate inflated constant (±120 px perpendicular /

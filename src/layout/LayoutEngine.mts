@@ -70,10 +70,23 @@ class LayoutEngine {
    * tallest, EnterpriseBoundary) then `[Type]` (the mxGraph default
    * size) — at the renderer's 1.2 line box (`renderedLineHeight`, the
    * cited mxGraph constant), plus one font-derived space-advance inset
-   * so the text is not flush on the stroke. Every term is a real
-   * renderer/font metric — no invented constant. (Previously this
-   * reserved only ONE fontkit `lineHeight(16)` ≈ 23px while the real
-   * 2-line render needs ≈ 28px → the overlap.)
+   * so the text is not flush on the stroke.
+   *
+   * P6 fix (empirically measured, NOT theorised). A drawio-export probe
+   * render of an `Enterprise_Boundary { System }` at scale 1, pixel-
+   * measured down the centre column: the rendered 2-line title bottom
+   * lands ≈ the OLD `top` (Name+Type+inset ≈ 33u) below the boundary
+   * top — i.e. the child compound was placed EXACTLY where the title
+   * ends, with ~1u clearance → the `topology-deep-nesting`
+   * `[system]`-on-child collision. PlantUML's own SVG ground truth
+   * (the #19 fidelity target) reserves a 77u boundary band with ≈16–20u
+   * of clearance BELOW its title text before the first child. So the
+   * reserve needs an explicit clearance term: one `renderedLineHeight`
+   * of the title font — a real typographic metric (one blank title
+   * line), ≈ PlantUML's measured breathing, no invented constant.
+   * Validated by re-rendering the probe + deep-nesting and re-measuring
+   * (the title `[type]` line now clears every first child) and by the
+   * factcheck-geometry harness (boundary band vs PlantUML's 77u).
    */
   private titlePadding(): { top: number; side: number } {
     const EB_TITLE_PX = 13 // EnterpriseBoundary Name font-size (the taller of the two boundary templates' explicit CSS)
@@ -81,7 +94,8 @@ class LayoutEngine {
       top: Math.ceil(
         renderedLineHeight(EB_TITLE_PX) +              // Name line
         renderedLineHeight(MX_DEFAULT_FONTSIZE) +      // [Type] line
-        spaceAdvance(EB_TITLE_PX, true)),              // font-derived inset off the border
+        spaceAdvance(EB_TITLE_PX, true) +              // font-derived inset off the border
+        renderedLineHeight(EB_TITLE_PX)),              // P6: one blank title-line of clearance before the first child
       side: Math.ceil(spaceAdvance(MX_DEFAULT_FONTSIZE, false))
     }
   }
