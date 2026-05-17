@@ -117,59 +117,52 @@ Everything below is researched, not speculative. Sizes are honest.
 Completed-work root-cause prose lives in git history + ADRs +
 `docs/UPGRADE-NOTES.md` + agent memories — not re-dumped here.
 
-> ▶ **RESUME HERE — session handoff 2026-05-17 (refreshed #7, P4b shipped).**
+> ▶ **RESUME HERE — session handoff 2026-05-17 (refreshed #8 — ADR
+> 0011 C3+D shipped; NEXT = ADR 0011 C2).**
 > `make factcheck` is THE gate (numeric PlantUML→drawio comparator,
 > ALL 26 conversions vs `-tsvg`; NO eyeballing — every visual claim
-> cites a metric). **NO auto-merge is configured** (verified
-> 2026-05-17: only `ci.yml`, no `gh pr merge --auto` /
-> `enablePullRequestAutoMerge` anywhere, repo `autoMergeRequest`
-> null — the earlier "repo auto-merges" claim was false and
-> propagated unverified). Per-PR flow: branch from fresh
-> `origin/main` → push → `gh pr create` → wait for CI green →
-> **explicit `gh pr merge <n> --squash --delete-branch`** → `git
-> fetch --prune && git reset --hard origin/main` for the next.
-> **Operating discipline (user, emphatic):
-> real fact-based fixes ONLY, no guesses/workarounds; fact-check
-> before AND after via version-exact docs + the tool's own registry;
-> a gate's pass is read ONLY from its own `rc=$?` on its own line —
-> never via a `grep`/`tail`/`||`/`&&` between the gate and the commit
-> (this bit 3× incl. last session).**
+> cites a metric). It now has **8 contract metrics** incl. `ratioBad`
+> (the wRatio/hRatio ratchet, ADR 0011 step 0). **NO auto-merge** —
+> per-PR flow: branch from fresh `origin/main` → push → `gh pr
+> create` → wait CI green → **explicit `gh pr merge <n> --squash
+> --delete-branch`** → `git fetch --prune && git reset --hard
+> origin/main`. **Any emit/geometry change MUST `make gallery` +
+> commit the refreshed `docs/gallery/` in the SAME PR** — the #93
+> gallery-drift CI gate fails otherwise (it caught a stale gallery
+> twice this session; do it BEFORE pushing, it's a derived artifact).
 >
-> Last session shipped (all MERGED to `origin/main`): #80 P12
-> (factcheck 23→26/26), #81 #15 (magic-constant audit), #82 #17
-> (`docs/FACTCHECK-COVERAGE.md` matrix), #83 P4b decision base, #84
-> P2 research+matrix, #85 P2 spike, #86 P4b ADR 0010. `claude-config
-> 9dc42d3` updated 4 global rules. Memories new/updated:
-> `lane-label-decollision`, `factcheck-harness-gate` (6 FP classes),
-> `no-guesses-fact-check-discipline`, `open-followups`.
+> **Operating discipline — emphatic, REPEATEDLY violated this session
+> (the user escalated to "you're full of shit", "not improving"):**
 >
-> ### ▶▶ P4b ✅ DONE 2026-05-17 (this session) — content-fit box sizing shipped
+> 1. **A gate's pass is read ONLY from its OWN `rc=$?` on its OWN
+>    line.** NEVER `grep`/`tail`/`||`/`&&`/`echo $?`-after-pipe
+>    between a gate and a commit. Bit ≥5× across sessions incl. THIS
+>    one (mdlint, then `make gallery-verify`). Run gate bare →
+>    capture rc → branch on it as a separate statement → THEN commit.
+> 2. **Self-audit EVERY literal YOU introduce** — string AND numeric,
+>    in code, COMMENTS, and TEST args/keys — against existing named
+>    constants (`PUML_FONT`, `PUML_LEAF_BOX`, `theme.*`,
+>    `SHAPE.REL_ARROW_SIZE`, …) BEFORE surfacing. Flagged 4× this
+>    session. See memory `self-audit-introduced-literals`.
+> 3. **Tests for new/changed code are PART of the change**, written
+>    automatically, never user-prompted; report coverage as a stated
+>    fact in the done-summary.
+> 4. **Do NOT narrate intent to "record in memory / fold into
+>    checklist" — silently DO it that turn, report it done.** The
+>    promise-instead-of-act IS the failure (memory
+>    `self-audit-introduced-literals` ESCALATION note).
+> 5. Real fact-based fixes ONLY; root-cause not launder; fact-check
+>    before AND after via version-exact docs + the tool's own
+>    registry; surface tensions, don't force.
 >
-> `theme.C4_MIN` (220×140-class fixed floor) **deleted**; replaced by
-> `PUML_LEAF_BOX` (MEASURED PlantUML `-tsvg` geometry: `INSET=10`,
-> `TOP_GAP=22.83`, `BOT_GAP=14.69`, pitch `12>16=20.62 / 16>12=17.52
-> / 12>12=16.34`). `measureNode` is now pure content-fit: `width =
-> ceil(widestLine + 2×INSET)`, `height = ceil(TOP_GAP + Σpitch +
-> BOT_GAP + cyl3 cap)`. Two latent bugs content-variable sizing
-> exposed, both fixed at root (NOT masked): (a) `LayoutEngine.
-> fanReserve` — a same-pair K-edge endpoint now floors its border at
-> `(K−1)·2·REL_ARROW_SIZE` (the old fixed floor incidentally hosted
-> the fan; derived from the gate's cited arrowhead metric); (b) the
-> L1 L/R post-pass was a raw `a.x↔b.x` swap correct ONLY at uniform
-> box width — now span-preserving + aborts if it would overlap (its
-> own documented "cannot degrade the layout" contract, now enforced).
-> `layout-quality` re-specified to the content-fit contract (≥
-> measureNode, no overlap). ADR 0010 fact-2 prose corrected (16 →
-> measured 16.34). New tests: `tests/p4b-svg-geom.test` gained a
-> `PUML_LEAF_BOX === measured-oracle` equivalence gate (verbatim
-> CI-safe + live-scan; this caught the 16/16.34 rounding);
-> `tests/layout/p4b-layout-engine.test` (fanReserve + L/R reorder);
-> `tests/layout/measureNode.test` rewritten to the closed form.
-> **Gate met:** factcheck CLEAN 26/26 · render-compare c4-container/
-> topology-linear-chain/c4-deployment at PlantUML parity (caps
-> preserved) · byte-scope 26/26 changed (broad+intentional as ADR
-> predicted; golden/parity green) · P6/cyl3 non-regression. 362 tests
-> green, lint+mdlint clean.
+> This session shipped (all MERGED): **#89 P4b content-fit · #90 P13
+> (→reverted #94) · #91 seq phase-a · #92 stale-gallery fix · #93
+> gallery-drift gate+Renovate · #94 P13 revert · #95 ADR 0011
+> decision base · #96 ratio-ratchet (step 0) · #97 ADR 0011 C3+cause
+> D**. Memories new/updated: `derived-artifact-enforcement-gate`
+> (new), `self-audit-introduced-literals` (escalation),
+> `no-guesses-fact-check-discipline`, `md-image-embedding` (P13
+> revert), `factcheck-harness-gate`.
 >
 > ### ▶▶ NEXT SESSION (priority order)
 >
@@ -198,6 +191,39 @@ Completed-work root-cause prose lives in git history + ADRs +
 >    fan/label rank-width — the dominant cause B; diagram ratios
 >    still need it). See ADR 0011 §Status + memory
 >    `derived-artifact-enforcement-gate`.
+>    > **▶ C2 RESUME (start cold here):** *Mechanism* — `dot` makes
+>    > every edge label / parallel edge a width-bearing **ranked
+>    > virtual node**; ELK reserves only a thin band, and catalyst's
+>    > `assignEdgeLanes` parallel-fan is applied **POST-ELK**
+>    > (`edgeLanes.mts`) so ELK reserves ZERO width for it. Fix:
+>    > inject **sized invisible structure** so ELK reserves the
+>    > horizontal room dot does — reuse the proven P2 pattern
+>    > (`LayoutEngine.mts` ~`buildGraph`/the `cmp*`+`__cmp_sink_*`
+>    > synthetic-edge + 1×1 phantom-child injection, and the emit
+>    > filter `/^(rel|lay)\d+$/` that discards anything synthetic so
+>    > `layoutData2mx` never draws it — byte-scoping proven). Concrete
+>    > options the research ranked (memory `open-followups` / ADR
+>    > 0011 §Candidates): (a) inflate fan-bearing leaf widths in
+>    > `measureNode`/LayoutEngine by the computed same-pair fan span
+>    > (count × measured lane gap), and/or (b) feed a sized invisible
+>    > label-dummy edge/node on the dummy rank mirroring dot's
+>    > label-node. `measureEdgeLabel` already feeds `labels:[{w,h}]`
+>    > to ELK (`LayoutEngine.mts:301`) — that's saturated, not the
+>    > lever. *Worst fixtures* (wRatio, post-C3+D — re-measure first
+>    > via `make factcheck` then the per-fixture loop in this file's
+>    > git history): the `rel-parallel-duplicate`/`rel-bidirectional`/
+>    > `rel-tech-vs-notech` parallel/antiparallel set + the
+>    > description-light topology-* . *Gate (BLOCKING):* `make
+>    > factcheck` CLEAN 26/26 with `ratioBad` RATCHETING TOWARD parity
+>    > (wRatio improves on the fan fixtures, NO ratioBad regression
+>    > elsewhere — over-inflation trips `nodeOverlap`/`attachMerge`,
+>    > the real risk); then **re-baseline the ratchet** (ratchet only
+>    > tightens), `make gallery`, commit, byte-scope worktree-diff,
+>    > and `render-compare rel-parallel-duplicate`. Then **C1** (try
+>    > `nodePlacement=BRANDES_KOEPF`+`bk.fixedAlignment=BALANCED`
+>    > ONLY if the Phase-4 crossing count — see
+>    > `LayoutEngine.mts:399-408` — does NOT regress; C1 may be
+>    > DECLINED, a valid ADR-sanctioned outcome).
 > 1. **Sequence diagrams** (#12, ADR 0007) — phased. **Phase (a)
 >    `SeqParser` ✅ DONE 2026-05-17** (`src/seq/`, 29-test matrix,
 >    net-new). Phase (b) WIP parked on branch
@@ -232,143 +258,67 @@ Completed-work root-cause prose lives in git history + ADRs +
 > defect-catalog below may have shifted (re-render + re-judge via
 > factcheck numbers, never PNG eyeball).
 >
-> **REMAINING after P4b:** Sequence diagrams (#12, ADR 0007) —
-> largest, new non-ELK subsystem; C4 surface true residuals
-> (`$sprite`, sketch, legend, dropped `note`) — low/opportunistic;
-> **P13** gallery column-width uniformity (user-requested, `[ ]`
-> below) — presentation-only, must not perturb the emit path.
+> **DONE & pruned** (detail in git history + ADRs + memories per the
+> convention at the top of BACKLOG — NOT re-dumped): P12, P2 (#85),
+> P4b+cause-D (ADR 0010 + ADR 0011 §Status), #15, #17, ADR 0011
+> step 0/C3/D. **P13** = SHIPPED then REVERTED same-day (uniform
+> `width=420` magnified the item-0 layout-aspect gap → reverted to
+> `height=360`; idea ABANDONED, superseded by item-0;
+> `docs/research/p13-gallery-uniformity.md` "REVERTED" + memory
+> `md-image-embedding`). `GALLERY_MD_ONLY`/`GALLERY_DRAWIO_ONLY`
+> infra + the #93 drift gate are kept.
 >
-> **REMAINING (priority order) — durable per-item record:**
->
-> - **P12** (#80) — ✅ DONE 2026-05-17. factcheck CLEAN 26/26.
-> - **P2** (#5/#84/#85) — ✅ DONE 2026-05-17. Weighted matrix →
->   "invisible co-rank edges" spiked + shipped: all 4 compass
->   directions correct, factcheck CLEAN 26/26, byte-scoped. Residual
->   "East one rank low" stays advisory (not a contract — PlantUML
->   itself doesn't deterministically co-rank). Effectively closed.
-> - **P4b** (#11/#83/#86 + impl PR this session) — ✅ DONE
->   2026-05-17. `C4_MIN`→`PUML_LEAF_BOX` content-fit; fanReserve +
->   span-preserving/abort L/R fixes; equivalence gate; factcheck
->   CLEAN 26/26, byte-scope 26/26 (intentional), 362 tests green.
->   See the "P4b ✅ DONE" handoff block above.
-> - **#15** (#81) — ✅ DONE 2026-05-17. Numeric-literal audit vs the
->   no-magic taxonomy; proven zero-output-change (26 fixtures
->   byte-identical vs `origin/main`).
-> - **#17** (#82) — ✅ DONE 2026-05-17. `docs/FACTCHECK-COVERAGE.md`
->   geometry-path↔harness-check coverage matrix.
-> - [x] **P13 — gallery column-width uniformity: SHIPPED (#90) then
->   REVERTED 2026-05-17 (same day).** Approach was uniform
->   `<img width="420">`. After the post-P4b gallery regen (#92) made
->   the images visible the user rejected it ("humongous fonts … ugly
->   garbage"). MEASURED root cause: catalyst boxes are PlantUML-
->   correct per-leaf; the diagrams are intrinsically narrow because
->   ELK lays them out 0.19–0.67× PlantUML's width (item-0 layout
->   aspect), and `width=420` magnified that 3–5×. Reverted embed to
->   `height=360` (caps the magnification). P13's "uniform width" idea
->   is ABANDONED, not deferred — superseded by item-0 (fix the layout
->   aspect itself). `docs/research/p13-gallery-uniformity.md`
->   "REVERTED" section + memory `md-image-embedding` record the full
->   evidence + the advisory→contract gate gap. The `GALLERY_MD_ONLY`
->   zero-churn regen path (from P13) is kept (useful infra).
->   The `GALLERY_DRAWIO_ONLY` drift gate (#93) is independent + kept.
-> - **Sequence diagrams** (#12, ADR 0007) — largest; MUST ship with
->   factcheck coverage (lifelines/messages/order) per user directive.
+> **OPEN (priority): (0) ADR 0011 C2 then C1 — see item 0 + the
+> "▶ C2 RESUME" note above. (1) Sequence diagrams #12 phase (b)+ —
+> WIP parked, see item 1. (2) C4 surface true residuals. Plus the
+> open gallery-visual residuals below (mostly subsumed by C2).**
 
-### ▶▶ GALLERY VISUAL AUDIT 2026-05-16 — defect catalog + plan
+### ▶▶ GALLERY VISUAL OPEN RESIDUALS (P2/P4/P6 DONE — pruned)
 
-Comprehensive puml-vs-drawio audit of all **20 corpus fixtures**,
-compared at normalized common-height scale (NOT the downscaled
-committed PNG — the #19 lesson). Every item links the EXACT images to
-re-check a fix/spike against: `docs/gallery/img/<stem>.puml.png`
-(ground truth) vs `docs/gallery/img/<stem>.drawio.png` (catalyst);
-regenerate with `make gallery` then diff those pairs. **Aesthetic
-fidelity to PlantUML is a first-class requirement — "looks different
-but content correct" is NOT a pass.**
+Audit basis: `docs/gallery/img/<stem>.{puml,drawio}.png` pairs
+(regen `make gallery`). Aesthetic fidelity to PlantUML is
+first-class. **Re-judge ALL of these post-ADR-0011-C2** — most are
+manifestations of cause B (ELK reserves no edge-label/fan rank
+width) and should be largely resolved by C2; confirm via factcheck
+and the pair images before any separate spike.
 
-**P1 — Multi-edge lane separation broken (SEVERE).**
-Fixtures/images: `rel-parallel-duplicate.{puml,drawio}.png` (SEVEREST —
-3 parallel A→B: only `async` drawn; `callback`/`sync` labels ORPHANED
-at canvas top/bottom with NO visible edge), `rel-tech-vs-notech.*`
-(antiparallel `verb with technology`+`back-rel no tech` cram at the
-Producer↔Auditor junction), `rel-bidirectional.*` (A↔C `calls`/
-`callbacks` label cram). Root-cause hypo: `assignEdgeLanes` +
-`catalyst.mts` emit for ≥2 same-pair edges fails to emit every edge's
-waypoints/label in the parallel case (labels fall back to drawio
-auto-anchor → flung to extremes) and under-separates the antiparallel
-case. Approach: spike `assignEdgeLanes` on the 3-parallel + 2-anti
-inputs; verify every parsed relation emits a distinct visible edge
-(corpus-sanity already has a route-distinctness gate — extend it to
-assert *edge presence per relation* + label proximity bound). Gate:
-the 3 images above re-rendered show N edges for N relations, labels
-on their own edge, none orphaned. (Re-check post-P12: factcheck is now
-CLEAN 26/26 — confirm whether P1 still reproduces before spiking.)
-
-**P2 — ✅ DONE (#85).** Invisible co-rank edges; all 4 compass
-directions correct, factcheck CLEAN 26/26. Advisory residual (East one
-rank low) accepted — see the per-item record above.
-
-**P3 — Long edge label → layout blow-up (SIGNIFICANT).**
-Image: `rel-long-labels.{puml,drawio}.png`. catalyst spreads the two
-nodes ~4.7× wider than PlantUML (label barely wrapped; ELK reserves a
-huge label rect). PlantUML wraps the long label into a tight ~4-line
-narrow column, nodes close. Root-cause hypo: the edge-label wrap cap
-fed to `measureEdgeLabel`/ELK is far too wide for a long label (or
-not applied), so ELK pads enormous horizontal space. Approach: cap
-the edge-label wrap width to a PlantUML-like narrow column
-(font-derived, not magic); re-feed ELK. Interacts with P4b. Gate:
-re-rendered width within ~1.3× of `rel-long-labels.puml.png`.
-
-**P4 — ✅ DONE (ADR 0008).** Context `stress` branch removed; always
-`layered`. The box-size residual **P4b is ✅ DONE 2026-05-17**
-(content-fit `PUML_LEAF_BOX`; see the "P4b ✅ DONE" handoff block).
-
-**P5 — hub label proximity (MEDIUM; RE-AUDIT post-P4 — likely
-largely resolved).** The "Context/stress radial hub" framing is
-OBSOLETE (P4/ADR 0008 removed stress; hub-spoke now ranks cleanly
-3-rank like PlantUML, labels sit on vertical edges). Re-render
-`topology-hub-spoke.{puml,drawio}.png` + `topology-wide-rank.*` and
-re-judge: P4 appears to have resolved most of this. Any residual is
-now a `layered` edge-label spacing question (not radial-hub), gate vs
-PlantUML.
-
-**P6 — ✅ DONE.** `titlePadding()` gained one real-metric clearance
-line (`renderedLineHeight(EB_TITLE_PX)`); `scripts/factcheck-geometry.mjs`
-is now the rigorous numeric gate (no eyeballing).
-
-**P7 — Short-hierarchical-edge label cram (LOW-MED).**
-Images: `edge-tags-styling.{puml,drawio}.png` (`sync call [REST]`
-tight on the Gateway→Core arrowhead), `level-dynamic.*` (`1: opens`
-tight at the first junction). 2-point hierarchical edges where the
-label sits on the arrowhead near the source. Approach: small along-edge
-label offset for short 2-point hierarchical edges (the non-laned
-2-point branch — distinct from #24/#56). Gate: those two images show
-the label clear of the arrowhead/box. (Re-check post-P12 — the
-`slideLabelAlongLane` work may already cover this.)
-
-**P8 — `«tag»` stereotype text not rendered (LOW).**
-Image: `edge-tags-styling.{puml,drawio}.png` — Core shows `«System»`;
-PlantUML shows `«critical»«system»` (tag stereotype text). Tag COLOUR
-is correctly applied (the important part); only the extra stereotype
-line is missing. Approach: prepend matched tag stereotypes to the
-element `«type»` line. Gate: re-rendered Core shows `«critical»`.
+- **P1 — multi-edge lane separation** (`rel-parallel-duplicate`,
+  `rel-tech-vs-notech`, `rel-bidirectional`): same-pair fan
+  under-separated / labels flung. = **cause B / C2** (the fan is
+  post-ELK). Re-check post-C2; factcheck `attachMerge` already 0.
+- **P3 — long edge label → width blow-up** (`rel-long-labels`):
+  ELK reserves a huge label rect. Interacts with C2/`measureEdgeLabel`
+  wrap cap. Re-check post-C2.
+- **P5 — hub label proximity** (`topology-hub-spoke`,
+  `topology-wide-rank`): likely already resolved by ADR 0008
+  (always-`layered`); re-judge, gate vs PlantUML.
+- **P7 — short 2-point hierarchical-edge label cram**
+  (`edge-tags-styling`, `level-dynamic`): may be covered by the
+  routed/laned label de-collision (`slideLabelAlongLane`, extended
+  for routed edges in #97). Re-check; small along-edge offset for the
+  non-laned 2-point branch if it still reproduces.
+- **P8 — `«tag»` stereotype text not rendered** (LOW, independent of
+  C2): `edge-tags-styling` Core shows `«System»`, PlantUML
+  `«critical»«system»`. Prepend matched tag stereotypes to the
+  element `«type»` line. Gate: re-rendered Core shows `«critical»`.
 
 ---
 
-1. **Sequence-diagram support — IMPLEMENTATION (design DONE).**
-   catalyst fail-louds on `C4_Sequence`/PlantUML sequence. The
-   design is settled and fact-checked in
-   `docs/adr/0007-sequence-diagram-support.md` (#66): a parallel
-   non-ELK pipeline (`SeqParser` → deterministic linear `seqLayout`
-   → `umlLifeline` emit) behind the existing fail-loud detector as
-   the dispatch seam; v1 scope vs deferred-v2 fragments; BLOCKING
-   test strategy. Execute it **phased**, each phase its own
-   byte-scope + render-compare gated PR: **(a) `SeqParser` + ordering
-   invariants — ✅ DONE 2026-05-17** (`src/seq/SeqParser.mts` +
-   `SeqModel.interface.mts`; 29-test ordering+fail-loud matrix;
-   purely additive, factcheck CLEAN 26/26 by construction);
-   (b) linear `seqLayout` + `umlLifeline` emit + detector dispatch
-   (NEXT); (c) corpus fixture + render-compare gate; (d) v2
-   fragments/dividers. Largest open item.
+1. **Sequence-diagram support #12 (ADR 0007), phased.** Design in
+   `docs/adr/0007-sequence-diagram-support.md`: parallel non-ELK
+   pipeline (`SeqParser` → linear `seqLayout` → `umlLifeline` emit)
+   behind the fail-loud detector; v1 vs deferred-v2; each phase its
+   own byte-scope+render-compare gated PR. **(a) `SeqParser` DONE
+   (#91).** **(b) NEXT** — linear `seqLayout` + `src/mx/seq/
+   Lifeline.mts` emit + `SeqConverter` + flip the `src/catalyst.mts`
+   detector `throw`→dispatch; **WIP PARKED on branch
+   `feat/seq-phase-b-layout-emit` @ `c18a403`** (seqLayout +
+   Lifeline.mts + SeqConverter written; catalyst.mts dispatch +
+   emit-contract tests + rebase-on-fresh-main remain). (c) corpus
+   fixture + render-compare gate; (d) v2 fragments/dividers. v1
+   fails loud on deferred constructs (the ibm-wm fixture uses
+   `==dividers==` ⇒ it is a phase-(c)/(d) fixture, NOT a v1 success
+   fixture; phase (c) needs a divider-free v1 sequence fixture).
 
 2. **C4 surface TRUE residuals (low/opportunistic).** Only the
    genuinely-unimplemented `✗` surface remains, none blocking
