@@ -254,6 +254,47 @@ export const SHAPE = {
  *    `renderedLineHeight`, per the renderer-style cascade) — a
  *    renderer-true value, not a guessed constant.
  */
+/**
+ * C4-PlantUML element text **wrap width** (ADR 0011 cause C / C3).
+ * Source: `$DEFAULT_WRAP_WIDTH ?= 200` → `skinparam wrapWidth
+ * $DEFAULT_WRAP_WIDTH` in C4-PlantUML **v2.13.0** `C4.puml` (the
+ * pinned stdlib every fixture `!include`s; fact-checked 2026-05-17 via
+ * the raw source). PlantUML wraps ALL element text — Name,
+ * `«stereotype»`, `[tech]`, description — at this width. A cited
+ * renderer constant (no-magic taxonomy category-2), under the same
+ * px-comparability assumption as {@link PUML_LEAF_BOX} and the
+ * factcheck `wRatio` ratchet (PlantUML SVG unit ≈ catalyst px, 1:1).
+ *
+ * `measureNode` MUST wrap element text at THIS width, not at the
+ * (short) title/`«stereotype»` width — wrapping the description to the
+ * title width crammed every multi-word description into a ~50–95 px
+ * column, making catalyst boxes 2–5× narrower than PlantUML (ADR 0011
+ * cause C; dominant for the description-heavy fixture majority,
+ * isolated via per-fixture measurement: `topology-linear-chain`
+ * single-column box 99 vs PlantUML 181).
+ */
+export const WRAP_WIDTH = 200
+
+/**
+ * PlantUML's RENDERED font sizes per C4 element text run (ADR 0011
+ * cause D — `measureNode` must size the box at PlantUML's geometry,
+ * which uses THESE, not catalyst's own div-CSS 11 px). Cited:
+ * C4-PlantUML v2.13.0 sets `$STEREOTYPE_FONT_SIZE = $TECHN_FONT_SIZE
+ * = 12` and defines NO `$ELEMENT_FONT_SIZE`, so the Name and
+ * `$descr` use PlantUML's built-in default font size **14** — except
+ * the Name, which C4 renders bold at 16 (all four directly observed
+ * as `font-size="…"` in the `-tsvg` ground truth, fact-checked
+ * 2026-05-17). The P4b model wrongly treated the description as 12,
+ * under-counting its wrap line-count AND its baseline pitch (~20 px
+ * short per box — the cause-D height deficit C3 revealed).
+ */
+export const PUML_FONT = {
+  STEREO: 12, // «stereotype» — C4-PlantUML $STEREOTYPE_FONT_SIZE
+  NAME: 16,   // element Name — C4 bold (observed font-size="16")
+  TECH: 12,   // [Technology] — C4-PlantUML $TECHN_FONT_SIZE
+  DESC: 14,   // description — PlantUML default (no $ELEMENT_FONT_SIZE)
+} as const
+
 export const PUML_LEAF_BOX = {
   INSET: 10,
   TOP_GAP: 22.83,
@@ -262,5 +303,20 @@ export const PUML_LEAF_BOX = {
     '12>16': 20.62,
     '16>12': 17.52,
     '12>12': 16.34,
+    // ADR 0011 cause D: the C4 `$descr` (and Name fallback) render at
+    // PlantUML's DEFAULT font 14 (C4-PlantUML defines no
+    // `$ELEMENT_FONT_SIZE`; `$STEREOTYPE_FONT_SIZE`=`$TECHN_FONT_SIZE`
+    // =12; observed `font-size="14"` on `$descr` in `-tsvg`). The P4b
+    // model wrongly treated the description as font 12, under-counting
+    // both its wrap line-count and its baseline pitch (~20 px short
+    // per box). These 14-transition pitches are MEASURED from the same
+    // live `-tsvg` (`scripts/p4b-svg-geom.mjs`, 78× for 14>14; the
+    // single 21.07 14>14 is the c4-exhaustive/dev sprite class,
+    // excluded — same tail-audit as 12>12=16.34). Self-checked:
+    // topology-linear-chain/a rh 96.27 = 22.83 + 20.62 + 19.65 +
+    // 19.07 + 14.1 (stereo→Name→desc1→desc2).
+    '16>14': 19.65, // Name(16) → description(14), no technology
+    '12>14': 18.48, // [tech](12) → description(14)
+    '14>14': 19.07, // description(14) → description(14), wrapped lines
   } as Record<string, number>,
 } as const

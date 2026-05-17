@@ -256,9 +256,33 @@ async function layoutData2mx(layoutData: LayoutResult, pumlElements: EntityDescr
       if (lbl && A && B) {
         const route = [{ x: A.cx, y: A.cy }, ...interior, { x: B.cx, y: B.cy }]
         const mid = polylineMidpoint(route)
+        // The label renders at ELK's placed rect `lbl` (the offset
+        // below re-anchors renderedMidpoint → lbl.centre). ELK places
+        // it clear of the boxes IT laid out, but a multi-rank routed
+        // edge's label can still land on an INTERVENING leaf whose
+        // (correct, ADR-0011-bigger) box ELK packed tighter than the
+        // label needs — the c4-deployment `SQL` over `cache` defect.
+        // This branch was the ONLY de-collision-less one (laned uses
+        // slideLabelAlongLane, straight uses resolveLabelOverlap);
+        // add the SAME geometry-exact slide so all three guarantee no
+        // `labelHit`. Slide is byte-inert where ELK already cleared
+        // (t=0 ⇒ unchanged offset), so only the genuine defect set
+        // moves — provable against the factcheck oracle.
+        let cx = lbl.x + lbl.width / 2, cy = lbl.y + lbl.height / 2
+        const vx = B.cx - A.cx, vy = B.cy - A.cy
+        const len = Math.hypot(vx, vy) || 1
+        const axis = { x: vx / len, y: vy / len }
+        const obstacles: NodeRect[] = []
+        for (const [id, c] of nodeCenter) {
+          if (id === rel.source || id === rel.target) continue
+          obstacles.push({ x: c.cx - c.hw, y: c.cy - c.hh, w: c.hw * 2, h: c.hh * 2 })
+        }
+        const t = slideLabelAlongLane(
+          { x: cx, y: cy }, axis, lbl.width, lbl.height, obstacles)
+        if (t !== 0) { cx += axis.x * t; cy += axis.y * t }
         g.addPoint(new MxPoint(
-          Math.round(lbl.x + lbl.width / 2 - mid.x),
-          Math.round(lbl.y + lbl.height / 2 - mid.y),
+          Math.round(cx - mid.x),
+          Math.round(cy - mid.y),
           'offset',
         ))
       }
