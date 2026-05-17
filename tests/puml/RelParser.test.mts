@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { RelParser } from '../../src/puml/RelParser.mjs';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 describe('RelParser', () => {
   it('should create RelParser instance', () => {
@@ -26,6 +31,7 @@ describe('RelParser', () => {
       label: 'Uses',
       description: 'HTTP API',
       bidirectional: false,
+      back: false,
     });
     expect(relations[1]).toEqual({
       source: 'system2',
@@ -33,6 +39,7 @@ describe('RelParser', () => {
       label: 'Responds',
       description: 'JSON data',
       bidirectional: false,
+      back: false,
     });
   });
 
@@ -243,5 +250,62 @@ describe('RelParser — RelIndex leading-index + numeric-alias safety (7-a)', ()
   it('BiRel with a numeric leading alias keeps it as the source', () => {
     const rels = RelParser.getRelations('BiRel(99, target, "syncs")');
     expect(rels[0]).toMatchObject({ source: '99', target: 'target', label: 'syncs', bidirectional: true });
+  });
+});
+
+// C4-PlantUML v2.13.0 C4.puml:
+//   Rel       → $getRel("-->>", $from, $to, …)   arrowhead at $to
+//   Rel_Back  → $getRel("<<--", $from, $to, …)   arrowhead at $from ONLY
+//   Rel_Back_Neighbor → "<<-"   (still a $from-side arrowhead)
+//   BiRel     → "<<-->>"        arrowheads at BOTH ends
+// Rel_Back does NOT swap $from/$to — only the arrowhead end moves. The
+// parser exposes this as a `back` boolean; `_Back` in the primitive
+// name is the sole discriminator and is mutually exclusive with BiRel
+// (C4-PlantUML has no BiRel_Back).
+describe('RelParser — Rel_Back arrow-reversal flag', () => {
+  it('plain Rel → back:false, bidirectional:false', () => {
+    const r = RelParser.getRelations('Rel(a, b, "uses")')[0];
+    expect(r).toMatchObject({ source: 'a', target: 'b', back: false, bidirectional: false });
+  });
+
+  it('Rel_Back → back:true and does NOT swap source/target', () => {
+    const r = RelParser.getRelations('Rel_Back(a, b, "acks")')[0];
+    // critical: $from/$to order preserved exactly (only the arrowhead reverses)
+    expect(r).toMatchObject({ source: 'a', target: 'b', label: 'acks', back: true, bidirectional: false });
+  });
+
+  it('Rel_Back with a 4th technology arg still flags back:true', () => {
+    const r = RelParser.getRelations('Rel_Back(b, a, "callback", "webhook")')[0];
+    expect(r).toMatchObject({ source: 'b', target: 'a', label: 'callback', description: 'webhook', back: true });
+  });
+
+  it('Rel_Back_Neighbor → back:true (the "<<-" form is still $from-side)', () => {
+    const r = RelParser.getRelations('Rel_Back_Neighbor(q, api, "drains")')[0];
+    expect(r).toMatchObject({ source: 'q', target: 'api', back: true, bidirectional: false });
+  });
+
+  it('RelIndex_Back → back:true and keeps the ordinal prefix', () => {
+    const r = RelParser.getRelations('RelIndex_Back(3, a, b, "x")')[0];
+    expect(r).toMatchObject({ source: 'a', target: 'b', label: '3: x', back: true });
+  });
+
+  it('BiRel → back:false (mutually exclusive; no BiRel_Back in C4-PlantUML)', () => {
+    const r = RelParser.getRelations('BiRel(a, b, "syncs")')[0];
+    expect(r).toMatchObject({ back: false, bidirectional: true });
+  });
+
+  it('forward directional Rel_Up is NOT back (only _Back reverses)', () => {
+    const r = RelParser.getRelations('Rel_Up(a, b, "up")')[0];
+    expect(r).toMatchObject({ back: false, bidirectional: false });
+  });
+
+  it('counts every Rel_Back* in the all-rel-variants fixture', () => {
+    const rels = RelParser.getRelations(
+      readFileSync(join(__dirname, '..', 'fixtures', 'c4-all-rel-variants.puml'), 'utf-8'),
+    );
+    // Fixture has Rel_Back(a,b,…) + Rel_Back_Neighbor(a,b,…) = 2 back rels;
+    // none of the plain/forward/BiRel lines are back.
+    expect(rels.filter((r) => r.back).length).toBe(2);
+    expect(rels.filter((r) => r.back && r.bidirectional).length).toBe(0);
   });
 });

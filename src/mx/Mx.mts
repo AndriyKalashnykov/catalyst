@@ -252,14 +252,25 @@ class Mx {
         object.push(t);
     }
 
-    async addMxC4Relationship(geometry: MxGeometry, source: string, target: string, type: string, name: string, technology?: string, description?: string, bidirectional: boolean = false, styleOverride?: StyleOverride, maxLabelWidthPx: number = Infinity): Promise<void> {
+    async addMxC4Relationship(geometry: MxGeometry, source: string, target: string, type: string, name: string, technology?: string, description?: string, bidirectional: boolean = false, styleOverride?: StyleOverride, maxLabelWidthPx: number = Infinity, back: boolean = false): Promise<void> {
 
-        // Bidirectional rels get arrowheads on BOTH ends (startArrow+endArrow).
-        // The existing Relastionship.style() sets endArrow=blockThin; we override
-        // startArrow here so the base class stays focused on the common case.
+        // Arrowhead placement mirrors C4-PlantUML v2.13.0 C4.puml exactly:
+        //   Rel       → "-->>"   arrowhead at $to     (the base style:
+        //                        endArrow=blockThin, endFill=1)
+        //   BiRel     → "<<-->>" arrowheads at BOTH ends
+        //   Rel_Back  → "<<--"   arrowhead at $from ONLY (NOT a swap of
+        //                        source/target — only the arrowhead end moves)
+        // The base Relastionship.style() emits the Rel case; we layer the
+        // BiRel / Rel_Back override here so the base class stays focused on
+        // the common case. mxGraph style strings take the LAST value for a
+        // duplicated key, so appending `endArrow=none` cleanly overrides the
+        // base `endArrow=blockThin` for the back case. The two flags are
+        // mutually exclusive (BiRel has no _Back variant — RelParser).
         let style = Relastionship.style()
         if (bidirectional) {
             style = style + ';startArrow=blockThin;startFill=1'
+        } else if (back) {
+            style = style + ';startArrow=blockThin;startFill=1;endArrow=none'
         }
         // AddRelTag / UpdateRelStyle colour + dashed overrides.
         style = StyleParser.applyOverride(style, styleOverride)

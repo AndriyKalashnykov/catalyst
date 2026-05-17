@@ -27,8 +27,8 @@ class RelParser {
         return ({ Up: 'U', U: 'U', Down: 'D', D: 'D', Left: 'L', L: 'L', Right: 'R', R: 'R' } as const)[m[1]];
     }
 
-    static getRelations(pumlString: string): Array<{ source: string, target: string, label: string, description: string, bidirectional: boolean, tags?: string, direction?: 'U' | 'D' | 'L' | 'R' }> {
-        const relations: Array<{ source: string, target: string, label: string, description: string, bidirectional: boolean, tags?: string, direction?: 'U' | 'D' | 'L' | 'R' }> = [];
+    static getRelations(pumlString: string): Array<{ source: string, target: string, label: string, description: string, bidirectional: boolean, back: boolean, tags?: string, direction?: 'U' | 'D' | 'L' | 'R' }> {
+        const relations: Array<{ source: string, target: string, label: string, description: string, bidirectional: boolean, back: boolean, tags?: string, direction?: 'U' | 'D' | 'L' | 'R' }> = [];
 
         // Cover the full C4-PlantUML relationship surface. The leading
         // (?<primitive>...) capture lets us tell BiRel apart so the renderer
@@ -73,6 +73,13 @@ class RelParser {
             const label = idxMatch ? `${idxMatch[1]}: ${verb}` : verb;
             const description = (match[6] ?? '').trim();
             const bidirectional = primitive.startsWith('BiRel');
+            // C4-PlantUML v2.13.0 C4.puml: Rel → $getRel("-->>", …) (arrowhead
+            // at $to); Rel_Back → $getRel("<<--", …) (arrowhead at $from);
+            // Rel_Back_Neighbor → "<<-"; RelIndex_Back* likewise. Source/target
+            // are NOT swapped — only the arrowhead end reverses. `_Back` in the
+            // primitive name is the single discriminator. BiRel has no _Back
+            // variant, so the two flags are mutually exclusive by construction.
+            const back = /_Back/.test(primitive);
             // $tags="x" may appear in the trailing args swallowed by `[^)]*`.
             const tagMatch = /\$tags\s*=\s*"([^"]*)"/.exec(match[0]);
             const tags = tagMatch ? tagMatch[1] : undefined;
@@ -83,6 +90,7 @@ class RelParser {
                 label,
                 description,
                 bidirectional,
+                back,
                 tags,
                 direction: RelParser.directionOf(primitive),
             });
