@@ -155,9 +155,23 @@ Completed-work root-cause prose lives in git history + ADRs +
 >
 > ### ▶▶ NEXT SESSION (priority order)
 >
-> 1. **Sequence diagrams** (#12, ADR 0007) — largest; new non-ELK
->    subsystem, phased per the durable item below; MUST ship with
->    factcheck coverage (lifelines/messages/order).
+> 1. **Sequence diagrams** (#12, ADR 0007) — phased. **Phase (a)
+>    `SeqParser` ✅ DONE 2026-05-17** (`src/seq/`, 29-test matrix,
+>    net-new). **NEXT = phase (b):** deterministic linear
+>    `src/seq/seqLayout.mts` (lifelines evenly spaced on X by measured
+>    header width — reuse `measureNode`/font metrics; events monotone
+>    Y in source order; activations stacked rects) + `src/mx/seq/
+>    Lifeline.mts` (`shape=umlLifeline;` + message edges reusing the
+>    Rel/Rel_Back/BiRel arrowhead map + note shapes) + `src/seq/
+>    SeqConverter.mts` orchestration. Phase (b) ALSO flips the
+>    `src/catalyst.mts` detector `throw` → `SeqConverter.convert`
+>    (first existing-path change in the chain — gate: all 26 static
+>    fixtures still byte-identical + factcheck CLEAN; new render-compare
+>    on a v1-scoped sequence fixture). Then (c) corpus fixture +
+>    render-compare gate, (d) v2 fragments/dividers. v1 fails loud on
+>    deferred constructs (the ibm-wm fixture uses `==dividers==` ⇒ it
+>    is a phase-(d)/(c) fixture, NOT a v1 success fixture — phase (c)
+>    needs a divider-free v1 sequence fixture).
 > 2. C4 surface TRUE residuals (`$sprite`, sketch, legend, dropped
 >    `note`) — low/opportunistic.
 > (P13 ✅ DONE 2026-05-17 — gallery emits uniform `<img width="420">`;
@@ -298,9 +312,13 @@ element `«type»` line. Gate: re-rendered Core shows `«critical»`.
    → `umlLifeline` emit) behind the existing fail-loud detector as
    the dispatch seam; v1 scope vs deferred-v2 fragments; BLOCKING
    test strategy. Execute it **phased**, each phase its own
-   byte-scope + render-compare gated PR: (a) `SeqParser` + ordering
-   invariants; (b) linear layout + emit; (c) corpus fixture +
-   render-compare gate; (d) v2 fragments. Largest open item.
+   byte-scope + render-compare gated PR: **(a) `SeqParser` + ordering
+   invariants — ✅ DONE 2026-05-17** (`src/seq/SeqParser.mts` +
+   `SeqModel.interface.mts`; 29-test ordering+fail-loud matrix;
+   purely additive, factcheck CLEAN 26/26 by construction);
+   (b) linear `seqLayout` + `umlLifeline` emit + detector dispatch
+   (NEXT); (c) corpus fixture + render-compare gate; (d) v2
+   fragments/dividers. Largest open item.
 
 2. **C4 surface TRUE residuals (low/opportunistic).** Only the
    genuinely-unimplemented `✗` surface remains, none blocking
