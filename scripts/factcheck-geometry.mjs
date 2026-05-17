@@ -279,7 +279,14 @@ function factcheck(stem, dir = CORPUS) {
       for (const n of C.nodes) {
         if (n.alias === g.source || n.alias === g.target) continue
         if (isContainer.has(n.alias)) continue       // boundary outline, not a leaf collision
-        if (intersects(lr, n) && !contains(lr, n) && !contains(n, lr)) labelHit++
+        if (intersects(lr, n) && !contains(lr, n) && !contains(n, lr)) {
+          labelHit++
+          if (process.env.FACTCHECK_DEBUG)
+            process.stderr.write(`  labelHit: "${r.label}" (${g.source}->${g.target}) ` +
+              `lr={x:${Math.round(lr.x)},y:${Math.round(lr.y)},w:${Math.round(lr.w)},h:${Math.round(lr.h)}} ` +
+              `over leaf ${n.alias} {x:${Math.round(n.x)},y:${Math.round(n.y)},w:${Math.round(n.w)},h:${Math.round(n.h)}} ` +
+              `offset={${Math.round(g.offset.x)},${Math.round(g.offset.y)}}\n`)
+        }
       }
     }
     // --- nodeOverlap: PARTIAL overlaps only (containment = legit nesting) ---
@@ -332,9 +339,17 @@ function factcheck(stem, dir = CORPUS) {
     }
     // attachMerge: same unordered pair, ≥2 edges → their endpoint attach
     // points must be separated on at least ONE end, else they collapse
-    // into one visual line (the P10 defect). attach x = exitX/entryX·w
-    // (or box centre when unconstrained); ATTACH_SEP_MIN is the cited
-    // 2×arrow-head metric defined at module top.
+    // into one visual line (the P10 defect). The attach point is 2-D:
+    // (exitX·w, exitY·h) on the source box, (entryX·w, entryY·h) on the
+    // target. A FALSE-POSITIVE class (fact-found 2026-05-17,
+    // c4-all-rel-variants b→c): comparing only the X component flags a
+    // HORIZONTAL same-pair fan — which `assignEdgeLanes` correctly
+    // separates in Y (exitY/entryY spread, exitX pinned to the 0/1
+    // border) — as "merged" though it is 66 px apart. The contract is
+    // EUCLIDEAN attach distance: edges merge only when BOTH ends are
+    // within ATTACH_SEP_MIN in the plane. attach x = exitX/entryX·w,
+    // y = exitY/entryY·h (or box centre when that axis is
+    // unconstrained); ATTACH_SEP_MIN is the cited 2×arrow-head metric.
     const grp = new Map()
     C.edges.forEach((g, i) => {
       if (!g.source || !g.target) return
@@ -342,6 +357,7 @@ function factcheck(stem, dir = CORPUS) {
       ;(grp.get(k) ?? grp.set(k, []).get(k)).push(i)
     })
     const ax = (n, frac) => n ? (frac === undefined ? n.x + n.w / 2 : n.x + frac * n.w) : 0
+    const ay = (n, frac) => n ? (frac === undefined ? n.y + n.h / 2 : n.y + frac * n.h) : 0
     let attachMerge = 0
     for (const idxs of grp.values()) {
       if (idxs.length < 2) continue
@@ -351,9 +367,28 @@ function factcheck(stem, dir = CORPUS) {
           const s1 = C.byAlias.get(g1.source), t1 = C.byAlias.get(g1.target)
           const s2 = C.byAlias.get(g2.source), t2 = C.byAlias.get(g2.target)
           if (!s1 || !t1 || !s2 || !t2) continue
-          const dSrc = Math.abs(ax(s1, g1.exitX) - ax(s2, g2.exitX))
-          const dTgt = Math.abs(ax(t1, g1.entryX) - ax(t2, g2.entryX))
-          if (dSrc < ATTACH_SEP_MIN && dTgt < ATTACH_SEP_MIN) attachMerge++
+          const dSrc = Math.hypot(
+            ax(s1, g1.exitX) - ax(s2, g2.exitX),
+            ay(s1, g1.exitY) - ay(s2, g2.exitY))
+          const dTgt = Math.hypot(
+            ax(t1, g1.entryX) - ax(t2, g2.entryX),
+            ay(t1, g1.entryY) - ay(t2, g2.entryY))
+          if (dSrc < ATTACH_SEP_MIN && dTgt < ATTACH_SEP_MIN) {
+            attachMerge++
+            if (process.env.FACTCHECK_DEBUG) {
+              const ay = (n, f) => n ? (f === undefined ? n.y + n.h / 2 : n.y + f * n.h) : 0
+              const sx1 = ax(s1, g1.exitX), sy1 = ay(s1, g1.exitY)
+              const sx2 = ax(s2, g2.exitX), sy2 = ay(s2, g2.exitY)
+              const tx1 = ax(t1, g1.entryX), ty1 = ay(t1, g1.entryY)
+              const tx2 = ax(t2, g2.entryX), ty2 = ay(t2, g2.entryY)
+              const e2 = (x1, y1, x2, y2) => Math.round(Math.hypot(x1 - x2, y1 - y2))
+              process.stderr.write(`  attachMerge: ${g1.source}->${g1.target} ` +
+                `[${C.rels?.[idxs[i]]?.label ?? idxs[i]} vs ${C.rels?.[idxs[j]]?.label ?? idxs[j]}] ` +
+                `src dX=${Math.round(dSrc)} dY=${Math.round(Math.abs(sy1 - sy2))} d2=${e2(sx1, sy1, sx2, sy2)} | ` +
+                `tgt dX=${Math.round(dTgt)} dY=${Math.round(Math.abs(ty1 - ty2))} d2=${e2(tx1, ty1, tx2, ty2)} ` +
+                `(exitY ${g1.exitY}/${g2.exitY} entryY ${g1.entryY}/${g2.entryY})\n`)
+            }
+          }
         }
     }
     // `clean` = the CONTRACTS held: nothing dropped, arrows correct, no
