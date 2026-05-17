@@ -74,33 +74,32 @@ Standalone, independently-maintained library (no upstream; never add an
 
 Everything below is researched, not speculative. Sizes are honest.
 
-> ▶ **RESUME HERE — session handoff 2026-05-16 (context-limit
-> cutoff).** Do these in order before new work.
-> **(1) Merge PR #53** `refactor/constants-singlesource` once CI
-> green (`gh pr merge 53 --squash --delete-branch`) — single-sources
-> ALL magic constants (PALETTE/SHAPE/C4_MIN in `theme.mts`, `MX`
-> flags, `DECIMAL_RADIX` in `src/constants.mts`), proven
-> byte-identical vs a fresh post-#52 baseline across all 20 fixtures
-> (3 incremental byte-gates), 287/287, mdlint green; COMPLETES old
-> backlog item 3 (Palette+MX → ✅-note below).
-> **(2) Cleanup after #53 + #54 merge:** delete the superseded local
-> branch `refactor/palette-mxflag-singlesource` (its WIP `dcd9657`
-> was cherry-picked into #53) and drop the stale `git stash@{0}`
-> "decimal-radix-for-consolidated" (already applied into #53); then
-> `git switch main && git fetch origin --prune && git reset --hard
-> origin/main`, and `git branch -D` any leftover merged locals.
-> **(3) Live backlog then:** item 1 = `edge-large-graph` #24-hier
-> IMPLEMENTATION (root-cause / disproved-spike / next-hypothesis
-> already in item 1 + PR #51 — re-cut from fresh `main`, execute the
-> "next hypothesis", full #24/#25-class render-compare gating);
-> item 2 = C4 surface residual gaps (LOW/opportunistic — only when a
-> downstream diagram needs one); item 3 = Sequence-diagram support
-> (large, design-first).
-> Merged this session: v1.6.1 chain, #19 gate, #23 (3 fixes
-> #43/#44/#45), #24 (#47), #25 (#49), C4-COVERAGE (#50),
-> edge-large-graph design (#51), fontZize fix (#52); handoff #54.
-> The `fontZize` audit closed (only typo'd style key, no
-> propagation).
+> ▶ **RESUME HERE — session handoff 2026-05-16 (refreshed).** All
+> constant/cleanup steps from the prior handoff are DONE (#53/#54
+> merged; superseded branch + stash already pruned; main clean).
+> **(1) If still open, merge this PR (#55** — corrected
+> edge-large-graph root cause, docs) and **claude-config PR #16**
+> (3 codified session learnings). Then `git switch main && git
+> fetch origin --prune && git reset --hard origin/main`.
+> **(2) Live backlog (priority order):**
+> – **item 1 = `edge-large-graph` #24-hier IMPLEMENTATION.** Root
+> cause is now MEASUREMENT-CORRECTED in item 1: the cram is the
+> **non-laned poly>2** branch (`catalyst.mts` ~L166) emitting ELK
+> route bends but NO label offset → drawio auto-anchors the
+> multi-bend label. Two spikes already disproved (v1 #51:
+> waypoint-at-label-centre distorts; v2: mis-targeted the 2-point
+> `calls` chain). Execute the CORRECTED next hypothesis in item 1
+> (emit ELK label offset in the non-laned poly>2 branch, account
+> for drawio's polyline path-midpoint anchor), full #24/#25-class
+> render-compare gating, re-cut from fresh `main`.
+> – item 2 = C4 surface residual gaps (LOW/opportunistic).
+> – item 3 = Sequence-diagram support (large, design-first).
+> **Merged this session:** v1.6.1 chain, #19 gate, #23 (#43/#44/#45),
+> #24 (#47), #25 (#49), C4-COVERAGE (#50), edge-large-graph design
+> (#51), fontZize (#52), consolidated constants (#53), handoffs
+> (#54). Open at cutoff: #55 (this), claude-config #16. `fontZize`
+> audit closed (only typo'd key, no propagation); constant
+> single-sourcing done & byte-proven (#53).
 
 ---
 
