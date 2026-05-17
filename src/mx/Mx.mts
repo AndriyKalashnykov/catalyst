@@ -299,7 +299,7 @@ class Mx {
         object.push(t);
     }
 
-    async addMxC4Relationship(geometry: MxGeometry, source: string, target: string, type: string, name: string, technology?: string, description?: string, bidirectional: boolean = false, styleOverride?: StyleOverride, maxLabelWidthPx: number = Infinity, back: boolean = false): Promise<void> {
+    async addMxC4Relationship(geometry: MxGeometry, source: string, target: string, type: string, name: string, technology?: string, description?: string, bidirectional: boolean = false, styleOverride?: StyleOverride, maxLabelWidthPx: number = Infinity, back: boolean = false, attach?: { exit: { x: number; y: number }; entry: { x: number; y: number } }): Promise<void> {
 
         // Arrowhead placement mirrors C4-PlantUML v2.13.0 C4.puml exactly:
         //   Rel       → "-->>"   arrowhead at $to     (the base style:
@@ -318,6 +318,19 @@ class Mx {
             style = style + ';startArrow=blockThin;startFill=1'
         } else if (back) {
             style = style + ';startArrow=blockThin;startFill=1;endArrow=none'
+        }
+        // P10: per-lane box-border attach points for laned (parallel /
+        // antiparallel) edges. Without these draw.io attaches every
+        // same-pair edge at the box CENTRE, so two one-way edges
+        // visually collapse into one (looking bidirectional + arrowless
+        // — the reported defect). exitX/exitY pin the SOURCE border
+        // point, entryX/entryY the TARGET; both are the lane's
+        // geometry-derived fractions. `exitDx/Dy=0;` keeps draw.io from
+        // adding its perpendicular fixed offset on top of the fraction.
+        if (attach) {
+            style = style +
+                `;exitX=${attach.exit.x};exitY=${attach.exit.y};exitDx=0;exitDy=0` +
+                `;entryX=${attach.entry.x};entryY=${attach.entry.y};entryDx=0;entryDy=0`
         }
         // AddRelTag / UpdateRelStyle colour + dashed overrides.
         style = StyleParser.applyOverride(style, styleOverride)

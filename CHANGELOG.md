@@ -22,36 +22,6 @@ This project adheres to [Keep a CHANGELOG](http://keepachangelog.com/).
   (only `edge-tags-styling` changes in the corpus). Tag colour styling
   was already applied; this adds the missing stereotype text.
 
-### Fixed
-
-- **Nested boundary title bands no longer collide with the first child
-  box.** `LayoutEngine.titlePadding()` reserved only the 2-line title
-  height (≈33u); a drawio-export probe render (pixel-measured) showed
-  the rendered `[type]` line bottom lands exactly there, so a nested
-  compound's first child was placed with ~1u clearance —
-  `topology-deep-nesting`'s `[system]` overran `API Gateway`/`Auth`.
-  Added one real-metric clearance line (`renderedLineHeight` of the
-  title font) so the reserved band is ≈49u with ~15–17u clearance,
-  matching PlantUML's SVG-measured ≈16–20u breathing. Only the 4
-  compound-bearing corpus fixtures change; 16 byte-identical. The #25
-  clearance test gained a non-tautological gate asserting the band
-  exceeds the empirically pixel-measured rendered-title bottom (the old
-  self-consistent formula passed while the diagram visibly collided).
-  New `scripts/factcheck-geometry.mjs` numeric harness (catalyst
-  emitted geometry vs PlantUML SVG ground truth) backs the gate.
-
-- **Multi-edge (parallel/antiparallel) labels now ride their own lane
-  line instead of being flung off it.** The lane separator placed each
-  label using a separate inflated constant (±120 px perpendicular /
-  ±150 px along) rather than the lane's own shift, so every non-centre
-  label detached from its edge — parallel duplicates orphaned 2 of 3
-  labels. Now `labelOffset = (px,py)·shift` (the lane's exact
-  displacement from drawio's A↔B-midpoint label anchor), and the
-  per-group lane gap widens to the group's widest measured label so
-  adjacent on-line labels clear each other — the way PlantUML fans
-  parallel duplicates. Only the 3 corpus fixtures with multi-edge
-  groups change; the other 17 are byte-identical.
-
 ### Changed
 
 - **Context diagrams now use the same `layered` (Graphviz-`dot`-style)
@@ -69,6 +39,64 @@ This project adheres to [Keep a CHANGELOG](http://keepachangelog.com/).
   Removed the now-dead `declump()`, `isHierarchical()`,
   `LayoutResult.context` flag, and the unreachable `#24`
   centre-waypoint emit block.
+- **`scripts/factcheck-geometry.mjs` is now a comprehensive,
+  fact-checked PlantUML→draw.io fidelity comparator** (no eyeballing).
+  Adds semantic checks — `entityMiss`, `relMiss`, `arrowBad`
+  (arrowhead count ≠ C4 semantic: bidirectional⇒2, one-way⇒1),
+  `labelDrop`, `attachMerge` (same-pair edges collapsing to one line) —
+  alongside the geometry checks, all vs the PlantUML `-tsvg` ground
+  truth. Every false-positive was itself fact-checked and fixed: edge
+  labels read from `c4Name` (not the `%c4Name%` placeholder), text
+  normalised for wrap-`<br/>`/`\n`/XML-escaping before comparison,
+  duplicate style keys read last-wins (mxGraph semantics, so `Rel_Back`
+  is correctly 1-headed), and strict rank-order demoted to advisory
+  (ELK `layered` and PlantUML `dot` legitimately differ in same-rank
+  ordering). Repeated literals (attribute names, style keys, the
+  2×arrow-head separation threshold, arrow-count contract) are named,
+  documented constants.
+
+### Fixed
+
+- **Antiparallel / parallel (laned) edges no longer visually merge into
+  one line.** Laned edges emitted `orthogonalEdgeStyle` with no
+  exit/entry constraints, so draw.io attached every same-pair edge at
+  the box CENTRE — two one-way edges (e.g. `Rel(a,c)` + `Rel(c,a)`)
+  collapsed into what looked like one bidirectional edge plus one
+  arrowless edge. Each lane now carries geometry-derived
+  `exitX/exitY/entryX/entryY` border-attach fractions (centre ± the
+  lane's own perpendicular shift, clamped to the border), so every
+  one-way edge is a distinct line attaching at a separated point with
+  its single correct arrowhead — matching PlantUML. Verified in the
+  rendered SVG (rel-bidirectional A↔C now attaches at x≈82.5 / x≈137.5,
+  55px apart; arrowhead counts exactly 4/3/… per C4 semantics). Only
+  the 3 corpus fixtures with multi-edge groups change; 17
+  byte-identical.
+- **Multi-edge (parallel/antiparallel) labels now ride their own lane
+  line instead of being flung off it.** The lane separator placed each
+  label using a separate inflated constant (±120 px perpendicular /
+  ±150 px along) rather than the lane's own shift, so every non-centre
+  label detached from its edge — parallel duplicates orphaned 2 of 3
+  labels. Now `labelOffset = (px,py)·shift` (the lane's exact
+  displacement from drawio's A↔B-midpoint label anchor), and the
+  per-group lane gap widens to the group's widest measured label so
+  adjacent on-line labels clear each other — the way PlantUML fans
+  parallel duplicates. Only the 3 corpus fixtures with multi-edge
+  groups change; the other 17 are byte-identical.
+- **Nested boundary title bands no longer collide with the first child
+  box.** `LayoutEngine.titlePadding()` reserved only the 2-line title
+  height (≈33u); a drawio-export probe render (pixel-measured) showed
+  the rendered `[type]` line bottom lands exactly there, so a nested
+  compound's first child was placed with ~1u clearance —
+  `topology-deep-nesting`'s `[system]` overran `API Gateway`/`Auth`.
+  Added one real-metric clearance line (`renderedLineHeight` of the
+  title font) so the reserved band is ≈49u with ~15–17u clearance,
+  matching PlantUML's SVG-measured ≈16–20u breathing. Only the 4
+  compound-bearing corpus fixtures change; 16 byte-identical. The #25
+  clearance test gained a non-tautological gate asserting the band
+  exceeds the empirically pixel-measured rendered-title bottom (the old
+  self-consistent formula passed while the diagram visibly collided).
+  New `scripts/factcheck-geometry.mjs` numeric harness (catalyst
+  emitted geometry vs PlantUML SVG ground truth) backs the gate.
 
 ## [1.6.1] - 2026-05-16
 

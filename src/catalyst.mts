@@ -240,7 +240,7 @@ async function layoutData2mx(layoutData: LayoutResult, pumlElements: EntityDescr
     // -> c4Technology). Passing rel.description as the `technology` arg fixes
     // the swapped-field bug where the verb landed in unused c4Name and the
     // template rendered the technology bold + an empty "[]".
-    await mx.addMxC4Relationship(g, rel.source, rel.target, 'Relationship', rel.label, rel.description, undefined, rel.bidirectional === true, Object.keys(relOvr).length ? relOvr : undefined, edgeLabelCap(rel.source, rel.target), rel.back === true)
+    await mx.addMxC4Relationship(g, rel.source, rel.target, 'Relationship', rel.label, rel.description, undefined, rel.bidirectional === true, Object.keys(relOvr).length ? relOvr : undefined, edgeLabelCap(rel.source, rel.target), rel.back === true, lane ? { exit: lane.exit, entry: lane.entry } : undefined)
     if (!emittedIds.has(rel.source) || !emittedIds.has(rel.target)) {
       // Not silently swallowed: an unresolved endpoint means the puml
       // referenced an alias that never produced a shape. Surface it so the

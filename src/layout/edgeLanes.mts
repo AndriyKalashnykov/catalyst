@@ -38,6 +38,20 @@ export interface LaneGeometry {
    */
   perp: { x: number; y: number }
   shift: number
+  /**
+   * Per-lane box-border attach fractions (mxGraph `exitX/exitY` on the
+   * SOURCE, `entryX/entryY` on the TARGET — each in [0,1] of that box).
+   * P10: without these every same-pair edge attaches at the box CENTRE,
+   * so two antiparallel one-way edges visually collapse into one
+   * (looking bidirectional + arrowless). Offsetting the attach point by
+   * the lane's own `shift` along the box border facing the other node
+   * makes each edge leave/enter a DISTINCT point — two clearly separate
+   * one-way lines, each with its single arrowhead, exactly as PlantUML
+   * renders Rel(a,c)+Rel(c,a). Geometry-derived (centre ± shift as a
+   * fraction of the real box extent), clamped to the border.
+   */
+  exit: { x: number; y: number }
+  entry: { x: number; y: number }
 }
 
 /** Default lane spacing for the routed waypoint (the minimum fan width
@@ -47,6 +61,15 @@ export interface LaneGeometry {
  *  see `assignEdgeLanes`. PlantUML fans parallel duplicates exactly this
  *  way: each label rides next to its own curve, never stacked. */
 export const EDGE_LANE_GAP_PX = 44
+
+/** mxGraph exit/entry fractions are in [0,1] of the box; 0.5 == the
+ *  centre of that edge (the unconstrained default catalyst used before
+ *  P10). Named so the per-lane attach math reads as "centre ± offset". */
+const HALF = 0.5
+/** Clamp an exit/entry fraction onto the box border. A lane whose
+ *  perpendicular offset would exceed the box extent is pinned to the
+ *  corner rather than detaching outside the shape. */
+const clamp01 = (v: number): number => Math.min(1, Math.max(0, v))
 
 /**
  * @param relations  visible relations, in emission order; the index into this
@@ -133,6 +156,33 @@ export function assignEdgeLanes(
       // each other. The centre lane (shift 0) keeps offset (0,0).
       const lane = idx - (idxs.length - 1) / 2
       const shift = lane * effGap
+      // Per-lane box-border attach points (P10). Use the RELATION's own
+      // source→target so the arrowhead end is correct; offset the attach
+      // along the border facing the other box by this lane's `shift`
+      // (canonical-frame perpendicular, so antiparallel partners get
+      // opposite offsets and never coincide). Fraction = centre (0.5) ±
+      // shift / box-extent, clamped to the border [0,1]. Falls back to
+      // centre (0.5) for the unknown-endpoint case.
+      const S = nodeCenter.get(relations[relIdx].source)
+      const T = nodeCenter.get(relations[relIdx].target)
+      let exit = { x: HALF, y: HALF }
+      let entry = { x: HALF, y: HALF }
+      if (S && T) {
+        const sdx = T.cx - S.cx, sdy = T.cy - S.cy
+        const vertical = Math.abs(sdy) >= Math.abs(sdx)
+        const fx = (off: number, hw: number) => clamp01(HALF + off / (2 * hw))
+        const perpOff = px * shift // canonical perpendicular displacement
+        const perpOffV = py * shift
+        if (vertical) {
+          // leave/enter on the top/bottom edge; spread along X
+          exit = { x: fx(perpOff, S.hw), y: sdy > 0 ? 1 : 0 }
+          entry = { x: fx(perpOff, T.hw), y: sdy > 0 ? 0 : 1 }
+        } else {
+          // leave/enter on the left/right edge; spread along Y
+          exit = { x: sdx > 0 ? 1 : 0, y: fx(perpOffV, S.hh) }
+          entry = { x: sdx > 0 ? 0 : 1, y: fx(perpOffV, T.hh) }
+        }
+      }
       out.set(relIdx, {
         waypoint: { x: Math.round(mcx + px * shift), y: Math.round(mcy + py * shift) },
         // `+ 0` normalises a signed-zero (`Math.round(0 * -shift)` → `-0`)
@@ -140,6 +190,8 @@ export function assignEdgeLanes(
         labelOffset: { dx: Math.round(px * shift) + 0, dy: Math.round(py * shift) + 0 },
         perp: { x: px, y: py },
         shift,
+        exit,
+        entry,
       })
     })
   }
