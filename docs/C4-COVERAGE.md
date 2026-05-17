@@ -101,8 +101,9 @@ done
 | Primitive | State |
 |---|---|
 | `Rel($from, $to, $label, $techn="", $descr="", ...)` | ✓ |
-| `Rel_Back` | ✓ (captured by regex; arrow direction not reversed yet) |
-| `Rel_Neighbor` / `Rel_Back_Neighbor` | ~ (captured, rendered as plain Rel) |
+| `Rel_Back` | ✓ (C4-PlantUML `"<<--"`: arrowhead reversed to the `$from` end via `startArrow`+`endArrow=none`, `Mx.mts`; endpoints NOT swapped — matches PlantUML) |
+| `Rel_Neighbor` | ~ (arrowhead correct; the Neighbor *placement* hint not honored) |
+| `Rel_Back_Neighbor` | ~ (✓ arrowhead reversed like `Rel_Back`; Neighbor placement hint not honored) |
 | `Rel_U` / `Rel_D` / `Rel_L` / `Rel_R` | ✓ (captured; hint ignored) |
 | `Rel_Up` / `Rel_Down` / `Rel_Left` / `Rel_Right` | ✓ (long-form captured by `relationPattern`; direction via `directionOf`) |
 | `BiRel` | ✓ (bidirectional — `startArrow=blockThin` emitted, `Mx.mts`) |

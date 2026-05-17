@@ -30,7 +30,7 @@ function overrideFor(type: string, tags: string | undefined, styles: ParsedStyle
   return Object.keys(merged).length ? merged : undefined
 }
 
-async function layoutData2mx(layoutData: LayoutResult, pumlElements: EntityDescriptor[], pumlRelations: { source: string, target: string, label: string, description: string, bidirectional?: boolean, tags?: string }[], styles: ParsedStyles): Promise<string> {
+async function layoutData2mx(layoutData: LayoutResult, pumlElements: EntityDescriptor[], pumlRelations: { source: string, target: string, label: string, description: string, bidirectional?: boolean, back?: boolean, tags?: string }[], styles: ParsedStyles): Promise<string> {
   const mx = new Mx(layoutData.height || 600, layoutData.width || 800)
   const parser = new EntityParser()
 
@@ -235,7 +235,7 @@ async function layoutData2mx(layoutData: LayoutResult, pumlElements: EntityDescr
     // -> c4Technology). Passing rel.description as the `technology` arg fixes
     // the swapped-field bug where the verb landed in unused c4Name and the
     // template rendered the technology bold + an empty "[]".
-    await mx.addMxC4Relationship(g, rel.source, rel.target, 'Relationship', rel.label, rel.description, undefined, rel.bidirectional === true, Object.keys(relOvr).length ? relOvr : undefined, edgeLabelCap(rel.source, rel.target))
+    await mx.addMxC4Relationship(g, rel.source, rel.target, 'Relationship', rel.label, rel.description, undefined, rel.bidirectional === true, Object.keys(relOvr).length ? relOvr : undefined, edgeLabelCap(rel.source, rel.target), rel.back === true)
     if (!emittedIds.has(rel.source) || !emittedIds.has(rel.target)) {
       // Not silently swallowed: an unresolved endpoint means the puml
       // referenced an alias that never produced a shape. Surface it so the
@@ -333,7 +333,7 @@ export class Catalyst {
    * @param pumlContent - The PlantUML content as string
    * @returns Array of relations
    */
-  static parseRelations(pumlContent: string): { source: string, target: string, label: string, description: string, bidirectional: boolean }[] {
+  static parseRelations(pumlContent: string): { source: string, target: string, label: string, description: string, bidirectional: boolean, back: boolean }[] {
     return RelParser.getRelations(pumlContent)
   }
 }

@@ -5,6 +5,7 @@ import { dirname, join } from 'node:path';
 import { Catalyst } from '../src/catalyst.mjs';
 import { EntityParser } from '../src/puml/EntityParser.mjs';
 import { RelParser } from '../src/puml/RelParser.mjs';
+import { parseStringPromise } from 'xml2js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const fixture = (name: string) =>
@@ -93,6 +94,46 @@ BiRel(a, b, "Talks", "gRPC")
         const edgeStyle = xml.match(/source="a" target="b"[^/]*style="([^"]*)"/);
         // Actually style is on the mxCell, let's grep more broadly
         expect(xml).toContain('startArrow=blockThin');
+    });
+
+    // C4-PlantUML Rel_Back ("<<--") = arrowhead at $from only. catalyst must
+    // reverse the ARROWHEAD, NOT swap the edge endpoints (source/target stay
+    // exactly as written — the corpus-sanity "no reversed endpoints" gate
+    // depends on this).
+    async function edgeStyleOf(xml: string, src: string, tgt: string): Promise<string> {
+        const doc = await parseStringPromise(xml);
+        const root = doc?.mxfile?.diagram?.[0]?.mxGraphModel?.[0]?.root?.[0] ?? {};
+        for (const obj of (root.object ?? [])) {
+            const cell = obj.mxCell?.[0]?.$ ?? {};
+            if (cell.edge === '1' && cell.source === src && cell.target === tgt) return cell.style ?? '';
+        }
+        throw new Error(`no edge ${src}->${tgt} in emitted xml`);
+    }
+
+    it('Rel_Back emits a $from-side arrowhead (startArrow + endArrow=none), endpoints NOT swapped', async () => {
+        const xml = await Catalyst.convert('System(a, "A")\nSystem(b, "B")\nRel_Back(a, b, "acks")\n');
+        // endpoints preserved exactly as written
+        const style = await edgeStyleOf(xml, 'a', 'b');
+        expect(style).toContain('startArrow=blockThin');
+        expect(style).toContain('startFill=1');
+        // mxGraph takes the LAST value of a duplicated key — endArrow must
+        // resolve to none (no $to-side head), overriding the base blockThin.
+        expect(style.split(';').filter((s) => s.startsWith('endArrow=')).at(-1)).toBe('endArrow=none');
+    });
+
+    it('plain Rel keeps the $to-side arrowhead and no startArrow', async () => {
+        const xml = await Catalyst.convert('System(a, "A")\nSystem(b, "B")\nRel(a, b, "uses")\n');
+        const style = await edgeStyleOf(xml, 'a', 'b');
+        expect(style.split(';').filter((s) => s.startsWith('endArrow=')).at(-1)).toBe('endArrow=blockThin');
+        expect(style).not.toContain('startArrow=blockThin');
+    });
+
+    it('BiRel keeps BOTH arrowheads (regression guard: back override must not leak)', async () => {
+        const xml = await Catalyst.convert('System(a, "A")\nSystem(b, "B")\nBiRel(a, b, "syncs")\n');
+        const style = await edgeStyleOf(xml, 'a', 'b');
+        expect(style).toContain('startArrow=blockThin');
+        // BiRel must NOT get endArrow=none — both ends keep an arrowhead.
+        expect(style.split(';').filter((s) => s.startsWith('endArrow=')).at(-1)).toBe('endArrow=blockThin');
     });
 });
 
