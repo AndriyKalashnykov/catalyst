@@ -141,26 +141,33 @@ Everything below is researched, not speculative. Sizes are honest.
 > Delete the 220×140-class constants; correct the mis-attributed
 > "Structurizr" provenance.
 >
-> **Open fact-checks that MUST be closed BEFORE coding (do not guess
-> past these — this is the "am I missing anything" list):**
+> **Fact-checks — ALL 4 CLOSED 2026-05-17 (measured, no guesses; the
+> numbers are in ADR 0010 §"Measured facts" and contract-locked by
+> `tests/p4b-svg-geom.test.mjs`). Implement FROM these constants:**
 >
-> - **Vertical inset is NOT yet measured** — only horizontal 10 px
->     is. Extend `p4b-box-metrics.mjs` to extract the SVG top/bottom
->     rect-vs-text-bbox inset + the line-stack height model; the
->     vertical minimum must be a measured metric, not "same as
->     horizontal" assumed.
-> - **The 14 px inset outliers** (`distinct=[10,14]`) — identify what
->     they are (sprite/icon? wider stroke?) and justify 10 px as the
->     single constant, or handle the outlier class explicitly. An
->     unexplained outlier ≠ a clean category-1 metric.
-> - **`layout-quality`'s "≥ C4 min size" assertion** breaks the
->     moment `C4_MIN` changes — design a DELIBERATE replacement
->     contract ("no leaf smaller than its measured content+inset" AND
->     "text never overflows its box"), do not just delete it.
-> - **Empty-description decision** (pure content-fit vs a small
->     safety floor) — decide from the render-compare of
->     `edge-empty-descriptions` (`c` = corpus's smallest PlantUML box,
->     82×58), not in the abstract.
+> - **Vertical inset MEASURED** (baseline-relative, no font-metric
+>     guess): `topGap`=22.83, `botGap`=14.69, pitch «stereo»12→Name16
+>     =20.62 ⇒ 2-line min = **58.14** (exactly PlantUML's smallest).
+>     `leafMinH = topGap + Σ(pitch over actual line set) + botGap`.
+> - **14 px tail RESOLVED**: 123/124 leaves are exactly 10 px; the
+>     lone ≠10 is `c4-exhaustive/dev` (a Person + 9-line sprite
+>     label — a classified glyph class, not noise). `INSET=10` is
+>     clean category-1.
+> - **`layout-quality` replacement contract SPECIFIED** (ADR 0010
+>     fact 3): per leaf `h ≥ topGap+Σpitch+botGap` AND `w ≥
+>     maxTextLen+2×10` AND no text overflow. Implement this, don't
+>     delete the assertion.
+> - **Empty-description SETTLED by measurement**: `edge-empty-
+>     descriptions/c` has nText=2 (PlantUML OMITS the blank line) ⇒
+>     pure content-fit reproduces it; NO separate floor (a floor
+>     would be a guess vs the ground truth).
+>
+> The `p4b-box-metrics.mjs` measurement is now safeguarded (fail-loud
+> on empty/broken parse, per-leaf `topGap+Σpitch+botGap===rh`
+> self-check) + the parser extracted to `scripts/p4b-svg-geom.mjs`
+> and contract-locked (6 tests). Re-run any time:
+> `make factcheck` then `SVG_DIR=build/factcheck-svg node
+> scripts/p4b-box-metrics.mjs`.
 >
 > **Gate (BLOCKING, ADR 0010 order):** (1) `make factcheck` CLEAN
 > 26/26 — tighter boxes must NOT introduce

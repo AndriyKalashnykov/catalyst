@@ -12,6 +12,7 @@
 import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { Catalyst } from '../dist/catalyst.mjs'
+import { entityGeom } from './p4b-svg-geom.mjs'
 
 const SVG_DIR = process.env.SVG_DIR ?? 'build/factcheck-svg'
 const FIX = ['tests/fixtures', 'tests/fixtures/corpus']
@@ -96,36 +97,79 @@ for (const [k, rs] of [...byFam].sort()) {
   console.log(`  ${k.padEnd(13)} floor ${C4_MIN[k][0]}x${C4_MIN[k][1]} (${fA}px²)  vs smallest PlantUML ${Math.round(minP.pW)}x${Math.round(minP.pH)} (${Math.round(pA)}px², ${minP.stem}/${minP.alias})  →  ${(fA / pA).toFixed(1)}× larger`)
 }
 
-// --- Measured PlantUML element INSET (the category-1 metric the ADR
-// needs). For every entity <g>: hInset = min(text.x)-rect.x and
-// rect.right-max(text.x+textLength); the value PlantUML pads text
-// from the box edge. Parsed straight from the -tsvg ground truth. ---
-function insets(svg) {
-  const out = []
-  const re = /<!--entity ([^>]+?)-->\s*<g[^>]*>(.*?)<\/g>/gs
-  let m
-  while ((m = re.exec(svg)) !== null) {
-    const body = m[2]
-    const rr = /<rect[^>]*?height="([\d.]+)"[^>]*?width="([\d.]+)"[^>]*?x="([-\d.]+)"[^>]*?y="([-\d.]+)"/.exec(body)
-    if (!rr) continue
-    const rx = +rr[3], rw = +rr[2]
-    const ts = [...body.matchAll(/<text[^>]*?textLength="([\d.]+)"[^>]*?x="([-\d.]+)"/g)]
-      .map(t => ({ x: +t[2], len: +t[1] }))
-    if (!ts.length) continue
-    const left = Math.min(...ts.map(t => t.x)) - rx
-    const right = (rx + rw) - Math.max(...ts.map(t => t.x + t.len))
-    out.push({ left: +left.toFixed(2), right: +right.toFixed(2) })
-  }
-  return out
-}
-const allInset = []
+// Measured PlantUML element INSET + vertical model (the category-1
+// metrics ADR 0010 needs). `entityGeom` is the contract-locked parser
+// (scripts/p4b-svg-geom.mjs + tests/p4b-svg-geom.test.mts).
+let svgCount = 0
+const G = []
 for (const dir of FIX) for (const f of readdirSync(dir)) {
   if (!f.endsWith('.puml')) continue
-  try { allInset.push(...insets(readFileSync(join(SVG_DIR, f.replace(/\.puml$/, '') + '.svg'), 'utf8'))) } catch { /* no svg */ }
+  const stem = f.replace(/\.puml$/, '')
+  let svg
+  try { svg = readFileSync(join(SVG_DIR, stem + '.svg'), 'utf8') } catch { continue }
+  svgCount++
+  G.push(...entityGeom(svg, stem))
 }
-const lefts = allInset.map(i => i.left), rights = allInset.map(i => i.right)
+// SAFEGUARD — fail loud, never produce decision data from an empty /
+// broken parse (a silent 0-row run would feed the ADR a phantom).
+if (svgCount === 0) {
+  console.error(`FATAL: no SVGs in ${SVG_DIR}. Run \`make factcheck\` first ` +
+    `(then SVG_DIR=build/factcheck-svg node scripts/p4b-box-metrics.mjs).`)
+  process.exit(2)
+}
+const leafCheck = G.filter(g => g.kind === 'entity')
+if (leafCheck.length === 0) {
+  console.error(`FATAL: parsed ${svgCount} SVGs but 0 leaf entities — the ` +
+    `entityGeom regex is broken; refusing to emit fact-check numbers.`)
+  process.exit(2)
+}
+// SELF-CHECK — by construction topGap+Σpitch+botGap === rect.height.
+// If a parse regression breaks text-y extraction this fails LOUD
+// (an invariant, not a masked tolerance; 0.05px = float noise only).
+for (const g of leafCheck) {
+  const recon = g.topGap + g.pitches.reduce((s, p) => s + p.d, 0) + g.botGap
+  if (Math.abs(recon - g.rh) > 0.05) {
+    console.error(`FATAL: vertical parse inconsistent for ${g.stem}/${g.alias}: ` +
+      `topGap+Σpitch+botGap=${recon.toFixed(3)} ≠ rect.height=${g.rh}. Parse is broken.`)
+    process.exit(2)
+  }
+}
 const uniq = a => [...new Set(a.map(v => Math.round(v)))].sort((x, y) => x - y)
-console.log(`\nMeasured PlantUML element text-inset (${allInset.length} entities, all fixtures):`)
-console.log(`  left  px: distinct=${JSON.stringify(uniq(lefts))}  median=${med(lefts)}`)
-console.log(`  right px: distinct=${JSON.stringify(uniq(rights))}  median=${med(rights)}`)
-console.log(`  ⇒ the category-1 horizontal inset for a content-fit minimum (NOT a guess).`)
+const leaves = G.filter(g => g.kind === 'entity')
+const clusters = G.filter(g => g.kind === 'cluster')
+console.log(`\n=== Measured PlantUML LEAF element metrics (${leaves.length} leaves; ${clusters.length} clusters excluded — their corner-title inset is not a leaf metric) ===`)
+
+// (2) Horizontal inset — leaves only; classify any !=10.
+const L = leaves.map(g => g.left), R = leaves.map(g => g.right)
+console.log(`  HORIZONTAL inset  left distinct=${JSON.stringify(uniq(L))} median=${med(L)}  |  right distinct=${JSON.stringify(uniq(R))} median=${med(R)}`)
+const off10 = leaves.filter(g => Math.round(g.left) !== 10 || Math.round(g.right) !== 10)
+if (off10.length === 0) {
+  console.log(`  ⇒ EVERY leaf is exactly 10px L+R. Category-1 horizontal inset = 10 (no outlier, no tail).`)
+} else {
+  console.log(`  Inset≠10 leaves (${off10.length}/${leaves.length}) — classified (fonts/glyph):`)
+  for (const o of off10.sort((a, b) => a.stem.localeCompare(b.stem)))
+    console.log(`    ${o.stem}/${o.alias} L=${o.left} R=${o.right} fonts=${o.fonts} nText=${o.nText} hasImage=${o.hasImage} (${o.rw}x${o.rh})`)
+}
+
+// (1) Vertical model — leaves only, baseline-relative (no font-metric guess).
+const tg = leaves.map(g => g.topGap), bg = leaves.map(g => g.botGap)
+console.log(`\n  VERTICAL (baseline-relative, leaves): rect.y→1stBaseline distinct=${JSON.stringify(uniq(tg))} median=${med(tg)}` +
+  `  |  lastBaseline→rect.bottom distinct=${JSON.stringify(uniq(bg))} median=${med(bg)}`)
+const pitchByFont = new Map()
+for (const g of leaves) for (const p of g.pitches) {
+  const k = `${p.from}->${p.to}`
+  ;(pitchByFont.get(k) ?? pitchByFont.set(k, []).get(k)).push(p.d)
+}
+console.log(`  Inter-baseline PITCH by font transition (leaves; median px):`)
+for (const [k, ds] of [...pitchByFont].sort()) console.log(`    ${k.padEnd(9)} n=${String(ds.length).padStart(3)} median=${med(ds)} distinct=${JSON.stringify(uniq(ds))}`)
+console.log(`  ⇒ closed-form leaf min height = topGap + Σ(pitch over the element's actual line set) + botGap`)
+console.log(`     (verify: 2-line «stereo»(12)+Name(16) ⇒ ${med(tg)} + ${med(pitchByFont.get('12->16'))} + ${med(bg)} = ${med(tg) + med(pitchByFont.get('12->16') ?? [0]) + med(bg)} vs measured min height)`)
+
+// (4) Empty-description leaves — settles pure-content-fit vs small-floor.
+const ed = leaves.filter(g => g.stem === 'edge-empty-descriptions').sort((a, b) => a.rw * a.rh - b.rw * b.rh)
+console.log(`\n  Empty-description fixture LEAVES (does PlantUML reserve a blank desc line?):`)
+for (const g of ed)
+  console.log(`    ${g.alias} ${g.rw}x${g.rh} nText=${g.nText} fonts=${g.fonts} topGap=${g.topGap} botGap=${g.botGap}`)
+console.log(`  ⇒ if nText is JUST «stereo»+Name (no empty desc line) at the SAME min height as any`)
+console.log(`     2-line element, PlantUML OMITS the empty line ⇒ pure content-fit reproduces it,`)
+console.log(`     NO separate empty-description floor needed (Gap 4 settled by measurement).`)

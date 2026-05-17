@@ -51,16 +51,50 @@ the corpus; `scripts/p4b-box-metrics.mjs`"). `measureNode`'s existing
 text measurement continues to drive size; only the *floor* changes
 from a fixed rectangle to `text + inset`.
 
-Keep a **small safety minimum** (not the old per-type rectangle —
-e.g. one rendered title line + inset) purely so a 1-char /
-empty-description element is not a degenerate sliver. The per-type
-220×140-class constants are deleted; their provenance is corrected.
+The per-type 220×140-class constants are deleted; their provenance is
+corrected. **No separate empty-description safety floor** — see the
+measured resolution below (PlantUML itself omits the blank line; pure
+content-fit reproduces it).
 
-Vertical sizing stays line-stack-driven (stereotype + name +
-optional tech + description, at the cited `renderedLineHeight`),
-plus the same measured inset top/bottom — i.e. the existing
-`measureNode` vertical model with the floor removed, not a new
-constant.
+### Measured facts — all four open gaps CLOSED 2026-05-17 (no guesses)
+
+`scripts/p4b-box-metrics.mjs` extended to extract these from the
+`-tsvg` ground truth (124 leaves; the 19 clusters/boundaries excluded
+— their rect spans children with the title in a corner, so their
+"inset" is not a leaf metric: a measurement-bug in the script's own
+regex was caught and fixed before trusting the numbers).
+
+1. **Horizontal inset = 10 px, exact.** 123/124 leaves are exactly
+   10 px left+right. The single exception is `c4-exhaustive/dev` — a
+   Person rendered with a 9-text-line sprite label (fonts
+   `16+14×8`), a distinct Person-with-sprite glyph class, NOT a
+   normal rectangle. So `INSET = 10` is a clean category-1 metric
+   with the tail fully audited (one classified glyph, not noise).
+2. **Vertical model (baseline-relative, NO font-metric guessing — all
+   values are directly in the SVG):** `topGap` (rect.y → first
+   baseline) = **22.83**; `botGap` (last baseline → rect.bottom) =
+   **14.69**; inter-baseline pitch «stereotype»(12)→Name(16) =
+   **20.62**, Name(16)→desc(12) = **17.52**, desc(12)→desc(12) =
+   **16**. Closed form: `leafMinHeight = topGap + Σ(pitch over the
+   element's ACTUAL line set) + botGap`. Verify: a 2-line
+   «stereotype»+Name element = 22.83 + 20.62 + 14.69 = **58.14**,
+   which is *exactly* PlantUML's measured smallest box height
+   (entity `d`, empty-desc `c`). The model is correct by
+   construction, not fitted.
+3. **`layout-quality` replacement contract (specified, not deleted):**
+   for every leaf — `height ≥ topGap + Σ(measuredPitch for its line
+   set) + botGap` AND `width ≥ maxRenderedTextLen + 2×INSET` AND no
+   text glyph extends beyond the box. This is the deliberate
+   anti-regression contract (the box is exactly its content-fit box,
+   never smaller, text never overflows) that replaces the absolute
+   "≥ C4 min" assertion.
+4. **Empty-description: pure content-fit, NO special floor.** Measured
+   `edge-empty-descriptions/c` = 82.20×58.14 with `nText=2` (just
+   «stereotype»+Name). PlantUML **omits** the empty description line
+   entirely and renders the normal 2-line minimum. Pure content-fit
+   (size to the lines that exist) reproduces this exactly — a
+   separate small-floor would be a guess contradicting the ground
+   truth. Decision settled by measurement.
 
 ## Consequences
 
@@ -81,18 +115,19 @@ constant.
   3. Byte baseline (`git worktree` of `origin/main`) recorded as
      evidence of the *scope* of change (expected: broad; assert no
      fixture is unchanged-by-accident where it should shrink).
-  4. Re-derive, do not assume: the 10 px inset is horizontal-measured;
-     confirm the vertical inset against the SVG before shipping
-     (extend `p4b-box-metrics.mjs` if the bracket is loose).
+  4. Both horizontal AND vertical insets are now SVG-measured (above)
+     — implement from those constants; the `p4b-box-metrics.mjs`
+     measurement is unit-tested + safeguarded so the numbers can't
+     silently rot.
 - **Interactions to verify**: the P6 boundary title band
   (`titlePadding`, ADR-era) and the cylinder3 cap reserve
   (`CYLINDER3_CAP_PX`) are independent measured reserves — confirm
   the smaller leaf floor does not regress boundary-band clearance or
   cylinder cap containment.
-- **Open question deferred to the implementation PR**: pure
-  content-fit vs content-fit-with-small-floor for empty-description
-  elements — decide by the render-compare of `edge-empty-descriptions`
-  (its `c` is the corpus's smallest PlantUML box, 82×58).
+- **Resolved (was an open question)**: pure content-fit vs a small
+  empty-description floor — settled by measurement (fact 4 above):
+  PlantUML omits the blank line, so pure content-fit is correct and
+  a floor would be a guess. No deferral.
 
 ## Why ADR (not just a fix)
 
