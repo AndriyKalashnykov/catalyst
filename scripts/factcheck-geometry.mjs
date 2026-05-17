@@ -26,9 +26,17 @@
  *   - nodeOverlap: PARTIAL node overlaps (containment = legit nesting)
  *   - boundaryBands: each container's title band before its first child
  *
- * A fixture is "clean" ONLY when entityMiss=relMiss=arrowBad=labelDrop
- * =attachMerge=labelHit=nodeOverlap=0 AND rankOrder=true. Anything else
- * is a defect, regardless of how the PNG looks.
+ * A fixture is "clean" iff the SEVEN CONTRACT metrics are 0:
+ * entityMiss=relMiss=arrowBad=labelDrop=attachMerge=labelHit=
+ * nodeOverlap=0 (see the `clean` predicate below). `rankOrder`,
+ * `wRatio`, `hRatio` and `boundaryBands` are ADVISORY — reported but
+ * NOT clean-disqualifying: ELK `layered` and PlantUML `dot` are both
+ * valid engines that legitimately differ in same-rank order / minor
+ * placement. A real over-ranking is judged as an extreme ratio
+ * explicitly, not via strict order equality. The path→metric coverage
+ * matrix is `docs/FACTCHECK-COVERAGE.md` (#17): every emit path has
+ * ≥1 guarding contract metric — no blind spots. A non-zero contract
+ * metric is a defect regardless of how the PNG looks.
  *
  * Usage:
  *   make factcheck                       # whole corpus, renders SVG +
