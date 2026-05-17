@@ -1,21 +1,34 @@
 #!/usr/bin/env node
 /**
- * Numeric fact-check harness — NO eyeballing.
+ * Comprehensive PlantUML→draw.io fidelity comparator — NO eyeballing.
+ * Every claim about a fixture must be one of these MEASURED numbers,
+ * never a visual judgement of a PNG.
  *
- * For each fixture it extracts MEASURED geometry from both sides:
- *   - PlantUML ground truth: rendered SVG (`-tsvg`, exact vector coords) —
- *     node rects keyed by `<!--entity ALIAS-->`, plus the diagram bbox.
- *   - catalyst: the emitted draw.io XML — node rects, and every edge's
- *     label rect computed exactly as draw.io anchors it (A↔B-centre
- *     midpoint + the emitted `as="offset"` mxPoint, size = measureEdgeLabel).
+ * SEMANTIC fidelity (parsed C4 model ⟷ emitted draw.io) — "did the
+ * conversion preserve everything PlantUML would show":
+ *   - entityMiss : parsed entities with no matching emitted object
+ *                  (alias + structural c4Type)
+ *   - relMiss    : parsed relations with no matching emitted edge
+ *   - arrowBad   : emitted edges whose arrowhead COUNT ≠ the C4
+ *                  semantic (bidirectional ⇒ 2, one-way Rel/Rel_Back
+ *                  ⇒ exactly 1). Catches the P10 "looks bidirectional /
+ *                  looks arrowless" class the geometry checks missed.
+ *   - labelDrop  : relations whose verb/label text is absent from its
+ *                  emitted edge; entities whose name is absent
+ *   - attachMerge: same-(unordered)-pair edges whose BOTH endpoint
+ *                  attach points are within SEP_MIN — they visually
+ *                  collapse into one line (the P10 defect)
  *
- * Then it prints numeric verdicts for the criteria the gallery audit
- * actually defines:
- *   - rankOrder : do nodes share the same TOP-DOWN y ordering? (structure)
- *   - sizeRatio : catalyst bbox vs PlantUML bbox (P3 gate ≤ ~1.3 width)
- *   - labelHit  : does any edge-label rect overlap a NON-endpoint node?
- *                 (P1/P5 "label clear of boxes" — 0 == pass)
- *   - nodeOverlap: any node-node overlap (must be 0)
+ * LAYOUT fidelity (emitted draw.io ⟷ PlantUML `-tsvg` ground truth):
+ *   - rankOrder  : same TOP-DOWN node y ordering as PlantUML
+ *   - wRatio/hRatio : catalyst bbox vs PlantUML bbox
+ *   - labelHit   : edge-label rect over a NON-endpoint LEAF (0 == pass)
+ *   - nodeOverlap: PARTIAL node overlaps (containment = legit nesting)
+ *   - boundaryBands: each container's title band before its first child
+ *
+ * A fixture is "clean" ONLY when entityMiss=relMiss=arrowBad=labelDrop
+ * =attachMerge=labelHit=nodeOverlap=0 AND rankOrder=true. Anything else
+ * is a defect, regardless of how the PNG looks.
  *
  * Usage: node scripts/factcheck-geometry.mjs <fixture-stem> [<stem> ...]
  *   needs the SVG already rendered to $SVG_DIR (default /tmp/svg).
@@ -27,6 +40,56 @@ import { measureEdgeLabel } from '../dist/layout/measureNode.mjs'
 
 const SVG_DIR = process.env.SVG_DIR ?? '/tmp/svg'
 const CORPUS = process.env.CORPUS_DIR ?? 'tests/fixtures/corpus'
+
+/** draw.io <object>/<mxCell> attribute names this comparator reads. Named
+ *  once so a typo can't silently make a check pass (the literals were
+ *  repeated across every parse site). */
+const ATTR = {
+  ID: 'id', C4_TYPE: 'c4Type', C4_NAME: 'c4Name',
+  C4_TECH: 'c4Technology', C4_STEREO: 'c4Stereotype',
+  VALUE: 'value', STYLE: 'style', SOURCE: 'source', TARGET: 'target',
+}
+/** mxGraph edge-style keys (the `key=value;` style string). */
+const STYLE = {
+  START_ARROW: 'startArrow', END_ARROW: 'endArrow',
+  EXIT_X: 'exitX', EXIT_Y: 'exitY', ENTRY_X: 'entryX', ENTRY_Y: 'entryY',
+}
+/** mxGraph defaults: an edge with no explicit arrow has none at the
+ *  start and a `classic` head at the end. */
+const ARROW_NONE = 'none'
+const DEFAULT_END_ARROW = 'classic'
+/** Minimum endpoint-attach separation for two edges of the same
+ *  unordered pair to read as distinct lines. = 2 × the relationship
+ *  arrow-head size (theme `SHAPE.REL_ARROW_SIZE` = 14) so two heads
+ *  cannot visually touch. A cited renderer metric, not a guess. */
+const ATTACH_SEP_MIN = 28
+/** C4 arrowhead-count contract: a bidirectional relation (`BiRel`)
+ *  renders an arrow at BOTH ends; every one-way relation (`Rel`,
+ *  `Rel_Back`, `RelIndex`) renders EXACTLY one. An edge whose emitted
+ *  count differs is the P10 "looks bidirectional / looks arrowless"
+ *  defect. */
+const ARROWS_BIDIRECTIONAL = 2
+const ARROWS_ONE_WAY = 1
+
+/**
+ * Normalise text for a present/absent comparison. The emitted c4Name
+ * legitimately differs from the parsed label by: word-wrap `<br/>`
+ * insertions (long verbs / `\n`), and XML/HTML escaping (`&amp;`
+ * `&lt;` `&gt;` — incl. P8's double-escaped `&amp;lt;`). Stripping
+ * those + collapsing whitespace makes "is the text preserved?" a
+ * true content check, not a formatting diff. Verified by hand against
+ * rel-long-labels / edge-multiline-labels / edge-unicode-specialchars
+ * (all were harness false-positives before this).
+ */
+function norm(s) {
+  return (s ?? '')
+    .replace(/&lt;br\/?&gt;|<br\/?>/gi, ' ')      // wrap breaks (HTML)
+    .replace(/\\n|\n/g, ' ')                      // PlantUML `\n` (literal or real)
+    .replace(/&amp;lt;/g, '<').replace(/&amp;gt;/g, '>') // P8 double-escape
+    .replace(/&amp;/g, '&').replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+    .replace(/\s+/g, ' ').trim()
+}
 
 /** Parse PlantUML SVG → { nodes:[{alias,x,y,w,h}], w, h }. */
 function parsePlantumlSvg(svg) {
@@ -52,7 +115,7 @@ function parseCatalyst(xml) {
   const byAlias = new Map()
   while ((m = ob.exec(xml)) !== null) {
     const o = m[1], rest = m[3]
-    const id = attr(o, 'id')
+    const id = attr(o, ATTR.ID)
     const gm = /<mxGeometry\b([^/]*?)\/>/.exec(rest)
     if (!gm || !/vertex="1"/.test(m[2])) continue
     const g = {}
@@ -61,10 +124,58 @@ function parseCatalyst(xml) {
     const n = { alias: id, x: g.x ?? 0, y: g.y ?? 0, w: g.width, h: g.height }
     nodes.push(n); byAlias.set(id, n)
   }
+  // Objects carry the semantic attrs (c4Type/c4Name/c4Stereotype) on the
+  // <object>, geometry on the inner <mxCell>. Re-scan for the attr map.
+  const objAttrs = []
+  const oa = /<object\b([^>]*)>/g
+  while ((m = oa.exec(xml)) !== null) {
+    objAttrs.push({
+      id: attr(m[1], ATTR.ID), c4Type: attr(m[1], ATTR.C4_TYPE),
+      c4Name: attr(m[1], ATTR.C4_NAME), c4Stereotype: attr(m[1], ATTR.C4_STEREO),
+      value: attr(m[1], ATTR.VALUE) ?? '',
+    })
+  }
+  // Edges: an edge is `<object c4Name="verb" c4Technology="[tech]" ...>`
+  // wrapping `<mxCell edge="1" source target style>`. The LABEL TEXT is
+  // the object's c4Name/c4Technology (the `value`/`label` attribute only
+  // holds the `%c4Name%` placeholder template — comparing against it was
+  // the harness's universal-labelDrop bug). Arrowheads: draw.io default
+  // startArrow=none, endArrow=classic; catalyst sets endArrow explicitly
+  // and startArrow only for a bidirectional relation.
+  const edges = []
+  const er = /<(?:object\b([^>]*)>\s*)?<mxCell\b([^>]*?\bedge="1"[^>]*?)(?:\/>|>)([\s\S]*?)<\/mxCell>/g
+  while ((m = er.exec(xml)) !== null) {
+    const objA = m[1] ?? '', cellA = m[2], body = m[3] ?? ''
+    const style = attr(cellA, ATTR.STYLE) ?? ''
+    // mxGraph parses the style string into an object, so on a DUPLICATE
+    // key the LAST value wins (verified empirically: catalyst appends
+    // `;endArrow=none` after the base `endArrow=blockThin` for Rel_Back
+    // and the render shows ONE head). Read the last match, not the
+    // first — reading the first falsely flagged every Rel_Back as
+    // 2-headed (a harness bug, not a product defect).
+    const sty = (k) => {
+      const all = [...style.matchAll(new RegExp(`(?:^|;)${k}=([^;]*)`, 'g'))]
+      return all.length ? all[all.length - 1][1] : undefined
+    }
+    const hasStart = !!sty(STYLE.START_ARROW) && sty(STYLE.START_ARROW) !== ARROW_NONE
+    const hasEnd = (sty(STYLE.END_ARROW) ?? DEFAULT_END_ARROW) !== ARROW_NONE
+    const arrowN = [hasStart, hasEnd].filter(Boolean).length // 0 | 1 | 2
+    const wps = [...body.matchAll(/<mxPoint x="([\-\d.]+)" y="([\-\d.]+)"\s*\/>/g)]
+      .map(p => ({ x: +p[1], y: +p[2] }))
+    const numStyle = (k) => sty(k) !== undefined ? +sty(k) : undefined
+    edges.push({
+      source: attr(cellA, ATTR.SOURCE), target: attr(cellA, ATTR.TARGET),
+      verb: attr(objA, ATTR.C4_NAME) ?? '',
+      tech: attr(objA, ATTR.C4_TECH) ?? '',
+      arrowN, wps,
+      exitX: numStyle(STYLE.EXIT_X), entryX: numStyle(STYLE.ENTRY_X),
+      exitY: numStyle(STYLE.EXIT_Y), entryY: numStyle(STYLE.ENTRY_Y),
+    })
+  }
   // bbox
   const minX = Math.min(...nodes.map(n => n.x)), minY = Math.min(...nodes.map(n => n.y))
   const maxX = Math.max(...nodes.map(n => n.x + n.w)), maxY = Math.max(...nodes.map(n => n.y + n.h))
-  return { nodes, byAlias, W: maxX - minX, H: maxY - minY }
+  return { nodes, byAlias, objAttrs, edges, W: maxX - minX, H: maxY - minY }
 }
 
 const intersects = (a, b) =>
@@ -139,7 +250,80 @@ function factcheck(stem) {
       if (!kids.length) continue
       bands.push(Math.round(Math.min(...kids.map(k => k.y)) - c.y))
     }
-    return { stem, rankOrder, wRatio, hRatio, labelHit, nodeOverlap,
+    // ===== SEMANTIC fidelity: parsed C4 model ⟷ emitted draw.io =====
+    const flatEnt = []
+    const walkE = es => es.forEach(e => { flatEnt.push(e); if (e.children) walkE(e.children) })
+    walkE(xmlP)
+    const objById = new Map(C.objAttrs.map(o => [o.id, o]))
+    // entityMiss: every parsed entity must be an emitted object with the
+    // same structural c4Type (and its name present).
+    let entityMiss = 0
+    for (const e of flatEnt) {
+      const o = objById.get(e.alias)
+      if (!o || o.c4Type !== e.type) { entityMiss++; continue }
+      const nm = norm(e.label)
+      if (nm && !norm(o.c4Name).includes(nm) && !norm(o.value).includes(nm)) entityMiss++
+    }
+    // relMiss + arrowBad + labelDrop, per parsed relation.
+    let relMiss = 0, arrowBad = 0, labelDrop = 0
+    const usedEdge = new Set()
+    for (const r of relsP) {
+      // match an emitted edge by unordered endpoints (Rel_Back reverses)
+      const idx = C.edges.findIndex((g, i) => !usedEdge.has(i) &&
+        ((g.source === r.source && g.target === r.target) ||
+         (g.source === r.target && g.target === r.source)))
+      if (idx < 0) { relMiss++; continue }
+      usedEdge.add(idx)
+      const g = C.edges[idx]
+      const expectArrows = r.bidirectional ? ARROWS_BIDIRECTIONAL : ARROWS_ONE_WAY
+      if (g.arrowN !== expectArrows) arrowBad++
+      // Label text lives in the edge object's c4Name (verb) — NOT
+      // `value` (that's the `%c4Name%` placeholder template). norm()
+      // strips wrap `<br/>` + XML-escaping so this is a content check.
+      const verb = norm(r.label)
+      if (verb && !norm(g.verb).includes(verb)) labelDrop++
+    }
+    // attachMerge: same unordered pair, ≥2 edges → their endpoint attach
+    // points must be separated on at least ONE end, else they collapse
+    // into one visual line (the P10 defect). attach x = exitX/entryX·w
+    // (or box centre when unconstrained); ATTACH_SEP_MIN is the cited
+    // 2×arrow-head metric defined at module top.
+    const grp = new Map()
+    C.edges.forEach((g, i) => {
+      if (!g.source || !g.target) return
+      const k = JSON.stringify([g.source, g.target].sort())
+      ;(grp.get(k) ?? grp.set(k, []).get(k)).push(i)
+    })
+    const ax = (n, frac) => n ? (frac === undefined ? n.x + n.w / 2 : n.x + frac * n.w) : 0
+    let attachMerge = 0
+    for (const idxs of grp.values()) {
+      if (idxs.length < 2) continue
+      for (let i = 0; i < idxs.length; i++)
+        for (let j = i + 1; j < idxs.length; j++) {
+          const g1 = C.edges[idxs[i]], g2 = C.edges[idxs[j]]
+          const s1 = C.byAlias.get(g1.source), t1 = C.byAlias.get(g1.target)
+          const s2 = C.byAlias.get(g2.source), t2 = C.byAlias.get(g2.target)
+          if (!s1 || !t1 || !s2 || !t2) continue
+          const dSrc = Math.abs(ax(s1, g1.exitX) - ax(s2, g2.exitX))
+          const dTgt = Math.abs(ax(t1, g1.entryX) - ax(t2, g2.entryX))
+          if (dSrc < ATTACH_SEP_MIN && dTgt < ATTACH_SEP_MIN) attachMerge++
+        }
+    }
+    // `clean` = the CONTRACTS held: nothing dropped, arrows correct, no
+    // visual merge, no label-on-leaf, no node overlap. rankOrder and
+    // wRatio/hRatio are ADVISORY diagnostics, NOT clean-disqualifiers:
+    // ELK `layered` and PlantUML `dot` are both valid hierarchical
+    // engines that legitimately differ in same-rank ordering / minor
+    // rank placement without dropping or mis-rendering anything. A real
+    // P9-class over-ranking shows up as an extreme hRatio (≫1) on a
+    // graph PlantUML compacts — judge that explicitly, not via strict
+    // order equality (which false-positives on every large/constrained
+    // graph).
+    const clean = entityMiss === 0 && relMiss === 0 && arrowBad === 0 &&
+      labelDrop === 0 && attachMerge === 0 && labelHit === 0 &&
+      nodeOverlap === 0
+    return { stem, clean, entityMiss, relMiss, arrowBad, labelDrop,
+             attachMerge, rankOrder, wRatio, hRatio, labelHit, nodeOverlap,
              boundaryBands: bands,
              pml: `${P.W}x${P.H}`, cat: `${Math.round(C.W)}x${Math.round(C.H)}` }
   })

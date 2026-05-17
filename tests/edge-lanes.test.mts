@@ -74,6 +74,46 @@ describe('assignEdgeLanes', () => {
     expect(w1.shift).toBe(22);
   });
 
+  it('P10: each lane gets DISTINCT box-border attach points (no centre merge)', () => {
+    // A=(0,0) B=(0,100), 160×80. Vertically stacked ⇒ edges leave/enter
+    // the top/bottom border; the perpendicular spread is along X as a
+    // fraction of the 160-wide box. A→B exits A's BOTTOM (y=1) enters
+    // B's TOP (y=0); B→A is the mirror. The two antiparallel edges MUST
+    // attach at different X fractions (else they collapse to the centre
+    // — the P10 defect). centre 0.5 ± 22/160 = 0.3625 / 0.6375.
+    const [e0, e1] = [0, 1].map((i) => assignEdgeLanes(
+      [{ source: 'A', target: 'B' }, { source: 'B', target: 'A' }], AB(), never,
+    ).get(i)!);
+    // A→B: exit A bottom, enter B top
+    expect(e0.exit).toEqual({ x: 0.6375, y: 1 });
+    expect(e0.entry).toEqual({ x: 0.6375, y: 0 });
+    // B→A: exit B top, enter A bottom (mirrored fraction)
+    expect(e1.exit).toEqual({ x: 0.3625, y: 0 });
+    expect(e1.entry).toEqual({ x: 0.3625, y: 1 });
+    // the load-bearing property: distinct attach X ⇒ no visual merge
+    expect(e0.exit.x).not.toBe(e1.exit.x);
+    expect(Math.abs(e0.exit.x - e1.exit.x) * 160).toBeGreaterThanOrEqual(28); // ≥ ATTACH_SEP_MIN
+    // fractions are clamped onto the border
+    for (const e of [e0, e1])
+      for (const p of [e.exit, e.entry]) {
+        expect(p.x).toBeGreaterThanOrEqual(0); expect(p.x).toBeLessThanOrEqual(1);
+        expect(p.y).toBeGreaterThanOrEqual(0); expect(p.y).toBeLessThanOrEqual(1);
+      }
+  });
+
+  it('P10: a clamped lane pins to the border, never detaches outside', () => {
+    // 4 edges on a NARROW box ⇒ outer lanes would exceed the box; the
+    // fraction must clamp to [0,1] (corner) not go negative / >1.
+    const tiny = new Map([['A', { cx: 0, cy: 0, hw: 10, hh: 10 }],
+                          ['B', { cx: 0, cy: 200, hw: 10, hh: 10 }]]);
+    const ls = assignEdgeLanes([0, 1, 2, 3].map(() => ({ source: 'A', target: 'B' })), tiny, never);
+    for (const i of [0, 1, 2, 3]) {
+      const e = ls.get(i)!;
+      expect(e.exit.x).toBeGreaterThanOrEqual(0); expect(e.exit.x).toBeLessThanOrEqual(1);
+      expect(e.entry.x).toBeGreaterThanOrEqual(0); expect(e.entry.x).toBeLessThanOrEqual(1);
+    }
+  });
+
   it('≥3-edge group: symmetric fan, middle edge on the anchor', () => {
     const lanes = assignEdgeLanes(
       [{ source: 'A', target: 'B' }, { source: 'A', target: 'B' }, { source: 'B', target: 'A' }],
