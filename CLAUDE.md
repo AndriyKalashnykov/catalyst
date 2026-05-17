@@ -54,8 +54,9 @@ Standalone, independently-maintained library (no upstream; never add an
 
 ## Where things are
 
-- Layout: `src/layout/LayoutEngine.mts` (ELK; `layered`+`NETWORK_SIMPLEX`
-  for hierarchical, `stress`+`sporeOverlap` declump for Context;
+- Layout: `src/layout/LayoutEngine.mts` (ELK; **always**
+  `layered`+`NETWORK_SIMPLEX` — Context too, matching PlantUML/`dot`;
+  ADR 0008 superseded the old Context→`stress` branch;
   `titlePadding`, `leafWidths`/`edgeCap`), `src/layout/measureNode.mts`
   (`measureNode`, `measureEdgeLabel`), `src/layout/edgeLanes.mts`
   (`assignEdgeLanes` multi-edge fan, `resolveLabelOverlap` single-edge
@@ -74,7 +75,21 @@ Standalone, independently-maintained library (no upstream; never add an
 
 Everything below is researched, not speculative. Sizes are honest.
 
-> ▶ **RESUME HERE — session handoff 2026-05-16 (refreshed #2).**
+> ▶ **RESUME HERE — session handoff 2026-05-17.**
+> **P4 (diagonal/sparse) DONE** on branch
+> `fix/p4-context-layered-not-stress` (PR pending): root cause was the
+> Context→`stress` algorithm, not `C4_MIN`/spacing. Fact-checked vs
+> PlantUML ground truth (PlantUML = `dot` = hierarchical for Context
+> too), removed the whole stress/declump/`isHierarchical`/`context`
+> machinery, **always `layered`**. 324/324, ADR 0008, byte-scope
+> proven (15 Context changed, 5 hier byte-identical), render-compare
+> PASS. Next: open the PR + merge, then **P1** (multi-edge lane
+> label-orphan — partially improved by P4 but sync/callback labels
+> still flung), then P2/P3/P5(re-audit, likely resolved)/P6/P7/P8,
+> then **P4b** (box-emptiness, deferred), then sequence-diagram impl
+> (ADR 0007). Older handoff #2 history below for context.
+>
+> ▶ (prior) **session handoff 2026-05-16 (refreshed #2).**
 > All this-session PRs MERGED; `main` synced (`ce30c50`), 317/317.
 > Big backlog sweep done — #24-hier impl (#56), label-offset
 > scope-lock (#57), `Rel_Back` arrowhead reversal (#58), Boundary
@@ -477,31 +492,42 @@ the edge-label wrap width to a PlantUML-like narrow column
 (font-derived, not magic); re-feed ELK. Interacts with P4. Gate:
 re-rendered width within ~1.3× of `rel-long-labels.puml.png`.
 
-**P4 — SYSTEMIC: oversized boxes / sparse + diagonal layout
-(CROSS-CUTTING, highest leverage).** Visible in ~every fixture:
-catalyst element boxes are dramatically larger and the layout far
-sparser/diagonal vs PlantUML's compact straight layout (clearest:
-`topology-linear-chain.{puml,drawio}.png` straight column vs diagonal
-staircase; `rel-layout-constraints.*`; amplifies P3 + P6). This single
-trait is the upstream amplifier of the long-label blow-up (P3), the
-nested-boundary title collisions (P6), the “feels too big” README/
-gallery sizing (#64/#65), and the diagonal-chain aesthetic. Root-cause
-hypo: `C4_MIN` per-type floor sizes and/or ELK node/edge spacing are
-too generous vs PlantUML; `NETWORK_SIMPLEX` staggers when over-spaced.
-Approach: investigate `C4_MIN` (`src/mx/c4/theme.mts`) + ELK
-`spacing.*` vs PlantUML's actual box metrics; spike a tighter floor +
-spacing and re-gate the WHOLE gallery byte+visual (high blast radius —
-golden/parity are topology-only so safe, but render-compare ALL 20).
-Fixing P4 should cascade-improve P3/P6 and the chain aesthetic.
-Highest-leverage investigation; do FIRST (others may shrink).
+**P4 — ✅ DIAGONAL/SPARSE DONE (PR pending, ADR 0008); P4b box-size
+residual deferred.** Root cause of the diagonal staircase + sparse
+scatter was NOT `C4_MIN`/spacing — it was the algorithm: a
+people/systems-only diagram was classified "Context" and laid out with
+`org.eclipse.elk.stress`+`sporeOverlap`, which force-directs a chain
+into a staircase and a hub into a scatter. **Fact-checked against the
+PlantUML ground truth: PlantUML renders Context with Graphviz `dot`
+(hierarchical ranking) too — it does NOT force-direct and does NOT
+avoid the ribbon.** The "Context ribbons under layered like
+PlantUML/dot" premise was empirically false. Fix: removed the Context
+`stress` branch, `declump`, `isHierarchical()`,
+`LayoutResult.context`, and the now-unreachable #24 centre-waypoint
+emit block; **always `layered`**. Spike: `topology-linear-chain`
+x-spread 132→0
+(column); render-compare: hub-spoke 3-rank, wide-rank ribbon, cyclic
+ranked+back-edge — all now match PlantUML. Byte-scope: exactly the 15
+former-Context fixtures changed, the 5 hierarchical byte-identical
+(zero hier regression). 324/324; `context-stress.test`→
+`context-layered.test` (locks: chain=column, hub ranks below targets,
+zero overlap, deterministic). **P4b (deferred, separate PR):** boxes
+still look empty — `C4_MIN` per-type floor (a documented C4-PlantUML/
+Structurizr convention, see `theme.mts` provenance) + `verticalAlign=
+top` leave whitespace below short content. This is a cross-cutting
+visual change touching ALL 20 fixtures + a documented constant; needs
+its own byte+render-compare gate and a fact-check of PlantUML's actual
+box metrics before shrinking the floor (memory `no-guesses` warns
+shrinking every box churns golden to chase a documented constant).
 
-**P5 — Context/stress hub label proximity (MEDIUM).**
-Images: `topology-hub-spoke.{puml,drawio}.png` (`publishes`/`routes
-to` crammed around the Event Bus hub), `topology-wide-rank.*` (dispatch
-label tightness in the radial). The #24 Context work helped solo edges
-but dense radial hubs still cluster labels. Approach: extend the #24
-resolveLabelOverlap / lane offset to the radial-hub many-edge case.
-Gate: re-rendered hub labels clear of the hub box + each other.
+**P5 — hub label proximity (MEDIUM; RE-AUDIT post-P4 — likely
+largely resolved).** The "Context/stress radial hub" framing is
+OBSOLETE (P4/ADR 0008 removed stress; hub-spoke now ranks cleanly
+3-rank like PlantUML, labels sit on vertical edges). Re-render
+`topology-hub-spoke.{puml,drawio}.png` + `topology-wide-rank.*` and
+re-judge: P4 appears to have resolved most of this. Any residual is
+now a `layered` edge-label spacing question (not radial-hub), gate vs
+PlantUML.
 
 **P6 — Nested-boundary title clearance residual (MEDIUM, #25-class).**
 Image: `topology-deep-nesting.{puml,drawio}.png`. Nested boundary

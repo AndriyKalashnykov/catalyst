@@ -6,6 +6,26 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 This project adheres to [Keep a CHANGELOG](http://keepachangelog.com/).
 
+## [Unreleased]
+
+### Changed
+
+- **Context diagrams now use the same `layered` (Graphviz-`dot`-style)
+  hierarchical ranking as every other C4 diagram type** — the
+  people/systems-only `org.eclipse.elk.stress` + `sporeOverlap` branch
+  is removed (ADR 0008, supersedes ADR 0005). PlantUML renders Context
+  with `dot` (hierarchical ranking) too; the prior premise that
+  "Context ribbons under `layered` like PlantUML/dot" was empirically
+  false. `stress` diverged from PlantUML in every Context shape: it
+  staircased linear chains, scattered hub-and-spoke, and radial-ised
+  the wide rank PlantUML embraces. `layered` reproduces PlantUML's
+  column / 3-rank / ribbon / ranked-cycle exactly. Hierarchical
+  diagrams are byte-identical (zero regression); only the 15
+  former-Context corpus fixtures change, all toward PlantUML fidelity.
+  Removed the now-dead `declump()`, `isHierarchical()`,
+  `LayoutResult.context` flag, and the unreachable `#24`
+  centre-waypoint emit block.
+
 ## [1.6.1] - 2026-05-16
 
 ### Fixed

@@ -169,30 +169,28 @@ The parity test asserts: every entity → a shape with matching `c4Type`; every 
 
 ### Layout fidelity (L1–L5) — engine: elkjs (Eclipse Layout Kernel)
 
-dagre 3.0.0 was replaced by **elkjs**: its documented option surface (wiki + spike) has no aspect/wrapping/same-rank/in-layer-order control; elkjs does. Algorithm is chosen per the **C4 spec level** of the source (a semantic fact, not a heuristic):
+dagre 3.0.0 was replaced by **elkjs**: its documented option surface (wiki + spike) has no aspect/wrapping/same-rank/in-layer-order control; elkjs does. **Every** C4 diagram type — Context included — uses one algorithm, matching PlantUML's own Graphviz `dot` (ADR 0008, supersedes 0005):
 
-- **Hierarchical** → `org.eclipse.elk.layered` (flow + orthogonal
-  routing + compound nesting). Triggered by EITHER (a) a
-  Container/Component/Node/Deployment_Node entity, OR (b) a **nested
-  compound** — a boundary inside a boundary (#25: only `layered`
-  honors `elk.padding` for nested-compound title bands; `stress`
-  ignores it).
-- **Context** (people/systems only, ≤1-level boundaries — hub-and-
-  spoke) → `org.eclipse.elk.stress` + an `org.eclipse.elk.sporeOverlap`
-  declump post-pass (deterministic, crossing-minimal, zero node
-  overlap — replaced the old seed-based `force`). Non-laned solo
-  Context edges get a catalyst-emitted centre-midpoint waypoint so
-  drawio routes deterministically and labels anchor predictably
-  (#24); laned/antiparallel edges use the lane waypoint+offset fan.
+- **Always `org.eclipse.elk.layered`** (flow + orthogonal routing +
+  compound nesting + `NETWORK_SIMPLEX` placement). PlantUML renders
+  every C4 level with `dot` (hierarchical ranking); ELK `layered` is
+  the same family, so catalyst reproduces PlantUML's column / rank /
+  ribbon / ranked-cycle in every case. The old people/systems→`stress`
+  +`sporeOverlap` Context branch was removed: it diverged from
+  PlantUML in every Context shape (chain→staircase, hub→scatter,
+  wide→radial). `layered` is overlap-free by construction, so no
+  declump pass is needed. Edges (Context and hierarchical alike) carry
+  ELK-computed ORTHOGONAL `sections`; laned/antiparallel edges use the
+  lane waypoint+offset fan.
 
 | Item | State |
 |---|---|
 | **L1 U/D** | ✓ (layered path) — engine-agnostic edge reversal ranks the target above/below |
 | **L1 L/R** | ~ honored only when the two nodes already land on the same rank (safe post-pass; cross-rank L/R is impossible in any layered engine incl. PlantUML/dot). Parsed + fed as ELK model-order influence otherwise |
-| **L2 edge routing** | ✓ layered: ELK-computed `sections` → drawio waypoints; Context (`stress`): catalyst-emitted centre-midpoint waypoint for non-laned solo edges (#24) + lane fan for laned/antiparallel |
+| **L2 edge routing** | ✓ ELK-computed `sections` → drawio waypoints (all diagram types, `layered`); laned/antiparallel edges use the lane waypoint+offset fan; multi-bend non-laned edges re-seat the label onto ELK's reserved rect (#56) |
 | **L3 node sizing** | ✓ real font metrics — fontkit + bundled Liberation Sans (no estimated ratios) |
 | **L4 nesting** | ✓ ELK native hierarchical/compound (boundaries, Deployment_Node), any depth |
-| **L5 aspect** | ✓ spec-driven `stress`/`layered` selection (the wide-star ribbon is fixed) |
+| **L5 aspect** | ✓ always `layered` — matches PlantUML/`dot` exactly, including the wide-rank ribbon PlantUML itself embraces (ADR 0008) |
 
 ### Tier 2 — remaining visual fidelity
 

@@ -62,3 +62,20 @@ release-chain step (the BLOCKING visual acceptance gate).
   change, zero emit-model change, zero regression (full-corpus spike).
   README layout-engine line + ADR-0006 + CHANGELOG. Local visual gate
   PASS on ibm-wm c4-container (44→30 crossings, containment correct).
+- P4 (Context `stress` → **always `layered`**; supersedes Phase 3 /
+  ADR-0005): done — PR pending. The gallery audit's "oversized/sparse/
+  diagonal" P4 was root-caused NOT to `C4_MIN`/spacing but to the
+  Context→`stress` algorithm. Fact-checked vs the PlantUML ground
+  truth: PlantUML renders Context with Graphviz `dot` (hierarchical
+  ranking) — it does NOT force-direct and does NOT avoid the ribbon,
+  so the "Context ribbons under layered like PlantUML/dot" premise of
+  ADR-0005 was empirically false. Removed the entire stress/declump/
+  `isHierarchical`/`LayoutResult.context`/#24-centre-waypoint
+  machinery; always `layered`. Spike: `topology-linear-chain`
+  x-spread 132→0. Byte-scope: 15 former-Context fixtures changed, 5
+  hierarchical byte-identical (zero hier regression). 324/324;
+  `context-stress.test`→`context-layered.test`. ADR-0008; C4-COVERAGE
+  L1–L5 + algorithm prose corrected; CLAUDE.md. Render-compare gate
+  PASS — every Context fixture now matches PlantUML's column/3-rank/
+  ribbon/ranked-cycle. P4b (box-emptiness from the documented
+  `C4_MIN` floor) carved off as a separate deferred PR.
