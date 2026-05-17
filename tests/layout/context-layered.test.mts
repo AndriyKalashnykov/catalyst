@@ -82,6 +82,27 @@ describe('Context uses layered ranking (PlantUML/dot fidelity, ADR 0008)', () =>
     }
   })
 
+  it('P9: a 2-cycle (a↔c) compacts to TWO ranks, not a 3-rank chain', async () => {
+    // ELK's default GREEDY cycle-breaking spread a↔c (Rel(a,c)+Rel(c,a))
+    // plus a→b across THREE ranks; PlantUML/dot keeps it to two (a on
+    // one rank; b & c the next). cycleBreaking=DEPTH_FIRST reproduces
+    // dot. Assert the rendered layout has at most TWO distinct ranks
+    // for this graph (3 ranks ⇒ the over-rank regressed).
+    const ents = ['a', 'b', 'c'].map((id) => ({
+      type: 'System', alias: id, label: id.toUpperCase(),
+      technology: '', description: '',
+    }))
+    const rels = [
+      { source: 'a', target: 'b', label: 'syncs', description: '' },
+      { source: 'a', target: 'c', label: 'calls', description: '' },
+      { source: 'c', target: 'a', label: 'callbacks', description: '' },
+    ]
+    const r = await LayoutEngine.calculateLayout(ents, rels)
+    const ranks = new Set(r.nodes.map((n) => Math.round(n.y!)))
+    expect(ranks.size, `a↔c 2-cycle must be ≤2 ranks (got ${ranks.size}: ${[...ranks].sort((x, y) => x - y)})`)
+      .toBeLessThanOrEqual(2)
+  })
+
   it('a Context layout produces deterministic geometry (re-run is identical)', async () => {
     // `stress`/`force` were seed-sensitive; `layered` is deterministic,
     // which is what keeps the golden/route-signature gates stable.
