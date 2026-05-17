@@ -34,11 +34,19 @@ import { Catalyst } from '../dist/catalyst.mjs';
 const PLANTUML_VERSION = process.env.PLANTUML_VERSION ?? '1.2026.2';
 const DRAWIO_IMAGE = process.env.DRAWIO_EXPORT_IMAGE ?? 'rlespinasse/drawio-export:v4.51.0';
 const DRAWIO_SCALE = process.env.DRAWIO_EXPORT_SCALE ?? '2';
-// Regenerate ONLY docs/gallery/README.md from the already-rendered
-// images (skip the java/docker render + catalyst convert). Lets a
-// markdown-template change (e.g. P13's embed-width tweak) regenerate
-// deterministically with ZERO committed-PNG churn — no re-render.
+// GALLERY_MD_ONLY=1  — regenerate ONLY docs/gallery/README.md from the
+//   already-rendered images (skip java/docker render + catalyst
+//   convert). For a markdown-template change with ZERO PNG churn.
+// GALLERY_DRAWIO_ONLY=1 — regenerate ONLY the catalyst .drawio XML
+//   (step 2). Pure node, deterministic, NO java/docker — this is the
+//   `make gallery-verify` / CI drift gate: the .drawio IS the emit
+//   output, so an emit change that didn't refresh the gallery shows
+//   as a `git diff` here (the P4b-class stale-artifact defect).
 const MD_ONLY = process.env.GALLERY_MD_ONLY === '1';
+const DRAWIO_ONLY = process.env.GALLERY_DRAWIO_ONLY === '1';
+// step 1 (PlantUML render) + step 3 (drawio-export) need java/docker;
+// run them only for a full `make gallery`.
+const RENDER = !MD_ONLY && !DRAWIO_ONLY;
 const CORPUS_DIR = resolve(process.env.CORPUS_DIR ?? 'tests/fixtures/corpus');
 const OUT = resolve(process.env.GALLERY_OUT ?? 'docs/gallery');
 const IMG = join(OUT, 'img');
@@ -64,9 +72,10 @@ if (fixtures.length === 0) {
   process.exit(1);
 }
 
-if (MD_ONLY) {
-  console.log('· GALLERY_MD_ONLY=1 — regenerating README.md from existing images (no render)');
-} else {
+if (MD_ONLY) console.log('· GALLERY_MD_ONLY=1 — README only (no render, no convert)');
+if (DRAWIO_ONLY) console.log('· GALLERY_DRAWIO_ONLY=1 — .drawio only (drift gate; no java/docker)');
+
+if (RENDER) {
 // 1. PlantUML: render the whole corpus dir in one JVM invocation.
 const jar = process.env.PLANTUML_JAR ?? join(OUT, 'plantuml.jar');
 if (!existsSync(jar)) {
@@ -85,15 +94,21 @@ for (const f of fixtures) {
     renameSync(produced, join(IMG, `${stem}.puml.png`));
   }
 }
+}
 
-// 2. catalyst: puml -> drawio for every fixture.
+// 2. catalyst: puml -> drawio for every fixture. Runs for a full
+//    render AND the drift gate (GALLERY_DRAWIO_ONLY); skipped only for
+//    the README-only mode.
+if (!MD_ONLY) {
 console.log('· converting puml -> drawio (catalyst)');
 for (const f of fixtures) {
   const stem = basename(f, '.puml');
   const xml = await Catalyst.convert(readFileSync(join(CORPUS_DIR, f), 'utf-8'));
   writeFileSync(join(DRAWIO_DIR, `${stem}.drawio`), xml);
 }
+}
 
+if (RENDER) {
 // 3. draw.io: render every .drawio in one container run (folder input).
 //    The container runs as root and writes a root-owned `export/` dir, so its
 //    lifecycle is managed root-side (a node rmSync would EACCES).
@@ -120,6 +135,13 @@ for (const f of fixtures) {
 }
 cleanExport();
 }
+
+// The drift gate stops here: it only needs the regenerated .drawio
+// (step 2) to `git diff` against the committed copies.
+if (DRAWIO_ONLY) {
+  console.log(`· GALLERY_DRAWIO_ONLY — wrote ${fixtures.length} .drawio to ${DRAWIO_DIR}`);
+  console.log('  (drift gate: `git diff --exit-code -- docs/gallery/drawio`)');
+} else {
 
 // 4. Gallery README — grouped by class, both images side by side.
 const lines = [];
@@ -190,3 +212,4 @@ writeFileSync(
 
 console.log(`\ngallery: ${join(OUT, 'README.md')}`);
 console.log(`  ${fixtures.length} fixtures · images in ${IMG} · drawio in ${DRAWIO_DIR}`);
+}

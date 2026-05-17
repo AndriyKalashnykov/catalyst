@@ -15,8 +15,16 @@ Standalone, independently-maintained library (no upstream; never add an
 - `npm run lint` (oxlint) + `npm run mdlint` (markdownlint; **MD007 wants
   4-space nested-list indent — never 2**, it bit the CHANGELOG repeatedly).
 - `npm run test:coverage` — CI gate, thresholds 85 % (currently ≈97 %).
-- `make ci` = build+lint+test; `make ci-run` = the real `.github/workflows/
-  ci.yml` via mise-managed `act` (Docker needed).
+- `make ci` = build+lint+test+**gallery-verify**; `make ci-run` = the
+  real `.github/workflows/ci.yml` via mise-managed `act` (Docker needed).
+- **`make gallery-verify` — deterministic gallery drift gate** (also a
+  `ci.yml` `test` step). Regenerates `docs/gallery/drawio/*.drawio`
+  (`GALLERY_DRAWIO_ONLY=1`, pure node, no java/docker) and fails on any
+  diff vs committed. ANY emit/template change ⇒ run **`make gallery`**
+  (full java+docker re-render) and commit the refresh, or this gate
+  (and CI) fails. Prevents the P4b-class defect: emit fixed but the
+  committed gallery left advertising the old output. PNG freshness is
+  NOT gated (needs docker) — the `.drawio` is the deterministic root.
 - **`make factcheck` — the NO-EYEBALLING fidelity gate (run it for any
   geometry/emit change).** Audits ALL puml→drawio conversions — the
   20-fixture gallery corpus AND the 6 canonical C4-PlantUML-spec
