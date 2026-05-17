@@ -102,9 +102,15 @@ Completed-work root-cause prose lives in git history + ADRs +
 > ▶ **RESUME HERE — session handoff 2026-05-17 (refreshed #6).**
 > `make factcheck` is THE gate (numeric PlantUML→drawio comparator,
 > ALL 26 conversions vs `-tsvg`; NO eyeballing — every visual claim
-> cites a metric). Repo AUTO-MERGES PRs on green CI: branch from
-> fresh `origin/main` → push → `gh pr create` → `git reset --hard
-> origin/main` for the next. **Operating discipline (user, emphatic):
+> cites a metric). **NO auto-merge is configured** (verified
+> 2026-05-17: only `ci.yml`, no `gh pr merge --auto` /
+> `enablePullRequestAutoMerge` anywhere, repo `autoMergeRequest`
+> null — the earlier "repo auto-merges" claim was false and
+> propagated unverified). Per-PR flow: branch from fresh
+> `origin/main` → push → `gh pr create` → wait for CI green →
+> **explicit `gh pr merge <n> --squash --delete-branch`** → `git
+> fetch --prune && git reset --hard origin/main` for the next.
+> **Operating discipline (user, emphatic):
 > real fact-based fixes ONLY, no guesses/workarounds; fact-check
 > before AND after via version-exact docs + the tool's own registry;
 > a gate's pass is read ONLY from its own `rc=$?` on its own line —
