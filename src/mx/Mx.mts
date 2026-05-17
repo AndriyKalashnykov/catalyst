@@ -19,6 +19,12 @@ import { PersonExt } from './c4/PersonExt.mjs';
 import { Boundary } from './c4/Boundary.mjs';
 import { EnterpriseBoundary } from './c4/EnterpriseBoundary.mjs';
 import { boundaryLegend } from './c4/boundaryLegend.mjs';
+import { SystemDbExt } from './c4/SystemDbExt.mjs';
+import { ContainerDbExt } from './c4/ContainerDbExt.mjs';
+import { ComponentDbExt } from './c4/ComponentDbExt.mjs';
+import { SystemQueueExt } from './c4/SystemQueueExt.mjs';
+import { ContainerQueueExt } from './c4/ContainerQueueExt.mjs';
+import { ComponentQueueExt } from './c4/ComponentQueueExt.mjs';
 import { DeploymentNode } from './c4/DeploymentNode.mjs';
 import { Relastionship } from './c4/Relationship.mjs';
 import { StyleParser } from '../puml/StyleParser.mjs';
@@ -141,13 +147,19 @@ class Mx {
                 style = SystemQueue.style()
                 break;
             case 'System_Ext':
-            case 'SystemDb_Ext':
-            case 'SystemQueue_Ext':
-                // Grey external variants — could further diverge DB/Queue shapes
-                // but the spec's upstream skinparam-based styling collapses them
-                // into the same grey rectangle in most renderers.
                 label = await SystemExt.label()
                 style = SystemExt.style()
+                break;
+            case 'SystemDb_Ext':
+                // C4-PlantUML keeps the DATABASE (cylinder) shape for the
+                // external variant — only the colour goes grey. Was
+                // flattened to the SystemExt rectangle (lost the cylinder).
+                label = await SystemDbExt.label()
+                style = SystemDbExt.style()
+                break;
+            case 'SystemQueue_Ext':
+                label = await SystemQueueExt.label()
+                style = SystemQueueExt.style()
                 break;
 
             // --- Containers ---
@@ -164,10 +176,16 @@ class Mx {
                 style = ContainerQueue.style()
                 break;
             case 'Container_Ext':
-            case 'ContainerDb_Ext':
-            case 'ContainerQueue_Ext':
                 label = await ContainerExt.label()
                 style = ContainerExt.style()
+                break;
+            case 'ContainerDb_Ext':
+                label = await ContainerDbExt.label()
+                style = ContainerDbExt.style()
+                break;
+            case 'ContainerQueue_Ext':
+                label = await ContainerQueueExt.label()
+                style = ContainerQueueExt.style()
                 break;
 
             // --- Components ---
@@ -184,10 +202,16 @@ class Mx {
                 style = ComponentQueue.style()
                 break;
             case 'Component_Ext':
-            case 'ComponentDb_Ext':
-            case 'ComponentQueue_Ext':
                 label = await ComponentExt.label()
                 style = ComponentExt.style()
+                break;
+            case 'ComponentDb_Ext':
+                label = await ComponentDbExt.label()
+                style = ComponentDbExt.style()
+                break;
+            case 'ComponentQueue_Ext':
+                label = await ComponentQueueExt.label()
+                style = ComponentQueueExt.style()
                 break;
 
             // --- Deployment level ---

@@ -193,13 +193,29 @@ dagre 3.0.0 was replaced by **elkjs**: its documented option surface (wiki + spi
 
 ### Tier 2 — remaining visual fidelity
 
-1. Per-type **colour** distinction for the `~` rows: `SystemDb`/
-   `ComponentDb` (own `cylinder3` templates, ContainerDb-family
-   colour), `*Queue` (own `mxgraph.c4.queue` shape, shared colour),
-   and the `_Ext` variants (`SystemDb_Ext`/`ContainerDb_Ext` lose the
-   cylinder → grey `SystemExt`). The shapes are dedicated now; only
-   the per-type fill/stroke colour is shared — that is the residual
-   `~`.
+1. DB/Queue colour + `_Ext` shape — ✓ **FIXED 2026-05-16**.
+   Fact-checked + render-verified against pinned C4-PlantUML v2.13.0
+   (`C4_Container.puml`): `ContainerDb`/`ContainerQueue`/`Container`
+   carry the **same** `$CONTAINER_BG_COLOR` — Db/Queue-ness is the
+   SHAPE, not the colour; likewise per System/Component level. The
+   earlier claim ("`SystemDb`/`ComponentDb` use ContainerDb-family
+   colour; only per-type colour is shared") was **stale/false**:
+   `SystemDb`→`SYSTEM_*`, `ContainerDb`→`CONTAINER_*`,
+   `ComponentDb`→`COMPONENT_*` were already correct per-level (code-
+   traced + render-verified). The genuine residual was the `_Ext`
+   variants: `SystemDb_Ext`/`ContainerDb_Ext`/`ComponentDb_Ext` and
+   the `*Queue_Ext` trio were flattened to the grey `*Ext` RECTANGLE,
+   losing the cylinder/queue shape PlantUML keeps (grey-coloured).
+   Fixed: 6 dedicated `*DbExt`/`*QueueExt` templates (cylinder3 /
+   `mxgraph.c4.queue` + the matching `*_EXT` palette), routed in
+   `Mx.mts`; `measureNode` `CYLINDER3_TYPES` extended to the 3
+   `*Db_Ext` so the cap is reserved (no text clip). render-compare:
+   `ContainerDb_Ext` is now a grey cylinder matching PlantUML. Zero
+   corpus-fixture impact (none use these types); `c4Type` attribute
+   unchanged so golden/parity untouched. (The `mxgraph.c4.queue`
+   shape itself falls back to a rectangle in drawio-export for BOTH
+   `_Ext` and non-`_Ext` queues — a pre-existing, consistent,
+   separate export-library limitation, not part of this gap.)
 2. Boundary type subtitle — ✓ **FIXED 2026-05-16**. Fact-checked
    against pinned C4-PlantUML v2.13.0 (`C4.puml`/`C4_Context.puml`/
    `C4_Container.puml`): `System_/Container_/Enterprise_Boundary` all
