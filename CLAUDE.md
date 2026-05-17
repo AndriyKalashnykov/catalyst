@@ -155,14 +155,13 @@ Completed-work root-cause prose lives in git history + ADRs +
 >
 > ### ▶▶ NEXT SESSION (priority order)
 >
-> 1. **P13 — gallery column-width uniformity** (user-requested;
->    presentation-only, must NOT perturb the emit path / factcheck —
->    see the `[ ]` durable item below). Self-contained, lower risk.
-> 2. **Sequence diagrams** (#12, ADR 0007) — largest; new non-ELK
+> 1. **Sequence diagrams** (#12, ADR 0007) — largest; new non-ELK
 >    subsystem, phased per the durable item below; MUST ship with
 >    factcheck coverage (lifelines/messages/order).
-> 3. C4 surface TRUE residuals (`$sprite`, sketch, legend, dropped
+> 2. C4 surface TRUE residuals (`$sprite`, sketch, legend, dropped
 >    `note`) — low/opportunistic.
+> (P13 ✅ DONE 2026-05-17 — gallery emits uniform `<img width="420">`;
+> `docs/research/p13-gallery-uniformity.md`. P4b ✅ DONE this session.)
 > Re-confirm P1/P3/P5/P7 status against the post-P4b gallery before
 > spiking them — content-fit re-sized every box, so the
 > defect-catalog below may have shifted (re-render + re-judge via
@@ -192,23 +191,22 @@ Completed-work root-cause prose lives in git history + ADRs +
 >   byte-identical vs `origin/main`).
 > - **#17** (#82) — ✅ DONE 2026-05-17. `docs/FACTCHECK-COVERAGE.md`
 >   geometry-path↔harness-check coverage matrix.
-> - [ ] **P13 — gallery page column-width uniformity (user-requested
->   2026-05-17).** On `docs/gallery/` the per-fixture "Source PlantUML"
->   vs "catalyst → draw.io" image pair currently renders at wildly
->   different widths across use cases (e.g. topology-wide-rank is very
->   wide, topology-linear-chain very narrow), so the page reads ragged.
->   GOAL: every fixture's two embedded images occupy the SAME width
->   column-to-column down the page (and ideally the two within a pair
->   match each other). Needs smart scaling — of the rendered nodes
->   and/or of the embedded `<img>` sizing (note `md-image-embedding`:
->   ~26× corpus aspect spread, scale-2 PNGs, gallery is
->   `scripts/gallery.mjs`-generated). RESEARCH how the field solves
->   non-uniform diagram-grid layouts (fixed-width thumbnails +
->   object-fit, per-image normalized scale, max-width container,
->   aspect-ratio boxes), spike ≥2 approaches, compare results
->   side-by-side, implement the best. Gate: regenerated gallery is
->   visually uniform-width; no factcheck/geometry change (presentation
->   only — must not perturb the emit path).
+> - [x] **P13 — gallery column-width uniformity ✅ DONE 2026-05-17.**
+>   Fact-checked the dominant constraint (GitHub strips `style=`/CSS
+>   ⇒ no object-fit/max-height/aspect-box; only the width|height attr
+>   bounds an image, one axis). Researched + weighted-compared 4
+>   approaches (`docs/research/p13-gallery-uniformity.md`); winner =
+>   uniform `<img width="420">` (every column + pair widths exactly
+>   420 px; ~½ scale-2 median ⇒ crisp; tall renders tall = the
+>   explicit accepted trade). Letterbox-to-tiles rejected on scope
+>   (image dep + 40-PNG churn for height-uniformity the user did not
+>   ask for). Diff confined to `scripts/gallery.mjs` (embed line +
+>   new `GALLERY_MD_ONLY=1` zero-churn regen path) + regenerated
+>   `docs/gallery/README.md`; NO `src/`, NO `docs/gallery/img/`
+>   change. Gate: factcheck CLEAN 26/26 (emit path untouched),
+>   lint+mdlint clean, 362 tests. Memory `md-image-embedding` updated
+>   to record the gallery-specific override (bound *width* here vs
+>   *height* for single-pair READMEs — axis is goal-specific).
 > - **Sequence diagrams** (#12, ADR 0007) — largest; MUST ship with
 >   factcheck coverage (lifelines/messages/order) per user directive.
 
