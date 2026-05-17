@@ -17,10 +17,27 @@ Standalone, independently-maintained library (no upstream; never add an
 - `npm run test:coverage` — CI gate, thresholds 85 % (currently ≈97 %).
 - `make ci` = build+lint+test; `make ci-run` = the real `.github/workflows/
   ci.yml` via mise-managed `act` (Docker needed).
-- Visual proof: `PLANTUML_VERSION=1.2026.2 RENDER_SRC=<puml> RENDER_OUT=<dir>
-  make render-compare` (java+docker; renders PlantUML PNG + catalyst→drawio
-  PNG side by side). `make gallery` renders the 20-fixture corpus into
-  `docs/gallery/`. Large PNGs: render at `DRAWIO_EXPORT_SCALE=1` to view.
+- **`make factcheck` — the NO-EYEBALLING fidelity gate (run it for any
+  geometry/emit change).** Renders every corpus fixture to PlantUML SVG
+  (the `-tsvg` vector ground truth) and runs
+  `scripts/factcheck-geometry.mjs`, a numeric PlantUML→drawio
+  comparator: `entityMiss / relMiss / arrowBad` (arrowhead count ≠ C4
+  semantic) `/ labelDrop / attachMerge` (same-pair edges collapsing)
+  `/ labelHit` (label over a non-endpoint leaf) `/ nodeOverlap /
+  boundaryBands`, plus advisory `rankOrder / wRatio / hRatio`. No args
+  → whole-corpus `CLEAN N/20` summary; `node scripts/factcheck-geometry.mjs
+  <stem>…` → per-fixture JSON. A fixture is "clean" ONLY when every
+  contract metric is 0. **Visual claims about a fixture MUST cite a
+  factcheck number, never a PNG eyeball** (the harness itself was built
+  by fact-checking and fixing each of its own false-positives — offset-
+  aware label anchor, mxGraph last-key style, `<br/>`/`\n`/XML-escape
+  normalisation, advisory rank-order). Needs java + a one-time
+  `make gallery` to fetch `plantuml.jar`.
+- Visual proof (corroborative only): `PLANTUML_VERSION=1.2026.2
+  RENDER_SRC=<puml> RENDER_OUT=<dir> make render-compare` (java+docker;
+  PlantUML PNG + catalyst→drawio PNG side by side). `make gallery`
+  renders the 20-fixture corpus into `docs/gallery/`. Large PNGs:
+  render at `DRAWIO_EXPORT_SCALE=1`.
 
 ## Non-negotiable discipline (this codebase + portfolio rules)
 

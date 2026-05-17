@@ -30,16 +30,36 @@
  * =attachMerge=labelHit=nodeOverlap=0 AND rankOrder=true. Anything else
  * is a defect, regardless of how the PNG looks.
  *
- * Usage: node scripts/factcheck-geometry.mjs <fixture-stem> [<stem> ...]
- *   needs the SVG already rendered to $SVG_DIR (default /tmp/svg).
+ * Usage:
+ *   make factcheck                       # whole corpus, renders SVG +
+ *                                        # prints `CLEAN N/20` (the gate)
+ *   node scripts/factcheck-geometry.mjs            # all fixtures, summary
+ *   node scripts/factcheck-geometry.mjs <stem> …   # per-fixture JSON
+ * Reads the PlantUML ground-truth SVG from $SVG_DIR (default /tmp/svg;
+ * `make factcheck` sets it to build/factcheck-svg and renders there).
+ * This is a SUPPORTED, repeatable gate — keep it green for every
+ * geometry/emit change; extend it (not a throwaway script) when a new
+ * fidelity contract is added.
  */
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { Catalyst } from '../dist/catalyst.mjs'
 import { measureEdgeLabel } from '../dist/layout/measureNode.mjs'
+// Reuse PRODUCTION code to find draw.io's label anchor: it places an
+// edge label at the cumulative-arc-length midpoint of the ROUTED
+// polyline, then the emitted `as="offset"` mxPoint displaces it. The
+// label-overlap check must use that true position, not the bare A↔B
+// midpoint (ignoring the offset falsely flagged every #56 re-seated
+// edge — a harness bug, not a product defect).
+import { polylineMidpoint } from '../dist/layout/edgeLanes.mjs'
 
 const SVG_DIR = process.env.SVG_DIR ?? '/tmp/svg'
 const CORPUS = process.env.CORPUS_DIR ?? 'tests/fixtures/corpus'
+/** File extensions / read encoding — named so the same string isn't
+ *  repeated at every readFileSync / fixture-enumeration site. */
+const PUML_EXT = '.puml'
+const SVG_EXT = '.svg'
+const ENC = 'utf8'
 
 /** draw.io <object>/<mxCell> attribute names this comparator reads. Named
  *  once so a typo can't silently make a check pass (the literals were
@@ -160,14 +180,19 @@ function parseCatalyst(xml) {
     const hasStart = !!sty(STYLE.START_ARROW) && sty(STYLE.START_ARROW) !== ARROW_NONE
     const hasEnd = (sty(STYLE.END_ARROW) ?? DEFAULT_END_ARROW) !== ARROW_NONE
     const arrowN = [hasStart, hasEnd].filter(Boolean).length // 0 | 1 | 2
+    // Bare self-closing mxPoints are the routed waypoints (inside
+    // `<Array as="points">`). The label displacement is the SEPARATE
+    // `<mxPoint … as="offset"/>`.
     const wps = [...body.matchAll(/<mxPoint x="([\-\d.]+)" y="([\-\d.]+)"\s*\/>/g)]
       .map(p => ({ x: +p[1], y: +p[2] }))
+    const offM = /<mxPoint x="([\-\d.]+)" y="([\-\d.]+)" as="offset"\s*\/>/.exec(body)
+    const offset = offM ? { x: +offM[1], y: +offM[2] } : { x: 0, y: 0 }
     const numStyle = (k) => sty(k) !== undefined ? +sty(k) : undefined
     edges.push({
       source: attr(cellA, ATTR.SOURCE), target: attr(cellA, ATTR.TARGET),
       verb: attr(objA, ATTR.C4_NAME) ?? '',
       tech: attr(objA, ATTR.C4_TECH) ?? '',
-      arrowN, wps,
+      arrowN, wps, offset,
       exitX: numStyle(STYLE.EXIT_X), entryX: numStyle(STYLE.ENTRY_X),
       exitY: numStyle(STYLE.EXIT_Y), entryY: numStyle(STYLE.ENTRY_Y),
     })
@@ -192,8 +217,8 @@ const partialOverlap = (a, b) =>
   intersects(a, b) && !contains(a, b) && !contains(b, a)
 
 function factcheck(stem) {
-  const puml = readFileSync(join(CORPUS, `${stem}.puml`), 'utf8')
-  const svg = readFileSync(join(SVG_DIR, `${stem}.svg`), 'utf8')
+  const puml = readFileSync(join(CORPUS, `${stem}${PUML_EXT}`), ENC)
+  const svg = readFileSync(join(SVG_DIR, `${stem}${SVG_EXT}`), ENC)
   const P = parsePlantumlSvg(svg)
   const xmlP = Catalyst.parseEntities(puml)
   const relsP = Catalyst.parseRelations(puml)
@@ -222,15 +247,28 @@ function factcheck(stem) {
       const na = C.byAlias.get(a), nb = C.byAlias.get(b)
       return na && nb ? Math.min(na.w, nb.w) : Infinity
     }
-    for (const r of relsP) {
-      const A = C.byAlias.get(r.source), B = C.byAlias.get(r.target)
+    const ctr = (n) => ({ x: n.x + n.w / 2, y: n.y + n.h / 2 })
+    // Iterate the EMITTED edges so the true rendered label position is
+    // used: anchor = polylineMidpoint([src-centre, …waypoints,
+    // tgt-centre]) + the emitted `as="offset"`. Matched to its relation
+    // (by unordered endpoints) only for the label text/cap dims.
+    const relUsed = new Set()
+    for (const g of C.edges) {
+      const A = C.byAlias.get(g.source), B = C.byAlias.get(g.target)
       if (!A || !B) continue
-      const d = measureEdgeLabel(r.label, r.description, cap(r.source, r.target))
-      const mx = (A.x + A.w / 2 + B.x + B.w / 2) / 2
-      const my = (A.y + A.h / 2 + B.y + B.h / 2) / 2
-      const lr = { x: mx - d.width / 2, y: my - d.height / 2, w: d.width, h: d.height }
+      const ri = relsP.findIndex((r, i) => !relUsed.has(i) &&
+        ((r.source === g.source && r.target === g.target) ||
+         (r.source === g.target && r.target === g.source)))
+      if (ri < 0) continue
+      relUsed.add(ri)
+      const r = relsP[ri]
+      const d = measureEdgeLabel(r.label, r.description, cap(g.source, g.target))
+      const route = [ctr(A), ...g.wps, ctr(B)]
+      const mid = polylineMidpoint(route)
+      const cx = mid.x + g.offset.x, cy = mid.y + g.offset.y
+      const lr = { x: cx - d.width / 2, y: cy - d.height / 2, w: d.width, h: d.height }
       for (const n of C.nodes) {
-        if (n.alias === r.source || n.alias === r.target) continue
+        if (n.alias === g.source || n.alias === g.target) continue
         if (isContainer.has(n.alias)) continue       // boundary outline, not a leaf collision
         if (intersects(lr, n) && !contains(lr, n) && !contains(n, lr)) labelHit++
       }
@@ -329,8 +367,26 @@ function factcheck(stem) {
   })
 }
 
-const stems = process.argv.slice(2)
-for (const s of stems) {
-  const r = await factcheck(s)
-  console.log(JSON.stringify(r))
+// CLI: explicit stems → one JSON line each. No args → audit the WHOLE
+// corpus and print only the non-clean fixtures + an N/total summary
+// (replaces ad-hoc throwaway audit scripts; same constants discipline).
+const args = process.argv.slice(2)
+if (args.length > 0) {
+  for (const s of args) console.log(JSON.stringify(await factcheck(s)))
+} else {
+  const { readdirSync } = await import('node:fs')
+  const stems = readdirSync(CORPUS)
+    .filter((f) => f.endsWith(PUML_EXT))
+    .map((f) => f.slice(0, -PUML_EXT.length))
+    .sort()
+  let cleanCount = 0
+  for (const s of stems) {
+    const r = await factcheck(s)
+    if (r.clean) { cleanCount++; continue }
+    console.log(
+      `${r.stem.padEnd(26)} arrowBad=${r.arrowBad} attachMerge=${r.attachMerge} ` +
+      `labelHit=${r.labelHit} entityMiss=${r.entityMiss} relMiss=${r.relMiss} ` +
+      `labelDrop=${r.labelDrop} nodeOverlap=${r.nodeOverlap}`)
+  }
+  console.log(`CLEAN ${cleanCount}/${stems.length}`)
 }
