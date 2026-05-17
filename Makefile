@@ -64,8 +64,23 @@ factcheck: build ## Numeric PlantUML→drawio fidelity audit of ALL conversions 
 	java -jar $(PLANTUML_JAR) -tsvg -nometadata $(CORPUS_DIR)/*.puml $(dir $(CORPUS_DIR))*.puml -o $(abspath $(FACTCHECK_SVG_DIR))
 	SVG_DIR=$(FACTCHECK_SVG_DIR) CORPUS_DIR=$(CORPUS_DIR) node scripts/factcheck-geometry.mjs
 
+.PHONY: gallery-verify
+gallery-verify: build ## Fail if the committed gallery .drawio drifted from the current emit (deterministic; no java/docker)
+	@# The .drawio XML IS catalyst's emit output; regenerating it is pure
+	@# node + deterministic. If it differs from the committed copies, an
+	@# emit/template change shipped without refreshing docs/gallery (the
+	@# P4b-class stale-artifact defect). PNG re-render needs docker and is
+	@# intentionally NOT gated here — this guards the deterministic root
+	@# cause; a failure means "run `make gallery` and commit the refresh".
+	@GALLERY_DRAWIO_ONLY=1 CORPUS_DIR=$(CORPUS_DIR) GALLERY_OUT=$(GALLERY_OUT) node scripts/gallery.mjs
+	@git diff --quiet -- $(GALLERY_OUT)/drawio || { \
+		echo "ERROR: docs/gallery is STALE vs the current emit — run 'make gallery' and commit the refresh."; \
+		git --no-pager diff --stat -- $(GALLERY_OUT)/drawio; \
+		exit 1; }
+	@echo "gallery-verify: docs/gallery .drawio in sync with current emit ✓"
+
 .PHONY: ci
-ci: build lint test ## Local CI pipeline (build + lint + tests)
+ci: build lint test gallery-verify ## Local CI pipeline (build + lint + tests + gallery drift gate)
 
 .PHONY: ci-run
 ci-run: deps ## Run the real .github/workflows/ci.yml locally via act (mise-managed; needs Docker)

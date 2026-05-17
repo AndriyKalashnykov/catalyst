@@ -44,6 +44,18 @@ jobs:
         run: |
           ./setup.sh
           npm ci
+      # Deterministic gallery drift gate (no java/docker): the .drawio
+      # XML IS catalyst's emit output; if it differs from the committed
+      # docs/gallery copies an emit/template change shipped without
+      # refreshing the gallery (the P4b-class stale-artifact defect —
+      # the converter was fixed but the public gallery still advertised
+      # the old output). Failure ⇒ run `make gallery` and commit.
+      - name: Gallery drift gate
+        run: |
+          npm run build
+          GALLERY_DRAWIO_ONLY=1 node scripts/gallery.mjs
+          git diff --exit-code -- docs/gallery/drawio \
+            || { echo "::error::docs/gallery is STALE vs the current emit — run 'make gallery' and commit the refresh"; exit 1; }
       - name: Run tests with coverage
         run: npm run test:coverage
       - name: Report Coverage
