@@ -216,9 +216,18 @@ const contains = (a, b, eps = 2) =>
 const partialOverlap = (a, b) =>
   intersects(a, b) && !contains(a, b) && !contains(b, a)
 
-function factcheck(stem) {
-  const puml = readFileSync(join(CORPUS, `${stem}${PUML_EXT}`), ENC)
-  const svg = readFileSync(join(SVG_DIR, `${stem}${SVG_EXT}`), ENC)
+/** PlantUML names its output after the `@startuml <name>` token, NOT
+ *  the .puml filename (e.g. c4-all-entity-variants.puml → all-variants).
+ *  Resolve the SVG by that token so EVERY fixture is checkable
+ *  regardless of filename↔title divergence; fall back to the stem. */
+function svgNameFor(stem, puml) {
+  const m = /^\s*@startuml\s+(\S+)/m.exec(puml)
+  return (m ? m[1] : stem) + SVG_EXT
+}
+
+function factcheck(stem, dir = CORPUS) {
+  const puml = readFileSync(join(dir, `${stem}${PUML_EXT}`), ENC)
+  const svg = readFileSync(join(SVG_DIR, svgNameFor(stem, puml)), ENC)
   const P = parsePlantumlSvg(svg)
   const xmlP = Catalyst.parseEntities(puml)
   const relsP = Catalyst.parseRelations(puml)
@@ -370,23 +379,34 @@ function factcheck(stem) {
 // CLI: explicit stems → one JSON line each. No args → audit the WHOLE
 // corpus and print only the non-clean fixtures + an N/total summary
 // (replaces ad-hoc throwaway audit scripts; same constants discipline).
+// "All puml→drawio conversions" = the gallery corpus AND the canonical
+// C4-PlantUML-spec fixtures one level up (c4-exhaustive, c4-all-rel-
+// variants, …) — the most exhaustive cases. Audit BOTH, non-recursive.
+const { readdirSync } = await import('node:fs')
+const { dirname } = await import('node:path')
+const FIXTURE_DIRS = [CORPUS, dirname(CORPUS)]
+const enumerate = () => FIXTURE_DIRS.flatMap((dir) =>
+  readdirSync(dir)
+    .filter((f) => f.endsWith(PUML_EXT))
+    .map((f) => ({ stem: f.slice(0, -PUML_EXT.length), dir })))
+
 const args = process.argv.slice(2)
 if (args.length > 0) {
-  for (const s of args) console.log(JSON.stringify(await factcheck(s)))
+  const all = enumerate()
+  for (const s of args) {
+    const e = all.find((x) => x.stem === s)
+    console.log(JSON.stringify(await factcheck(s, e ? e.dir : CORPUS)))
+  }
 } else {
-  const { readdirSync } = await import('node:fs')
-  const stems = readdirSync(CORPUS)
-    .filter((f) => f.endsWith(PUML_EXT))
-    .map((f) => f.slice(0, -PUML_EXT.length))
-    .sort()
+  const all = enumerate().sort((a, b) => a.stem.localeCompare(b.stem))
   let cleanCount = 0
-  for (const s of stems) {
-    const r = await factcheck(s)
+  for (const { stem, dir } of all) {
+    const r = await factcheck(stem, dir)
     if (r.clean) { cleanCount++; continue }
     console.log(
       `${r.stem.padEnd(26)} arrowBad=${r.arrowBad} attachMerge=${r.attachMerge} ` +
       `labelHit=${r.labelHit} entityMiss=${r.entityMiss} relMiss=${r.relMiss} ` +
       `labelDrop=${r.labelDrop} nodeOverlap=${r.nodeOverlap}`)
   }
-  console.log(`CLEAN ${cleanCount}/${stems.length}`)
+  console.log(`CLEAN ${cleanCount}/${all.length}`)
 }

@@ -18,7 +18,10 @@ Standalone, independently-maintained library (no upstream; never add an
 - `make ci` = build+lint+test; `make ci-run` = the real `.github/workflows/
   ci.yml` via mise-managed `act` (Docker needed).
 - **`make factcheck` — the NO-EYEBALLING fidelity gate (run it for any
-  geometry/emit change).** Renders every corpus fixture to PlantUML SVG
+  geometry/emit change).** Audits ALL puml→drawio conversions — the
+  20-fixture gallery corpus AND the 6 canonical C4-PlantUML-spec
+  fixtures in `tests/fixtures/` (c4-exhaustive, c4-all-rel-variants,
+  …) — 26 total. Renders each to PlantUML SVG
   (the `-tsvg` vector ground truth) and runs
   `scripts/factcheck-geometry.mjs`, a numeric PlantUML→drawio
   comparator: `entityMiss / relMiss / arrowBad` (arrowhead count ≠ C4

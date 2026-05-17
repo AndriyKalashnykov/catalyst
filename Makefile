@@ -58,10 +58,10 @@ gallery: build ## Dual-render the use-case corpus into docs/gallery (needs java+
 	node scripts/gallery.mjs
 
 .PHONY: factcheck
-factcheck: build ## Numeric PlantUML→drawio fidelity audit of the whole corpus (needs java); the no-eyeballing gate
+factcheck: build ## Numeric PlantUML→drawio fidelity audit of ALL conversions — gallery corpus + C4-spec fixtures (needs java); the no-eyeballing gate
 	@mkdir -p $(FACTCHECK_SVG_DIR)
 	@test -f $(PLANTUML_JAR) || { echo "ERROR: $(PLANTUML_JAR) missing — run 'make gallery' once to fetch it"; exit 1; }
-	java -jar $(PLANTUML_JAR) -tsvg -nometadata $(CORPUS_DIR)/ -o $(abspath $(FACTCHECK_SVG_DIR))
+	java -jar $(PLANTUML_JAR) -tsvg -nometadata $(CORPUS_DIR)/*.puml $(dir $(CORPUS_DIR))*.puml -o $(abspath $(FACTCHECK_SVG_DIR))
 	SVG_DIR=$(FACTCHECK_SVG_DIR) CORPUS_DIR=$(CORPUS_DIR) node scripts/factcheck-geometry.mjs
 
 .PHONY: ci
