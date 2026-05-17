@@ -1,7 +1,13 @@
 # ADR 0007 — Sequence-diagram support (design)
 
-- Status: proposed (design-first; implementation deferred to a phased follow-up)
-- Date: 2026-05-16
+- Status: accepted — phased implementation in progress
+- Date: 2026-05-16 (design); phase-a landed 2026-05-17
+- Phases: **(a) `SeqParser` + ordering invariants — ✅ DONE
+  2026-05-17** (`src/seq/SeqParser.mts` + `SeqModel.interface.mts`,
+  29-test ordering+fail-loud matrix; net-new, zero existing-path
+  change, factcheck CLEAN 26/26 by construction). Next: (b) linear
+  `seqLayout` + `umlLifeline` emit; (c) corpus fixture +
+  render-compare gate; (d) v2 fragments/dividers.
 
 ## Context
 
