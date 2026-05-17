@@ -6,11 +6,17 @@ import { ELEMENT_TITLE_PX, ELEMENT_BODY_PX, RELATIONSHIP_LABEL_PX, CYLINDER3_CAP
 /**
  * The `*Db` C4 types whose template emits drawio `shape=cylinder3`
  * (see `src/mx/Mx.mts` dispatch + `src/mx/c4/{Container,System,Component}Db.mts`).
- * `_Ext` DB variants render as the grey rectangle (`*Ext` templates),
- * NOT a cylinder, so they are deliberately excluded. The cylinder
- * draws an elliptical cap at top AND bottom that text must not occupy.
+ * The `_Ext` DB variants now ALSO render as a cylinder (grey-coloured —
+ * C4-PlantUML keeps the database shape for external DBs; see
+ * `src/mx/c4/{Container,System,Component}DbExt.mts`), so they need the
+ * SAME cap reservation or long content clips at the bottom ellipse —
+ * the exact bug fixed for the non-`_Ext` DBs. The cylinder draws an
+ * elliptical cap at top AND bottom that text must not occupy.
  */
-const CYLINDER3_TYPES = new Set(['SystemDb', 'ContainerDb', 'ComponentDb'])
+const CYLINDER3_TYPES = new Set([
+  'SystemDb', 'ContainerDb', 'ComponentDb',
+  'SystemDb_Ext', 'ContainerDb_Ext', 'ComponentDb_Ext',
+])
 
 /**
  * Text-measured leaf-node size (L3). Sizes a shape to its rendered label
