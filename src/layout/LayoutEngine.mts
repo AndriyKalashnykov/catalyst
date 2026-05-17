@@ -2,7 +2,7 @@ import ELK from 'elkjs/lib/elk.bundled.js'
 import type { ElkNode, ElkExtendedEdge } from 'elkjs/lib/elk-api.js'
 import { EntityDescriptor } from '../puml/EntityDescriptor.interface.mjs'
 import { spaceAdvance, renderedLineHeight, MX_DEFAULT_FONTSIZE } from '../text/TextMetrics.mjs'
-import { ENTERPRISE_BOUNDARY_TITLE_PX } from '../mx/c4/theme.mjs'
+import { ENTERPRISE_BOUNDARY_TITLE_PX, SHAPE } from '../mx/c4/theme.mjs'
 import { measureNode, measureEdgeLabel } from './measureNode.mjs'
 
 interface LayoutNode {
@@ -131,10 +131,50 @@ class LayoutEngine {
     }
   }
 
+  /**
+   * Same-pair edge-fan border reserve (alias → minimum border extent, px).
+   *
+   * `assignEdgeLanes` (P12) distributes a K-edge same-pair group's
+   * box-border attach points EVENLY across the endpoint border, so
+   * adjacent attaches are `borderExtent / (K−1)` px apart. The factcheck
+   * `attachMerge` contract fails when that gap < `ATTACH_SEP_MIN`
+   * (= 2 × the cited `SHAPE.REL_ARROW_SIZE` arrow-head — two edges within
+   * one arrow-head of each other on BOTH ends are visually one line).
+   *
+   * Therefore an endpoint of a K-edge same-pair group needs a border of
+   * at least `(K−1) × 2 × REL_ARROW_SIZE` to host K distinguishable
+   * attach points. Pre-P4b the fixed 220-class `C4_MIN` *incidentally*
+   * supplied this; with content-fit boxes it must be an explicit
+   * geometry reserve — a category-1 value DERIVED from the cited
+   * arrow-head metric (same class as `titlePadding` / `edgeCap`), NOT
+   * the old arbitrary floor. Keyed by the busiest single same-pair group
+   * on the leaf (the `attachMerge` metric only compares within a pair).
+   */
+  private fanReserve(): Map<string, number> {
+    const ATTACH_SEP_MIN = 2 * SHAPE.REL_ARROW_SIZE
+    const groupSize = new Map<string, number>()      // sorted-pair key → count
+    for (const r of this.relations) {
+      if (r.source === r.target) continue
+      const k = JSON.stringify([r.source, r.target].sort())
+      groupSize.set(k, (groupSize.get(k) ?? 0) + 1)
+    }
+    const out = new Map<string, number>()
+    for (const r of this.relations) {
+      if (r.source === r.target) continue
+      const K = groupSize.get(JSON.stringify([r.source, r.target].sort())) ?? 1
+      if (K < 2) continue
+      const need = (K - 1) * ATTACH_SEP_MIN
+      for (const ep of [r.source, r.target])
+        out.set(ep, Math.max(out.get(ep) ?? 0, need))
+    }
+    return out
+  }
+
   /** Build the ELK node tree. Leaves are text-measured (L3); compound nodes
    * (boundaries / Deployment_Node) get children + a font-derived title pad. */
   private buildNodes(entities: EntityDescriptor[]): ElkNode[] {
     const pad = this.titlePadding()
+    const fan = this.fanReserve()
     const toElk = (e: EntityDescriptor): ElkNode => {
       if (e.children && e.children.length) {
         return {
@@ -146,7 +186,12 @@ class LayoutEngine {
         }
       }
       const d = measureNode(e)
-      return { id: e.alias, width: d.width, height: d.height }
+      // Floor BOTH axes at the same-pair edge-fan reserve: edge
+      // orientation (top/bottom vs left/right attach) is ELK-decided
+      // post-layout, so either axis may host the fan — reserve both so
+      // the P12 even attach-spread clears `ATTACH_SEP_MIN` regardless.
+      const need = fan.get(e.alias) ?? 0
+      return { id: e.alias, width: Math.max(d.width, need), height: Math.max(d.height, need) }
     }
     return entities.map(toElk)
   }
@@ -435,7 +480,38 @@ class LayoutEngine {
       if (!sameRank) continue
       const wantBefore = rel.direction === 'L'              // L: target left of source
       const isBefore = b.x < a.x
-      if (isBefore !== wantBefore) { const t = a.x; a.x = b.x; b.x = t }
+      if (isBefore !== wantBefore) {
+        // SPAN-PRESERVING reorder (NOT a raw top-left x swap). ELK
+        // contains both a and b in their parent cluster, so it contains
+        // their union extent [lo, hi]. Re-seating the desired-left node
+        // flush at `lo` and the desired-right node flush at `hi − width`
+        // keeps BOTH inside [lo, hi] ⊆ parent — parent-containment holds
+        // by construction. A raw `a.x ↔ b.x` swap only preserved
+        // containment when a.width === b.width (true pre-P4b when every
+        // box was the fixed C4_MIN size; FALSE under content-fit sizing,
+        // where the wider box poked out of its ELK-sized parent).
+        const lo = Math.min(a.x, b.x)
+        const hi = Math.max(a.x + a.width, b.x + b.width)
+        const na = wantBefore ? hi - a.width : lo
+        const nb = wantBefore ? lo : hi - b.width
+        // Enforce the pass's OWN documented contract — "cannot degrade
+        // the layout". When a and b are NOT adjacent siblings (a third
+        // node sits between them in ELK's placement), flushing them to
+        // the span extremes lands one on that node (the c4-exhaustive
+        // `cacheExt ~ pubExt` 2px graze). Pre-P4b uniform box sizes +
+        // wide ELK gaps masked this; content-fit exposed it. If the
+        // reorder would PARTIAL-overlap any other leaf, abort it and
+        // keep ELK's placement (the safe fallback the comment promises)
+        // — a real invariant guard, not a tolerance mask.
+        const hits = (mv: LayoutNode, x: number): boolean =>
+          nodes.some(n =>
+            n !== a && n !== b && !n.isCluster &&
+            n.x !== undefined && n.y !== undefined &&
+            x < n.x + n.width && x + mv.width > n.x &&
+            mv.y! < n.y + n.height && n.y < mv.y! + mv.height)
+        const wouldHit = hits(a, na) || hits(b, nb)
+        if (!wouldHit) { a.x = na; b.x = nb }
+      }
     }
 
     // Top-level edges → coords are absolute (relative to root). Map ELK

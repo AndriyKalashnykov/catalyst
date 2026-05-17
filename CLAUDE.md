@@ -99,7 +99,7 @@ Everything below is researched, not speculative. Sizes are honest.
 Completed-work root-cause prose lives in git history + ADRs +
 `docs/UPGRADE-NOTES.md` + agent memories — not re-dumped here.
 
-> ▶ **RESUME HERE — session handoff 2026-05-17 (refreshed #6).**
+> ▶ **RESUME HERE — session handoff 2026-05-17 (refreshed #7, P4b shipped).**
 > `make factcheck` is THE gate (numeric PlantUML→drawio comparator,
 > ALL 26 conversions vs `-tsvg`; NO eyeballing — every visual claim
 > cites a metric). **NO auto-merge is configured** (verified
@@ -125,62 +125,48 @@ Completed-work root-cause prose lives in git history + ADRs +
 > `lane-label-decollision`, `factcheck-harness-gate` (6 FP classes),
 > `no-guesses-fact-check-discipline`, `open-followups`.
 >
-> ### ▶▶ NEXT SESSION = P4b IMPLEMENTATION (sole focus; ADR 0010 accepted & sanctions it)
+> ### ▶▶ P4b ✅ DONE 2026-05-17 (this session) — content-fit box sizing shipped
 >
-> Complete & utter P4b: replace the fixed per-type `theme.C4_MIN`
-> floor with a content-fit minimum — real fact-based, no guesses.
-> **Read FIRST, in order:** `docs/adr/0010-content-fit-box-sizing.md`
-> (decision + BLOCKING gating plan), `docs/research/p4b-box-metrics.md`
-> (measured evidence), then rerun the measurement: `make factcheck`
-> once, then `SVG_DIR=build/factcheck-svg node
-> scripts/p4b-box-metrics.mjs`.
+> `theme.C4_MIN` (220×140-class fixed floor) **deleted**; replaced by
+> `PUML_LEAF_BOX` (MEASURED PlantUML `-tsvg` geometry: `INSET=10`,
+> `TOP_GAP=22.83`, `BOT_GAP=14.69`, pitch `12>16=20.62 / 16>12=17.52
+> / 12>12=16.34`). `measureNode` is now pure content-fit: `width =
+> ceil(widestLine + 2×INSET)`, `height = ceil(TOP_GAP + Σpitch +
+> BOT_GAP + cyl3 cap)`. Two latent bugs content-variable sizing
+> exposed, both fixed at root (NOT masked): (a) `LayoutEngine.
+> fanReserve` — a same-pair K-edge endpoint now floors its border at
+> `(K−1)·2·REL_ARROW_SIZE` (the old fixed floor incidentally hosted
+> the fan; derived from the gate's cited arrowhead metric); (b) the
+> L1 L/R post-pass was a raw `a.x↔b.x` swap correct ONLY at uniform
+> box width — now span-preserving + aborts if it would overlap (its
+> own documented "cannot degrade the layout" contract, now enforced).
+> `layout-quality` re-specified to the content-fit contract (≥
+> measureNode, no overlap). ADR 0010 fact-2 prose corrected (16 →
+> measured 16.34). New tests: `tests/p4b-svg-geom.test` gained a
+> `PUML_LEAF_BOX === measured-oracle` equivalence gate (verbatim
+> CI-safe + live-scan; this caught the 16/16.34 rounding);
+> `tests/layout/p4b-layout-engine.test` (fanReserve + L/R reorder);
+> `tests/layout/measureNode.test` rewritten to the closed form.
+> **Gate met:** factcheck CLEAN 26/26 · render-compare c4-container/
+> topology-linear-chain/c4-deployment at PlantUML parity (caps
+> preserved) · byte-scope 26/26 changed (broad+intentional as ADR
+> predicted; golden/parity green) · P6/cyl3 non-regression. 362 tests
+> green, lint+mdlint clean.
 >
-> Decision (ADR 0010): leaf minimum = `measured-text + 2×INSET`,
-> `INSET = 10 px` (MEASURED PlantUML element text-inset, 124
-> entities; single-source in `theme.mjs`, annotate provenance).
-> Delete the 220×140-class constants; correct the mis-attributed
-> "Structurizr" provenance.
+> ### ▶▶ NEXT SESSION (priority order)
 >
-> **Fact-checks — ALL 4 CLOSED 2026-05-17 (measured, no guesses; the
-> numbers are in ADR 0010 §"Measured facts" and contract-locked by
-> `tests/p4b-svg-geom.test.mjs`). Implement FROM these constants:**
->
-> - **Vertical inset MEASURED** (baseline-relative, no font-metric
->     guess): `topGap`=22.83, `botGap`=14.69, pitch «stereo»12→Name16
->     =20.62 ⇒ 2-line min = **58.14** (exactly PlantUML's smallest).
->     `leafMinH = topGap + Σ(pitch over actual line set) + botGap`.
-> - **14 px tail RESOLVED**: 123/124 leaves are exactly 10 px; the
->     lone ≠10 is `c4-exhaustive/dev` (a Person + 9-line sprite
->     label — a classified glyph class, not noise). `INSET=10` is
->     clean category-1.
-> - **`layout-quality` replacement contract SPECIFIED** (ADR 0010
->     fact 3): per leaf `h ≥ topGap+Σpitch+botGap` AND `w ≥
->     maxTextLen+2×10` AND no text overflow. Implement this, don't
->     delete the assertion.
-> - **Empty-description SETTLED by measurement**: `edge-empty-
->     descriptions/c` has nText=2 (PlantUML OMITS the blank line) ⇒
->     pure content-fit reproduces it; NO separate floor (a floor
->     would be a guess vs the ground truth).
->
-> The `p4b-box-metrics.mjs` measurement is now safeguarded (fail-loud
-> on empty/broken parse, per-leaf `topGap+Σpitch+botGap===rh`
-> self-check) + the parser extracted to `scripts/p4b-svg-geom.mjs`
-> and contract-locked (6 tests). Re-run any time:
-> `make factcheck` then `SVG_DIR=build/factcheck-svg node
-> scripts/p4b-box-metrics.mjs`.
->
-> **Gate (BLOCKING, ADR 0010 order):** (1) `make factcheck` CLEAN
-> 26/26 — tighter boxes must NOT introduce
-> `nodeOverlap`/`labelHit`/`attachMerge` (PRIMARY risk: smaller boxes
-> ⇒ labels closer); (2) `make render-compare` on a dense compound
-> (`c4-container`) + a sparse `topology-*` + a Db/cylinder3 fixture —
-> at PlantUML parity, not merely smaller; (3) `git worktree`
-> byte-baseline vs `origin/main` as SCOPE evidence (broad change
-> EXPECTED & intentional — NOT zero-output; golden/parity fingerprint
-> topology so they stay green while coordinates change); (4) verify
-> P6 boundary-band (`titlePadding`) + cylinder3 cap
-> (`CYLINDER3_CAP_PX`) non-regression. New content-fit-floor tests.
-> ONE coherent branch + PR.
+> 1. **P13 — gallery column-width uniformity** (user-requested;
+>    presentation-only, must NOT perturb the emit path / factcheck —
+>    see the `[ ]` durable item below). Self-contained, lower risk.
+> 2. **Sequence diagrams** (#12, ADR 0007) — largest; new non-ELK
+>    subsystem, phased per the durable item below; MUST ship with
+>    factcheck coverage (lifelines/messages/order).
+> 3. C4 surface TRUE residuals (`$sprite`, sketch, legend, dropped
+>    `note`) — low/opportunistic.
+> Re-confirm P1/P3/P5/P7 status against the post-P4b gallery before
+> spiking them — content-fit re-sized every box, so the
+> defect-catalog below may have shifted (re-render + re-judge via
+> factcheck numbers, never PNG eyeball).
 >
 > **REMAINING after P4b:** Sequence diagrams (#12, ADR 0007) —
 > largest, new non-ELK subsystem; C4 surface true residuals
@@ -196,8 +182,11 @@ Completed-work root-cause prose lives in git history + ADRs +
 >   directions correct, factcheck CLEAN 26/26, byte-scoped. Residual
 >   "East one rank low" stays advisory (not a contract — PlantUML
 >   itself doesn't deterministically co-rank). Effectively closed.
-> - **P4b** (#11/#83/#86) — ✅ decision base + ADR 0010 accepted
->   2026-05-17. **NEXT: implementation** per the plan above.
+> - **P4b** (#11/#83/#86 + impl PR this session) — ✅ DONE
+>   2026-05-17. `C4_MIN`→`PUML_LEAF_BOX` content-fit; fanReserve +
+>   span-preserving/abort L/R fixes; equivalence gate; factcheck
+>   CLEAN 26/26, byte-scope 26/26 (intentional), 362 tests green.
+>   See the "P4b ✅ DONE" handoff block above.
 > - **#15** (#81) — ✅ DONE 2026-05-17. Numeric-literal audit vs the
 >   no-magic taxonomy; proven zero-output-change (26 fixtures
 >   byte-identical vs `origin/main`).
@@ -268,8 +257,8 @@ the edge-label wrap width to a PlantUML-like narrow column
 re-rendered width within ~1.3× of `rel-long-labels.puml.png`.
 
 **P4 — ✅ DONE (ADR 0008).** Context `stress` branch removed; always
-`layered`. The box-size residual is **P4b** — the NEXT-SESSION focus
-in the RESUME-HERE block above.
+`layered`. The box-size residual **P4b is ✅ DONE 2026-05-17**
+(content-fit `PUML_LEAF_BOX`; see the "P4b ✅ DONE" handoff block).
 
 **P5 — hub label proximity (MEDIUM; RE-AUDIT post-P4 — likely
 largely resolved).** The "Context/stress radial hub" framing is

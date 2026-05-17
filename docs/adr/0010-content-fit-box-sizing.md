@@ -75,7 +75,10 @@ regex was caught and fixed before trusting the numbers).
    baseline) = **22.83**; `botGap` (last baseline → rect.bottom) =
    **14.69**; inter-baseline pitch «stereotype»(12)→Name(16) =
    **20.62**, Name(16)→desc(12) = **17.52**, desc(12)→desc(12) =
-   **16**. Closed form: `leafMinHeight = topGap + Σ(pitch over the
+   **16.34** (this doc originally rounded it to "16"; the
+   implementation uses the full-precision live `-tsvg` value 16.34,
+   asserted equal to the oracle by `tests/p4b-svg-geom.test.mts`).
+   Closed form: `leafMinHeight = topGap + Σ(pitch over the
    element's ACTUAL line set) + botGap`. Verify: a 2-line
    «stereotype»+Name element = 22.83 + 20.62 + 14.69 = **58.14**,
    which is *exactly* PlantUML's measured smallest box height
