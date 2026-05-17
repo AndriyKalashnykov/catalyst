@@ -389,20 +389,37 @@ Everything below is researched, not speculative. Sizes are honest.
    so forcing the edge THROUGH it drags the route + stacks the
    `calls [gRPC]` labels into a left-margin column. Routing-through-
    label-centre is the wrong shape.
-   **Next hypothesis (for the focused session — spike, don't commit
-   on faith):** the cram is because drawio auto-routes (orthogonal
-   L-shape) while ELK placed the label for ELK's straight 2-point
-   route. Candidate: lower the `else if (poly && poly.length > 2)`
-   threshold so even a 2-point ELK section is emitted as explicit
-   drawio waypoints (drawio then draws ELK's exact segment, not its
-   own auto-route) → ELK's label placement becomes valid; emit
-   `e.label` as the offset. Scope-guard to hierarchical non-laned
-   non-cluster edges; Context (#24) + laned + poly>2 paths
+   **Spike v2 (`fix/edge-large-graph-hier-v2`, reverted) — also
+   wrong target, but MEASUREMENT-CORRECTED the root cause.** v2
+   lowered the threshold to emit a midpoint waypoint + `e.label`
+   offset for 2-point hierarchical sections. Per-verb emitted-block
+   diff proved it fired on the **`calls` chain** (those ARE the
+   2-point sections — `svc1→svc2…`, adjacent layered nodes — and
+   they were already FINE), while the actual crammed edges
+   (`integrates`/`reads-writes` to External 1–6) were **untouched**:
+   they are **poly>2 (multi-bend) ELK routes**, emitted by the
+   NON-laned `else if (poly && poly.length > 2 …)` branch
+   (`src/catalyst.mts` ~L166) which emits ELK's interior bend points
+   as waypoints **but emits NO label offset** → drawio auto-anchors
+   the multi-bend edge's label → the cram. (Confirmed: per-verb
+   block diff — `calls`/`uses` changed, `integrates`/`reads-writes`
+   identical, i.e. v2 missed them entirely.)
+   **CORRECTED next hypothesis (focused session — spike, don't
+   commit on faith):** in the **non-laned poly>2 branch** (~L166;
+   NOT the 2-point path, NOT the laned poly>2 path which already
+   uses `lane.labelOffset`), capture `e.label` and ALSO emit an
+   `offset` mxPoint = `ELK-label-centre − drawio's default label
+   anchor on the emitted polyline` so the multi-bend edge's label
+   sits at ELK's non-overlapping rect instead of drawio's
+   auto-anchor. The known wrinkle: drawio's default edge-label
+   anchor is the polyline path-midpoint, NOT a simple endpoint
+   mean — derive it from the emitted points (cumulative segment
+   length) or accept/measure the small residual. Scope: non-laned
+   poly>2 only; 2-point (`calls`) + laned + Context(#24) paths
    byte-identical; gate = corpus route-signature + parity/golden +
-   layout-quality + full gallery render-compare + the ibm-wm
-   `c4-container`/deployment pair. The `fix/edge-large-graph-hier-
-   labels` spike branch was dropped (analysis preserved here);
-   re-cut from fresh `main`.
+   layout-quality + full gallery render-compare + ibm-wm
+   `c4-container`/deployment. Both spike branches dropped (v1 #51,
+   v2 reverted); analysis preserved here — re-cut from fresh `main`.
 
 2. **C4 surface residual gaps (low — see `docs/C4-COVERAGE.md`
    Tier-2/3, validated 2026-05-16).** The genuinely-unimplemented `✗`
