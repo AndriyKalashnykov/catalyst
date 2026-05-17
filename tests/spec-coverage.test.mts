@@ -149,13 +149,15 @@ BiRel(a, b, "Talks", "gRPC")
         }
         throw new Error(`no object id=${id}`);
     }
-    const C4 = '@startuml\n!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Container.puml\n';
-
+    // No `!include` needed: catalyst parses the C4 macros syntactically
+    // (the include URL is never fetched), so the test carries no pinned
+    // C4-PlantUML version string — same convention as the include-less
+    // Rel_Back / BiRel emit tests above.
     it('named boundaries render the PlantUML lowercase-tag subtitle, c4Type attribute unchanged', async () => {
         const xml = await Catalyst.convert(
-            `${C4}System_Boundary(sb,"S"){System(s,"s")}\n`
+            `System_Boundary(sb,"S"){System(s,"s")}\n`
             + `Container_Boundary(cb,"C"){Container(c,"c")}\n`
-            + `Enterprise_Boundary(eb,"E"){System(e,"e")}\n@enduml`);
+            + `Enterprise_Boundary(eb,"E"){System(e,"e")}\n`);
         for (const [id, kind, tag] of [
             ['sb', 'System_Boundary', 'system'],
             ['cb', 'Container_Boundary', 'container'],
@@ -170,8 +172,8 @@ BiRel(a, b, "Talks", "gRPC")
 
     it('generic Boundary surfaces its explicit $type; bare Boundary stays [Boundary]', async () => {
         const xml = await Catalyst.convert(
-            `${C4}Boundary(gb,"G","custom-zone"){System(g,"g")}\n`
-            + `Boundary(pb,"P"){System(p,"p")}\n@enduml`);
+            `Boundary(gb,"G","custom-zone"){System(g,"g")}\n`
+            + `Boundary(pb,"P"){System(p,"p")}\n`);
         expect((await boundaryObj(xml, 'gb')).label).toContain('[custom-zone]');
         expect((await boundaryObj(xml, 'pb')).label).toContain('[Boundary]');
     });
