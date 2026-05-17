@@ -3,7 +3,7 @@ import { Mx, MxGeometry } from './mx/Mx.mjs'
 import { MxPoint } from './mx/MxPoint.mjs'
 import { RelParser } from './puml/RelParser.mjs'
 import { LayoutEngine, LayoutResult } from './layout/LayoutEngine.mjs'
-import { assignEdgeLanes, resolveLabelOverlap, type NodeCenter, type NodeRect } from './layout/edgeLanes.mjs'
+import { assignEdgeLanes, resolveLabelOverlap, polylineMidpoint, type NodeCenter, type NodeRect } from './layout/edgeLanes.mjs'
 import { measureEdgeLabel } from './layout/measureNode.mjs'
 import { StyleParser } from './puml/StyleParser.mjs'
 import { DECIMAL_RADIX } from "./constants.mjs"
@@ -100,11 +100,18 @@ async function layoutData2mx(layoutData: LayoutResult, pumlElements: EntityDescr
   // points are looked up by the `rel<index>` edge name when present, else a
   // default geometry is used (drawio re-routes from source/target cells).
   const layoutEdgeByRelIdx = new Map<number, { x: number; y: number }[]>()
+  // ELK's reserved non-overlapping label rect (absolute) per edge. Threaded
+  // for the non-laned poly>2 (multi-bend hierarchical) branch so the label
+  // can be re-seated onto ELK's rect instead of drawio's auto-anchor.
+  const layoutEdgeLabelByRelIdx = new Map<number, { x: number; y: number; width: number; height: number }>()
   if (layoutData.edges && Array.isArray(layoutData.edges)) {
     for (const e of layoutData.edges) {
       const m = /^rel(\d+)$/.exec(e.name ?? '')
       if (m && e.points && e.points.length > 0) {
         layoutEdgeByRelIdx.set(parseInt(m[1], DECIMAL_RADIX), e.points)
+      }
+      if (m && e.label) {
+        layoutEdgeLabelByRelIdx.set(parseInt(m[1], DECIMAL_RADIX), e.label)
       }
     }
   }
@@ -158,6 +165,25 @@ async function layoutData2mx(layoutData: LayoutResult, pumlElements: EntityDescr
     } else if (poly && poly.length > 2 && !clusterIds.has(rel.source) && !clusterIds.has(rel.target)) {
       for (const p of poly.slice(1, -1)) {
         g.addArrayPoint(new MxPoint(Math.round(p.x), Math.round(p.y)))
+      }
+      // #24-hier: a non-laned MULTI-BEND hierarchical edge. ELK already
+      // reserved a non-overlapping label rect (layoutEdgeLabelByRelIdx),
+      // but drawio auto-anchors the label at the routed polyline's
+      // LENGTH-midpoint — which, for the External-fanout edges in
+      // edge-large-graph, lands in the crammed junction. Re-seat the
+      // label onto ELK's rect with the absolute offset between ELK's
+      // label centre and drawio's path-midpoint anchor. Same offset
+      // mxPoint mechanism the lane fan + Context solo paths use; scoped
+      // to THIS branch only (2-point `calls` chain, laned, and
+      // Context(#24) paths are untouched ⇒ byte-identical).
+      const lbl = layoutEdgeLabelByRelIdx.get(i)
+      if (lbl && poly) {
+        const mid = polylineMidpoint(poly)
+        g.addPoint(new MxPoint(
+          Math.round(lbl.x + lbl.width / 2 - mid.x),
+          Math.round(lbl.y + lbl.height / 2 - mid.y),
+          'offset',
+        ))
       }
     } else {
       // Straight, non-laned edge (the stress/force Context case: ELK
