@@ -116,14 +116,21 @@ Everything below is researched, not speculative. Sizes are honest.
 >
 > **REMAINING (priority order), each its own factcheck-gated PR:**
 >
-> - **P12** (task #18) — REAL defects the spec-fixture coverage
->   exposed, harness-verified (not artifacts): `c4-container`
->   ingress→apps "Routes /" + lb→apps "Allocates LoadBalancer IP"
->   labels overlap leaf `docker`@(790,308) — resolveLabelOverlap
->   offset insufficient vs a non-endpoint leaf; `c4-all-rel-variants`
+> - **P12** (task #18 has the full fact-checked state) — REAL
+>   harness-verified spec defects. `c4-container` ingress→apps
+>   "Routes /" + lb→apps "Allocates LoadBalancer IP" labels land on
+>   `docker`. **DISPROVED by fact-check**: it is NOT "resolveLabelOverlap
+>   returns null / offset insufficient" — that fn returns large offsets
+>   ({324,-61}/{257,147}) it *believes* clear all obstacles. **Verified
+>   direction:** the de-collision obstacle set (catalyst.mts `else`
+>   branch) is built from leaf `nodeCenter`, so `docker` (a boundary/
+>   cluster) is never an obstacle and the chosen offset lands on it →
+>   fix = include cluster/boundary rects as obstacles (and/or make
+>   resolveLabelOverlap 2-D). Plus `c4-all-rel-variants`
 >   attachMerge=3+labelHit=2 (P10 exit/entry gap on some same-pair
->   rel-variant combos); `c4-exhaustive` labelHit=1. Gate → CLEAN
->   26/26.
+>   rel-variant combos — separate root) and `c4-exhaustive`
+>   labelHit=1. Gate → `make factcheck` CLEAN 26/26. Do NOT re-chase
+>   the disproved null hypothesis.
 > - **P2** (#5) — Rel_L/R: ELK partitioning spiked, insufficient;
 >   needs deeper layout spike. Advisory (rankOrder), not a contract.
 > - **P4b** (#11) — box-emptiness: measured PlantUML targets
