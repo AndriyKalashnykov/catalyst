@@ -87,3 +87,37 @@ not silently contradict.
   does not read the gallery, so this only re-confirms the emit path
   was untouched).
 - Visual: regenerated README columns are uniform 420 px width.
+
+## REVERTED 2026-05-17 (same day) — width=420 → height=360
+
+P13 shipped (#90), the post-P4b gallery was regenerated (#92) so the
+images became visible, and the user rejected the result: "humongous
+fonts … proportion is humongous … lots of ugly garbage".
+
+**Measured root cause (overturns this doc's premise):** the defect is
+NOT the embed and NOT box sizing. Per-leaf, catalyst boxes are
+PlantUML-correct (`scripts/p4b-box-metrics.mjs`: e.g.
+`rel-parallel-duplicate` cat box 93×59 vs PlantUML 92.4×58.1; the
+143-leaf table tracks PlantUML closely). The problem is **diagram
+aspect**: catalyst's ELK `layered` lays whole diagrams out far
+narrower than PlantUML's Graphviz `dot` — `wRatio` (catalyst ÷
+PlantUML diagram width) is 0.19–0.67 on **14 of 20** gallery
+fixtures. Uniform `width=420` then scales those intrinsically-narrow
+(aspect ~0.1–0.3) diagrams up 3–5× to fill the column, blowing the
+fonts up side-by-side against PlantUML (which scales up far less).
+
+This is precisely the trade this doc's Decision section called an
+"accepted downside" — that judgement was wrong; an embed-width policy
+cannot paper over a layout-aspect divergence. `width=420` reverted to
+`height=360` (the two-sided bound from memory `md-image-embedding`),
+which caps the magnification. The **real fix is the ELK↔dot
+layout-aspect mismatch** (catalyst diagrams should spread to roughly
+PlantUML's aspect) — tracked as the next backlog item; this doc's
+"uniform width" approach is abandoned, not deferred.
+
+Process note: `wRatio`/`hRatio` are *advisory* in the factcheck gate,
+so 14 fixtures at 0.19–0.67 still reported "CLEAN 26/26". A measured
+fidelity axis guarded only by an advisory metric rots silently — the
+layout-aspect fix must also promote a width/height-ratio bound from
+advisory to a contract gate (see memory
+`derived-artifact-enforcement-gate`).

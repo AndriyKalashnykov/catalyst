@@ -172,24 +172,25 @@ for (const [title, prefix, blurb] of CLASSES) {
     lines.push('');
     lines.push('| Source PlantUML | catalyst → draw.io |');
     lines.push('|---|---|');
-    // P13: WIDTH-uniform HTML <img>, NOT bare `![](…)` and NOT
-    // `height=` (the prior bound). GitHub's sanitizer strips
-    // `style=`/`class` (github/markup, fact-checked 2026-05-17), so
-    // CSS object-fit / max-height / aspect-boxes are unavailable —
-    // only the width|height ATTR bounds an image, and only ONE axis
-    // (both ⇒ aspect distortion). The corpus spans a ~26× aspect
-    // range; `height=360` therefore made every COLUMN a different
-    // width (the reported "ragged" defect). `width="420"` makes every
-    // column — and the two images within a pair — exactly 420 px wide
-    // (P13's explicit goal). 420 ≈ ½ the scale-2 median native width
-    // ⇒ zero upscale for the common case (retina crisp); only
-    // extreme-aspect outliers scale. A tall diagram now renders tall —
-    // inherent to "uniform width" and the accepted trade. Full
-    // rationale + weighted comparison: docs/research/p13-gallery-
-    // uniformity.md; deliberately overrides md-image-embedding memory
-    // for the gallery (memory updated to record the override).
+    // Height-bounded HTML <img> (per memory `md-image-embedding`).
+    // GitHub's sanitizer strips `style=`/`class`, so only the
+    // width|height ATTR bounds an image and only ONE axis. `height=360`
+    // + GitHub's built-in `max-width:100%` is a two-sided bound: tall
+    // images cap at 360px high; wide ones are bound by column width
+    // (aspect preserved). 360 keeps the scale-2 median crisp.
+    //
+    // P13's `width="420"` (uniform columns) was REVERTED here: catalyst
+    // boxes are PlantUML-correct per-leaf, but ELK lays diagrams out
+    // much narrower than PlantUML's dot (wRatio 0.19–0.67 across 14/20
+    // fixtures — a layout-aspect mismatch, NOT a box-size bug).
+    // Uniform `width=420` then magnified those intrinsically-narrow
+    // diagrams 3–5× → "humongous fonts" side-by-side (the trade P13's
+    // research flagged as "accepted" — user rejected it). `height=360`
+    // caps that magnification until the layout-aspect issue itself is
+    // fixed (the real fix; see docs/research/p13-gallery-uniformity.md
+    // "REVERTED" note + the CLAUDE.md backlog layout-aspect item).
     const cell = (kind) =>
-      `<img src="img/${stem}.${kind}.png" alt="${stem} ${kind}" width="420">`;
+      `<img src="img/${stem}.${kind}.png" alt="${stem} ${kind}" height="360">`;
     lines.push(`| ${cell('puml')} | ${cell('drawio')} |`);
     lines.push('');
     lines.push('<details><summary>PlantUML source</summary>');
