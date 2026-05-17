@@ -131,21 +131,26 @@ describe('LayoutEngine (elkjs)', () => {
       expect(at(r, 'b').y!).toBeGreaterThan(at(r, 'a').y!)
     })
 
-    // Honest L/R contract: a Rel_L/Rel_R STILL emits an a→b edge, so a
-    // layered engine (ELK, dagre, and PlantUML's own Graphviz/dot) ranks
-    // a and b in DIFFERENT layers — "b left/right of a" is geometrically
-    // impossible for edge-connected nodes. L/R is fed as ELK
-    // considerModelOrder *influence* for the cases where it is meaningful
-    // (same-rank peers); it is not a guarantee and must not break layout.
-    // Asserting a strict x-order here would be a false claim.
-    it('Rel_L/Rel_R are accepted, keep parity, and still rank by the edge', async () => {
+    // P2 Strategy A contract (supersedes the old "L/R still ranks by
+    // the edge" behaviour): a Rel_L/Rel_R is NOT fed to ELK as a
+    // ranking edge (that edge ranked the target a layer below the
+    // source — the defect). Instead the source+target are co-ranked
+    // (here, an isolated pair → one synthetic 1×1 phantom sink both
+    // point at). So: both nodes present; NO `rel<i>` ranking edge for
+    // the L/R relation in the LayoutResult (the visible connector is
+    // still drawn by layoutData2mx from pumlRelations, verified in the
+    // emit tests); the pair co-ranks instead of b-below-a; and no
+    // synthetic phantom leaks into the emitted node set.
+    it('Rel_L/Rel_R are co-ranked, no ranking edge, no phantom leak', async () => {
       for (const d of ['L', 'R'] as const) {
         const r = await LayoutEngine.calculateLayout(
           two, [{ source: 'a', target: 'b', label: d, description: '', direction: d }])
         expect(r.nodes.map(n => n.id).sort()).toEqual(['a', 'b'])
-        expect(r.edges.some(e => e.source === 'a' && e.target === 'b')).toBe(true)
-        // edge-connected → still different ranks (b below a in TB).
-        expect(at(r, 'b').y!).toBeGreaterThan(at(r, 'a').y!)
+        expect(r.nodes.some(n => n.id.startsWith('__cmp'))).toBe(false)
+        // L/R no longer a ranking edge ⇒ not in the rel/lay edge set.
+        expect(r.edges.some(e => e.source === 'a' && e.target === 'b')).toBe(false)
+        // co-ranked (same row), NOT the old "b strictly below a".
+        expect(at(r, 'b').y!).toBeCloseTo(at(r, 'a').y!, 0)
       }
     })
   })

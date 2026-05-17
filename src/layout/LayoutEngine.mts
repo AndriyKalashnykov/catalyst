@@ -60,6 +60,9 @@ class LayoutEngine {
   private relations: Rel[] = []
   private constraints: Lay[] = []
   private graphOpts: Record<string, string> = {}
+  /** P2 spike: ids of synthetic 1×1 co-rank phantom sinks — excluded
+   *  from the emitted node set and from the result bounding box. */
+  private phantomIds = new Set<string>()
 
   /**
    * Compound-node (boundary / Deployment_Node) top title band that ELK
@@ -229,7 +232,16 @@ class LayoutEngine {
     // connector is still emitted from pumlRelations in layoutData2mx with the
     // authored from→to, so this only affects placement). L/R handled by model
     // order above. `rel<i>` name lets layoutData2mx pull the routed polyline.
-    const edges: ElkExtendedEdge[] = this.relations.map((r, i) => {
+    // P2 spike: an L/R relation's OWN s→t edge ranks t a layer below s
+    // (proven: it overrode the co-rank edge, "West" stayed under the
+    // hub). So L/R rels do NOT contribute a ranking edge here — the
+    // synthetic `cmp` co-rank edge below carries the placement intent;
+    // the visible L/R connector is still drawn by layoutData2mx from
+    // pumlRelations (independent of the ELK edge set). U/D unchanged
+    // (U=reversed, D=forward — both already rank correctly).
+    const edges: ElkExtendedEdge[] = []
+    this.relations.forEach((r, i) => {
+      if (r.direction === 'L' || r.direction === 'R') return
       const up = r.direction === 'U'
       // Phase 2: feed the measured label rectangle to ELK so it reserves
       // space and routes/places nodes clear of the label. The verb is
@@ -237,12 +249,12 @@ class LayoutEngine {
       // swapped-field grammar — see layoutData2mx). `lay<i>` constraint
       // edges are invisible and intentionally get NO label.
       const dim = measureEdgeLabel(r.label, r.description, edgeCap(r.source, r.target))
-      return {
+      edges.push({
         id: `rel${i}`,
         sources: [up ? r.target : r.source],
         targets: [up ? r.source : r.target],
         labels: [{ text: r.label, width: dim.width, height: dim.height }],
-      }
+      })
     })
     // Layout-only Lay_* edges: present for ELK ranking, NOT in pumlRelations,
     // so layoutData2mx never draws them (it only emits `rel<n>` geometry +
@@ -250,6 +262,55 @@ class LayoutEngine {
     this.constraints.forEach((c, i) => {
       const up = c.direction === 'U'
       edges.push({ id: `lay${i}`, sources: [up ? c.target : c.source], targets: [up ? c.source : c.target] })
+    })
+
+    // P2 spike (Strategy A — invisible co-rank edges). A Rel_L/R(s,t)
+    // also feeds rel<i> s→t, which ranks t a layer BELOW s; "t beside
+    // s" then needs t on s's rank. ELK co-ranks two nodes when they
+    // share a successor, so for each L/R rel add an invisible edge
+    // t→S where S is a real ELK successor of s (≠ s,t); if s has none,
+    // route s and t into ONE lazily-created 1×1 phantom sink. Synthetic
+    // edges/phantoms are id-prefixed `cmp`/`__cmp_sink_` so the emit
+    // path (which only keeps /^(rel|lay)\d+$/) ignores them, exactly
+    // like `lay`. Only emitted when an L/R rel exists ⇒ a hint-free
+    // graph gets ZERO synthetic structure ⇒ byte-identical (the E
+    // scoping guarantee).
+    // To pin an L/R target onto its source's EXACT rank (not merely
+    // "≤ some shared successor"), mirror ALL of the source's ranking
+    // edges onto the target: for every predecessor P of source add an
+    // invisible P→target, and for every successor S add target→S. The
+    // target then inherits source's identical upper+lower rank bounds
+    // ⇒ same rank, regardless of how deep source's own chain is (a
+    // shared-successor-only edge failed: source's n→hub→s chain pinned
+    // hub a rank above w/e). If source has neither pred nor succ
+    // (isolated), route source+target into ONE 1×1 phantom sink so
+    // they co-rank. All synthetic ids are `cmp*`/`__cmp_sink_*` →
+    // ignored by the emit filter; only added when an L/R rel exists.
+    const preds = new Map<string, string[]>()
+    const succs = new Map<string, string[]>()
+    for (const e of edges) {
+      const s = e.sources?.[0], t = e.targets?.[0]
+      if (!s || !t) continue
+      ;(succs.get(s) ?? succs.set(s, []).get(s)!).push(t)
+      ;(preds.get(t) ?? preds.set(t, []).get(t)!).push(s)
+    }
+    this.phantomIds.clear()
+    this.relations.forEach((r, i) => {
+      if (r.direction !== 'L' && r.direction !== 'R') return
+      const ps = (preds.get(r.source) ?? []).filter(x => x !== r.target && x !== r.source)
+      const ss = (succs.get(r.source) ?? []).filter(x => x !== r.target && x !== r.source)
+      if (ps.length === 0 && ss.length === 0) {
+        const sink = `__cmp_sink_${r.source}`
+        if (!this.phantomIds.has(sink)) {
+          this.phantomIds.add(sink)
+          children.push({ id: sink, width: 1, height: 1 })
+        }
+        edges.push({ id: `cmp${i}s`, sources: [r.source], targets: [sink] })
+        edges.push({ id: `cmp${i}t`, sources: [r.target], targets: [sink] })
+        return
+      }
+      ps.forEach((p, k) => edges.push({ id: `cmp${i}p${k}`, sources: [p], targets: [r.target] }))
+      ss.forEach((s, k) => edges.push({ id: `cmp${i}s${k}`, sources: [r.target], targets: [s] }))
     })
 
     // Phase 2: edge-label spacing, font-derived (not invented constants).
@@ -337,6 +398,7 @@ class LayoutEngine {
     const clusters: LayoutNode[] = []
     // ELK child coords are relative to the parent → accumulate to absolute.
     const walk = (n: { id: string; x?: number; y?: number; width?: number; height?: number; children?: unknown[] }, ox: number, oy: number, parent?: string) => {
+      if (this.phantomIds.has(n.id)) return   // P2 spike: synthetic sink — never emitted
       const x = (n.x ?? 0) + ox
       const y = (n.y ?? 0) + oy
       const kids = (n.children ?? []) as typeof nodes extends never ? never : Array<{ id: string; x?: number; y?: number; width?: number; height?: number; children?: unknown[] }>
@@ -397,12 +459,22 @@ class LayoutEngine {
       edges.push({ source: src.source, target: src.target, name: e.id, points: pts, label })
     }
 
+    // P2 spike: recompute the bbox from REAL nodes/clusters only — a
+    // co-rank phantom sink would otherwise inflate ELK's r.width/height
+    // with an empty rank/slot. With no phantoms this equals the prior
+    // value (ELK's root extent), so hint-free graphs are unaffected.
+    let bw = 0, bh = 0
+    for (const n of [...nodes, ...clusters]) {
+      bw = Math.max(bw, (n.x ?? 0) + (n.width ?? 0))
+      bh = Math.max(bh, (n.y ?? 0) + (n.height ?? 0))
+    }
+    const noPhantom = this.phantomIds.size === 0
     return {
       nodes,
       edges,
       clusters,
-      width: Math.ceil(r.width ?? 0),
-      height: Math.ceil(r.height ?? 0),
+      width: noPhantom ? Math.ceil(r.width ?? 0) : Math.ceil(bw),
+      height: noPhantom ? Math.ceil(r.height ?? 0) : Math.ceil(bh),
     }
   }
 
