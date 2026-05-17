@@ -97,63 +97,118 @@ Standalone, independently-maintained library (no upstream; never add an
 
 Everything below is researched, not speculative. Sizes are honest.
 
-> ▶ **RESUME HERE — session handoff 2026-05-17 (refreshed #5).**
-> **`make factcheck` is now THE gate** (CLAUDE.md "Build/test/verify"):
-> numeric PlantUML→drawio comparator over ALL 26 conversions (20
-> gallery corpus + 6 C4-spec fixtures) vs PlantUML `-tsvg`. NO
-> eyeballing — every visual claim cites a factcheck metric. The repo
-> AUTO-MERGES PRs on green CI (no manual merge/Monitor needed; just
-> push + `gh pr create`, then `git reset --hard origin/main`).
+> ▶ **RESUME HERE — session handoff 2026-05-17 (refreshed #6).**
+> `make factcheck` is THE gate (numeric PlantUML→drawio comparator,
+> ALL 26 conversions vs `-tsvg`; NO eyeballing — every visual claim
+> cites a metric). Repo AUTO-MERGES PRs on green CI: branch from
+> fresh `origin/main` → push → `gh pr create` → `git reset --hard
+> origin/main` for the next. **Operating discipline (user, emphatic):
+> real fact-based fixes ONLY, no guesses/workarounds; fact-check
+> before AND after via version-exact docs + the tool's own registry;
+> a gate's pass is read ONLY from its own `rc=$?` on its own line —
+> never via a `grep`/`tail`/`||`/`&&` between the gate and the commit
+> (this bit 3× incl. this session).**
 >
-> - **✅ P12 DONE 2026-05-17 — `make factcheck` CLEAN 26/26** (was
->   23/26; 341/341 tests). THREE fact-verified root causes, NOT the
->   handoff's disproved hypothesis (which it warned against):
->   1. **`c4-container` labelHit=2 — #24-hier base-point bug.** The
->      multi-bend branch (catalyst.mts, the `else if poly>2`) computed
->      `offset = ELK-label-centre − polylineMidpoint(ELK_poly)` but
->      catalyst emits only the INTERIOR waypoints and lets drawio
->      re-anchor endpoints to CELL CENTRES — so the offset was
->      calibrated against ELK's attach-point poly yet applied against
->      drawio's centre-endpoint route (~186 px base-point mismatch →
->      label onto `docker`). Fix: anchor on the rendered route
->      `[A-centre,…interior,B-centre]` (provable vs the oracle).
->   2. **`c4-all-rel-variants`/`c4-exhaustive` labelHit — laned label
->      on an unrelated leaf.** New pure helper `slideLabelAlongLane`
->      (edge-lanes.mts) slides the label ALONG its lane line (axis =
->      src→tgt unit), minimal gate-predicate-identical distance,
->      ±0.5 px rounding-envelope; 0 when clear ⇒ byte-identical for
->      the 24 already-clean. Wired at the lane emit site.
->   3. **`c4-all-rel-variants` attachMerge — clamp-merge + 1 gate
->      false-positive.** Real: `clamp01(0.5+px·shift/2hw)` saturated
->      ≥4-lane outer attach fractions at the SAME corner → replaced
->      with even border distribution `0.5+dir·lane/(K−1)` (provably
->      ≥extent/(K−1) apart, never clamps). Gate FP (6th class, fixed):
->      `attachMerge` compared only attach-X, flagging a Y-separated
->      HORIZONTAL fan (b→c, 66 px apart) → now EUCLIDEAN 2-D attach
->      distance using exitY/entryY. New `FACTCHECK_DEBUG` env on the
->      comparator (durable labelHit+attachMerge diagnostics).
->   Visual corroboration (render-compare): c4-container labels off
->   `docker`; c4-all-rel-variants — all 17 labels clear, attaches
->   fanned. New memories: see `factcheck-harness-gate` (6th FP class),
->   `lane-label-decollision`.
+> **This session — all MERGED to `origin/main`:** #80 P12 (factcheck
+> 23→26/26: #24-hier base-point, `slideLabelAlongLane`, even attach
+> distribution + 6th comparator FP class), #81 #15 (magic-constant
+> audit, byte-identical), #82 #17 (`docs/FACTCHECK-COVERAGE.md`
+> path→metric matrix), #83 P4b decision base, #84 P2 research+matrix,
+> #85 P2 spike (compass correct, gated). `claude-config 9dc42d3`: 4
+> global rules updated (parallel-research→matrix→spike;
+> probe-scope-vs-algebra; gate-rc recurrence #3; worktree
+> byte-baseline; quantisation-half-step constant; full-dimensionality
+> metrics + coverage matrix). **Open: #86 P4b ADR 0010**
+> (auto-merging). Memories new/updated: `lane-label-decollision`,
+> `factcheck-harness-gate` (6 FP classes),
+> `no-guesses-fact-check-discipline` (probe-scope corollary),
+> `open-followups`. Per-item root-cause prose lives in git history +
+> ADRs + memories + the ✅ entries below — not re-dumped here.
 >
-> - **MERGED:** #70 P4 (Context→`layered`, ADR 0008; cascaded P3/P5/P7
->   resolved), #71 P1 (lane labels), #72 P6 (boundary title band),
->   #73 P8 (tag stereotypes), #74 P10 (per-lane attach pts), #75 P9
->   (cycleBreaking=DEPTH_FIRST), #76 (harness offset-aware + complete
->   26-conversion gate). 334/334 tests.
-> - **ALL original gallery-audit defects P1–P11 DONE** (P11 was a
->   harness artifact; 5 harness false-positives each fact-checked &
->   fixed). Corpus **20/20 clean**.
+> ### ▶▶ NEXT SESSION = P4b IMPLEMENTATION (sole focus; ADR 0010 accepted & sanctions it)
 >
-> **REMAINING (priority order), each its own factcheck-gated PR:**
+> Complete & utter P4b: replace the fixed per-type `theme.C4_MIN`
+> floor with a content-fit minimum — real fact-based, no guesses.
+> **Read FIRST, in order:** `docs/adr/0010-content-fit-box-sizing.md`
+> (decision + BLOCKING gating plan), `docs/research/p4b-box-metrics.md`
+> (measured evidence), then rerun the measurement: `make factcheck`
+> once, then `SVG_DIR=build/factcheck-svg node
+> scripts/p4b-box-metrics.mjs`.
+>
+> Decision (ADR 0010): leaf minimum = `measured-text + 2×INSET`,
+> `INSET = 10 px` (MEASURED PlantUML element text-inset, 124
+> entities; single-source in `theme.mjs`, annotate provenance).
+> Delete the 220×140-class constants; correct the mis-attributed
+> "Structurizr" provenance.
+>
+> **Fact-checks — ALL 4 CLOSED 2026-05-17 (measured, no guesses; the
+> numbers are in ADR 0010 §"Measured facts" and contract-locked by
+> `tests/p4b-svg-geom.test.mjs`). Implement FROM these constants:**
+>
+> - **Vertical inset MEASURED** (baseline-relative, no font-metric
+>     guess): `topGap`=22.83, `botGap`=14.69, pitch «stereo»12→Name16
+>     =20.62 ⇒ 2-line min = **58.14** (exactly PlantUML's smallest).
+>     `leafMinH = topGap + Σ(pitch over actual line set) + botGap`.
+> - **14 px tail RESOLVED**: 123/124 leaves are exactly 10 px; the
+>     lone ≠10 is `c4-exhaustive/dev` (a Person + 9-line sprite
+>     label — a classified glyph class, not noise). `INSET=10` is
+>     clean category-1.
+> - **`layout-quality` replacement contract SPECIFIED** (ADR 0010
+>     fact 3): per leaf `h ≥ topGap+Σpitch+botGap` AND `w ≥
+>     maxTextLen+2×10` AND no text overflow. Implement this, don't
+>     delete the assertion.
+> - **Empty-description SETTLED by measurement**: `edge-empty-
+>     descriptions/c` has nText=2 (PlantUML OMITS the blank line) ⇒
+>     pure content-fit reproduces it; NO separate floor (a floor
+>     would be a guess vs the ground truth).
+>
+> The `p4b-box-metrics.mjs` measurement is now safeguarded (fail-loud
+> on empty/broken parse, per-leaf `topGap+Σpitch+botGap===rh`
+> self-check) + the parser extracted to `scripts/p4b-svg-geom.mjs`
+> and contract-locked (6 tests). Re-run any time:
+> `make factcheck` then `SVG_DIR=build/factcheck-svg node
+> scripts/p4b-box-metrics.mjs`.
+>
+> **Gate (BLOCKING, ADR 0010 order):** (1) `make factcheck` CLEAN
+> 26/26 — tighter boxes must NOT introduce
+> `nodeOverlap`/`labelHit`/`attachMerge` (PRIMARY risk: smaller boxes
+> ⇒ labels closer); (2) `make render-compare` on a dense compound
+> (`c4-container`) + a sparse `topology-*` + a Db/cylinder3 fixture —
+> at PlantUML parity, not merely smaller; (3) `git worktree`
+> byte-baseline vs `origin/main` as SCOPE evidence (broad change
+> EXPECTED & intentional — NOT zero-output; golden/parity fingerprint
+> topology so they stay green while coordinates change); (4) verify
+> P6 boundary-band (`titlePadding`) + cylinder3 cap
+> (`CYLINDER3_CAP_PX`) non-regression. New content-fit-floor tests.
+> ONE coherent branch + PR.
+>
+> **REMAINING after P4b:** Sequence diagrams (#12, ADR 0007) —
+> largest, new non-ELK subsystem; C4 surface true residuals
+> (`$sprite`, sketch, legend, dropped `note`) — low/opportunistic;
+> **P13** gallery column-width uniformity (user-requested, `[ ]`
+> below) — presentation-only, must not perturb the emit path.
+>
+> **REMAINING (priority order) — durable per-item record:**
 >
 > - **P12 — ✅ DONE** (see the ✅ block above; `make factcheck`
 >   CLEAN 26/26, 341/341). No longer the entry point.
-> - **P2** (#5) — Rel_L/R: ELK partitioning spiked, insufficient;
->   needs deeper layout spike. Advisory (rankOrder), not a contract.
-> - **P4b** (#11) — box-emptiness: measured PlantUML targets
->   recorded; cross-cutting all-fixture visual change, ADR-worthy.
+> - **P2** (#5) — ✅ research + spike DONE 2026-05-17. Weighted
+>   matrix (`docs/research/p2-directional-constraints.md`, #84) →
+>   winner "invisible co-rank edges" SPIKED + shipped (#85): all 4
+>   compass directions now correct (N↑S↓W←E→, W co-ranked), factcheck
+>   CLEAN 26/26, byte-scoped (only 3 L/R fixtures changed). Residual:
+>   East one rank low (ELK layerer tie-break; P2 stays advisory, not
+>   a contract — PlantUML itself doesn't deterministically co-rank).
+>   Further (deterministic 2-pass) ruled out by the matrix as
+>   high-risk for an advisory metric. Effectively closed.
+> - **P4b** (#11) — ✅ decision base + **ADR 0010 accepted**
+>   2026-05-17. Measured: floor 2.7–7.8× oversized vs PlantUML
+>   ground truth; PlantUML element text-inset = **10 px** (measured,
+>   124 entities). Decision: content-fit minimum = `text + 2×10px`,
+>   delete fixed `C4_MIN`. **NEXT: implementation** — the cross-cutting
+>   gated PR per ADR 0010's BLOCKING plan (factcheck CLEAN 26/26 +
+>   render-compare + byte baseline; re-spec `layout-quality` "≥ C4
+>   min"; verify vertical inset + P6/cylinder3 interaction).
 > - **#15 — ✅ DONE 2026-05-17.** Audited every numeric literal in
 >   `src/` against the no-magic taxonomy. Codebase already strong
 >   (theme.mts/TextMetrics single-source the type scale). Fixed: (a)
