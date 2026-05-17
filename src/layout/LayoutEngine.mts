@@ -32,12 +32,6 @@ interface LayoutResult {
   clusters: LayoutNode[]
   width: number
   height: number
-  /** True when the Context (`org.eclipse.elk.stress`) algorithm was
-   *  used (people/systems only) rather than hierarchical `layered`.
-   *  #24 scope guard: only Context solo edges get the synthetic
-   *  centre-midpoint waypoint — hierarchical edges already carry a
-   *  deterministic ELK ORTHOGONAL route and MUST stay byte-identical. */
-  context: boolean
 }
 
 type Rel = { source: string; target: string; label: string; description: string; direction?: 'U' | 'D' | 'L' | 'R' }
@@ -161,42 +155,31 @@ class LayoutEngine {
   }
 
   /**
-   * Spec-grounded algorithm selection (not a numeric heuristic). A C4
-   * *Context* diagram contains only people/systems (+ boundaries) and NO
-   * Container/Component/Deployment_Node — it is an inherently hub-and-spoke
-   * overview that `layered` spreads into a wide ribbon (true of dagre, ELK
-   * AND PlantUML's own Graphviz/dot). Container/Component/Deployment diagrams
-   * are hierarchical/flow and belong in `layered`. The discriminator is the
-   * C4 spec's own diagram-level definition — the set of entity types present
-   * — read straight from the parsed model.
+   * Layout algorithm: **always `org.eclipse.elk.layered`** — for Context
+   * diagrams too. This supersedes the old people/systems→`stress`
+   * discriminator (ADR 0005, now superseded by ADR 0008).
    *
-   * SECOND structural trigger (#25): a **nested compound** — a boundary
-   * inside a boundary (compound-in-compound). `stress` is force-directed
-   * and does NOT honor `elk.padding` for compound nesting, so a nested
-   * boundary's title band collides with its parent's (proved by spike:
-   * bumping `elk.padding[top]` 33→100 under `stress` moved the child 0u;
-   * the same graph under `layered` honors the padding exactly — child at
-   * exactly the padding distance). Only `layered` reserves the
-   * per-compound title band, so a diagram whose boundaries nest ≥2 deep
-   * is structurally hierarchical regardless of leaf types and MUST use
-   * `layered`. A single-level boundary (a compound holding only leaves)
-   * stays Context — `stress`+declump handles it and `layered` would
-   * ribbon it.
+   * WHY (fact-checked against the ground truth, not a heuristic): the #19
+   * acceptance gate's first-class requirement is *aesthetic fidelity to
+   * PlantUML*. PlantUML renders every C4 diagram — Context included —
+   * with Graphviz `dot`, which is hierarchical layered ranking. It does
+   * NOT force-direct and does NOT avoid the ribbon. The prior premise
+   * ("Context is hub-and-spoke that `layered` ribbons like PlantUML/dot
+   * does") was empirically FALSE, proven by the gallery ground-truth
+   * renders:
+   *   - linear chain  → PlantUML = straight column;  `stress` = diagonal staircase
+   *   - hub-and-spoke → PlantUML = clean 3-rank;      `stress` = scattered tangle
+   *   - wide rank     → PlantUML = embraced ribbon;   `stress` = radial (not the
+   *                                                    ribbon PlantUML shows)
+   * `stress` diverged from PlantUML in every Context shape. ELK `layered`
+   * (same hierarchical-ranking family as `dot`) matches PlantUML in all
+   * of them. ADR 0005 only ever compared `force` vs `stress` on crossing
+   * count — it never compared against `layered` or evaluated PlantUML
+   * fidelity, which is the actual objective. The `stress`+`sporeOverlap`
+   * machinery is therefore removed; `layered` already reserves the
+   * per-compound title band the #25 nested-boundary fix needs, so that
+   * fix is preserved by construction.
    */
-  private isHierarchical(): boolean {
-    const deeper = /^(Container|Component|Node|Deployment_Node)/
-    const scan = (es: EntityDescriptor[]): boolean =>
-      es.some(e => deeper.test(e.type) || (e.children ? scan(e.children) : false))
-    // Compound-in-compound: walk carrying "already inside a compound?" —
-    // true the moment a compound child is itself found within another.
-    const nestedCompound = (es: EntityDescriptor[], inCompound: boolean): boolean =>
-      es.some(e => {
-        const isCompound = !!(e.children && e.children.length)
-        if (isCompound && inCompound) return true
-        return e.children ? nestedCompound(e.children, isCompound) : false
-      })
-    return scan(this.entities) || nestedCompound(this.entities, false)
-  }
 
   /** alias → measured leaf width. Compound nodes (boundaries) are absent
    *  on purpose: their final width is ELK-decided, so an edge touching one
@@ -264,10 +247,11 @@ class LayoutEngine {
       'elk.edgeLabels.inline': 'false',
     }
 
-    const hierarchical = this.isHierarchical()
-    const layoutOptions: Record<string, string> = hierarchical
-      ? {
-          // Hierarchical C4 (Container/Component/Deployment): layered flow.
+    const layoutOptions: Record<string, string> = {
+          // Always layered — matches PlantUML/Graphviz `dot` for every C4
+          // diagram type, Context included (see the class-level rationale
+          // and ADR 0008). Container/Component/Deployment AND Context all
+          // rank hierarchically here, exactly as PlantUML's own dot does.
           'elk.algorithm': 'org.eclipse.elk.layered',
           'elk.direction': 'DOWN',
           'elk.hierarchyHandling': 'INCLUDE_CHILDREN',
@@ -281,8 +265,9 @@ class LayoutEngine {
           // wrapping splits a long *sequence of layers* into side-by-side
           // chunks — NOT a single over-wide rank — and it empirically
           // flattened normal ranking. Plain layered already balances
-          // hierarchical C4 (multiple ranks); the wide-star case is handled
-          // by the stress (Context) branch below, not by mis-using wrapping.
+          // hierarchical C4 (multiple ranks); the wide-star case (e.g.
+          // topology-wide-rank) is the ribbon PlantUML/dot itself shows,
+          // so layered reproducing it IS the fidelity target.
           // L1 L/R: bias within-layer order by model order WITHOUT overriding
           // edge ranking (forceNodeModelOrder rejected — it flattens ranks).
           'elk.layered.considerModelOrder.strategy': 'NODES_AND_EDGES',
@@ -299,61 +284,22 @@ class LayoutEngine {
           'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX',
           ...this.graphOpts
         }
-      : {
-          // C4 Context (hub-and-spoke): `stress` over `force` (Phase 3).
-          // Empirical spike on the real ibm-wm c4-context (post Phase 1+2
-          // node sizes): force = 3 edge crossings, stress = 0, and stress
-          // is DETERMINISTIC (force is seed-based — unstable golden/route
-          // signatures). `stress` confirmed in elkjs 0.11.1's own
-          // knownLayoutAlgorithms() registry. Edges stay straight (a
-          // context overview is not a flow diagram); graphOpts
-          // (rankdir/spacing) don't apply and are intentionally not spread.
-          'elk.algorithm': 'org.eclipse.elk.stress',
-          'elk.hierarchyHandling': 'INCLUDE_CHILDREN',
-          ...edgeLabelOpts
-        }
 
     return { id: 'root', layoutOptions, children, edges }
   }
 
   /**
-   * Phase 3 second pass. `stress` minimises edge crossings (0 on the real
-   * c4-context) but, unlike `force`, has NO node-repulsion — it can leave
-   * boxes overlapping (the layout-quality gate's invariant). ELK's
-   * `sporeOverlap` is purpose-built to remove node overlaps while
-   * preserving the relative arrangement, so the crossing-minimal positions
-   * from stress survive. Deterministic. Compound nesting (boundaries) is
-   * kept via INCLUDE_CHILDREN; the spacing is the same font-derived title
-   * band used elsewhere (a real metric, not an invented constant).
+   * Layout is always `layered` (see the class-level rationale / ADR 0008).
+   * The old `stress`+`sporeOverlap` declump second pass — which existed
+   * only because the removed Context branch left node overlaps — is gone:
+   * `layered` produces non-overlapping ranked output by construction, the
+   * same way PlantUML's own Graphviz `dot` does.
    */
-  private async declump(laid: ElkNode): Promise<ElkNode> {
-    const gap = this.titlePadding().top
-    const clone = (n: ElkNode): ElkNode => ({
-      id: n.id,
-      x: n.x, y: n.y, width: n.width, height: n.height,
-      ...(n.children ? { children: n.children.map(clone) } : {}),
-    })
-    const g2: ElkNode = {
-      id: laid.id,
-      layoutOptions: {
-        'elk.algorithm': 'org.eclipse.elk.sporeOverlap',
-        'elk.hierarchyHandling': 'INCLUDE_CHILDREN',
-        'elk.spacing.nodeNode': String(gap),
-      },
-      children: (laid.children ?? []).map(clone),
-      edges: (laid.edges ?? []) as ElkExtendedEdge[],
-    }
-    return this.elk.layout(g2)
-  }
-
   async calculateLayout(): Promise<LayoutResult> {
     const g = this.buildGraph()
     // elkjs returns a laid-out graph: x/y/width/height on shapes, routed
     // `sections` on edges (top-level edge coords are absolute).
-    let r = await this.elk.layout(g)
-    // Context (non-hierarchical) used `stress` — declump any node overlaps
-    // it left, preserving its crossing-minimal arrangement.
-    if (!this.isHierarchical()) r = await this.declump(r)
+    const r = await this.elk.layout(g)
 
     const nodes: LayoutNode[] = []
     const clusters: LayoutNode[] = []
@@ -425,7 +371,6 @@ class LayoutEngine {
       clusters,
       width: Math.ceil(r.width ?? 0),
       height: Math.ceil(r.height ?? 0),
-      context: !this.isHierarchical(),
     }
   }
 
