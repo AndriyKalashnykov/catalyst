@@ -74,21 +74,39 @@ Standalone, independently-maintained library (no upstream; never add an
 
 Everything below is researched, not speculative. Sizes are honest.
 
-> ▶ **RESUME HERE — session handoff 2026-05-16 (refreshed).** Prior
-> handoff's PRs all merged (#55, claude-config #16); main synced.
-> **`edge-large-graph` #24-hier IMPLEMENTATION — DONE this session**
-> (the CORRECTED hypothesis worked; see the ✅ note below; PR open
-> at cutoff). **(1) If still open, merge that PR**, then `git switch
-> main && git fetch origin --prune && git reset --hard origin/main`.
+> ▶ **RESUME HERE — session handoff 2026-05-16 (refreshed #2).**
+> All this-session PRs MERGED; `main` synced (`ce30c50`), 317/317.
+> Big backlog sweep done — #24-hier impl (#56), label-offset
+> scope-lock (#57), `Rel_Back` arrowhead reversal (#58), Boundary
+> subtitle→PlantUML lowercase tag (#60), `_Ext` DB/Queue keep
+> cylinder/queue shape (#63), 3 stale C4-COVERAGE entries
+> fact-corrected (#59 + the boundary/`_Ext` doc fixes), README +
+> gallery image-embed right-sized (#64/#65), **ADR 0007
+> sequence-diagram DESIGN (#66)**. All fact-checked vs pinned
+> C4-PlantUML, byte-scope + render-compare gated.
+> **(1)** Working tree clean; just `git fetch origin --prune && git
+> reset --hard origin/main` to start fresh.
 > **(2) Live backlog (priority order):**
-> – **item 1 = C4 surface residual gaps** (LOW/opportunistic; see
-> `docs/C4-COVERAGE.md` Tier-2/3 + the dropped-`note` gap).
-> – **item 2 = Sequence-diagram support** (large, design-first).
-> **Merged this session:** v1.6.1 chain, #19 gate, #23 (#43/#44/#45),
-> #24 (#47), #25 (#49), C4-COVERAGE (#50), edge-large-graph design
-> (#51), fontZize (#52), consolidated constants (#53), handoffs
-> (#54), #55, claude-config #16. Open at cutoff: the #24-hier
-> implementation PR (this session).
+> – **item 1 = Sequence-diagram IMPLEMENTATION** — design is
+> settled in `docs/adr/0007-sequence-diagram-support.md`; execute
+> it phased (parser+ordering → linear layout+emit → render-compare
+> gate → v2 fragments), each phase its own gated PR. This is now
+> the largest open item.
+> – **item 2 = C4 surface true residuals only** (genuinely
+> LOW/opportunistic): `$sprite`, `$shadowing`/custom `$lineStyle`/
+> `SET_SKETCH_STYLE`, `SHOW_LEGEND*`, `AddProperty`/property
+> tables, dropped PlantUML `note` callouts. Per-type DB/Queue
+> COLOUR and Boundary subtitle are NOT here (shipped/were-already-
+> correct — see corrected `docs/C4-COVERAGE.md`).
+> – Optional: 3 no-PR stale remote branches
+> (`add-typescript-and-dagre-types`, `copilot/fix-linting-and-
+> testing-issues`, `tsconfig-forward-compat`) — user-decision to
+> prune (left intact: no MERGED confirmation, not this session's).
+> **Merged this session (2):** #56 #24-hier, #57 scope-lock, #58
+> Rel_Back, #59 boundary doc, #60 boundary subtitle, #63 `_Ext`
+> shape, #64 README img, #65 gallery img, #66 ADR-0007 (+ Renovate
+> #61/#62 dep pins). New memories: `self-audit-introduced-literals`,
+> `c4-plantuml-renovate-tracked`, `md-image-embedding`.
 
 ---
 
@@ -390,25 +408,31 @@ Everything below is researched, not speculative. Sizes are honest.
 > at the next release-chain consumption (standard
 > catalyst→puml2drawio→ibm-wm flow), as with every prior fix.
 
-1. **C4 surface residual gaps (low — see `docs/C4-COVERAGE.md`
-   Tier-2/3, validated 2026-05-16).** The genuinely-unimplemented `✗`
-   surface, all low-value/no-parity-impact: `$sprite` (no drawio
-   sprite registry), `$shadowing`/custom `$lineStyle`/`SET_SKETCH_STYLE`,
-   legend (`SHOW_LEGEND`/`_FLOATING`/`_DYNAMIC`, `HIDE_STEREOTYPE`,
-   `SHOW_PERSON_OUTLINE/_PORTRAIT/_SPRITE`), `AddProperty`/property
-   tables, sequence display toggles (`SHOW_ELEMENT_DESCRIPTIONS`/
-   `SHOW_FOOT_BOXES`/`SHOW_INDEX`), `Container_Boundary` type
-   distinction (renders as generic `Boundary`), and per-type fill
-   colour for the `~` DB/Queue/_Ext rows. **Plus one gap NOT in the
-   matrix:** PlantUML `note` callouts are dropped entirely (found in
-   #19 — `ibm-wm layered-architecture` has 2; add a `note` row to
-   C4-COVERAGE when tackled). Pick up individually only when a
-   downstream diagram actually needs one; none block parity/golden.
+1. **Sequence-diagram support — IMPLEMENTATION (design DONE).**
+   catalyst fail-louds on `C4_Sequence`/PlantUML sequence. The
+   design is settled and fact-checked in
+   `docs/adr/0007-sequence-diagram-support.md` (#66): a parallel
+   non-ELK pipeline (`SeqParser` → deterministic linear `seqLayout`
+   → `umlLifeline` emit) behind the existing fail-loud detector as
+   the dispatch seam; v1 scope vs deferred-v2 fragments; BLOCKING
+   test strategy. Execute it **phased**, each phase its own
+   byte-scope + render-compare gated PR: (a) `SeqParser` + ordering
+   invariants; (b) linear layout + emit; (c) corpus fixture +
+   render-compare gate; (d) v2 fragments. Largest open item.
 
-2. **Sequence-diagram support (deferred feature, large, design-first).**
-   catalyst fail-louds on `C4_Sequence`/PlantUML sequence. New
-   subsystem (parser + deterministic non-ELK layout + umlLifeline
-   emit). Full design context in memory `open-followups` item 4.
+2. **C4 surface TRUE residuals (low/opportunistic).** Only the
+   genuinely-unimplemented `✗` surface remains, none blocking
+   parity/golden: `$sprite` (no drawio sprite registry),
+   `$shadowing`/custom `$lineStyle`/`SET_SKETCH_STYLE`, legend
+   (`SHOW_LEGEND`/`_FLOATING`/`_DYNAMIC`, `HIDE_STEREOTYPE`,
+   `SHOW_PERSON_OUTLINE/_PORTRAIT/_SPRITE`), `AddProperty`/property
+   tables, sequence display toggles, and dropped PlantUML `note`
+   callouts (add a `note` row to `docs/C4-COVERAGE.md` when
+   tackled). **NOT here any more** (this-session fact-check +
+   fixes): `Rel_Back` arrow (#58 ✓), Boundary subtitle (#60 ✓),
+   `_Ext` DB/Queue shape (#63 ✓), per-type DB/Queue COLOUR (was
+   already correct — stale doc corrected). Pick up individually
+   only when a downstream diagram needs one.
 
 Deferred research (not blocking): Graphviz edge-routing benchmark
 (reference only, memory `open-followups` item 2).
