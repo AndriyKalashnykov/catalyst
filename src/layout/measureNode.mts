@@ -1,7 +1,7 @@
 import { EntityDescriptor } from '../puml/EntityDescriptor.interface.mjs'
 import { textWidth, renderedLineHeight, spaceAdvance, wrap } from '../text/TextMetrics.mjs'
 import { splitLabelLines, wrapEdgeLabelLines } from '../text/labelLines.mjs'
-import { ELEMENT_TITLE_PX, ELEMENT_BODY_PX, RELATIONSHIP_LABEL_PX, CYLINDER3_CAP_PX, PUML_LEAF_BOX } from '../mx/c4/theme.mjs'
+import { RELATIONSHIP_LABEL_PX, CYLINDER3_CAP_PX, PUML_LEAF_BOX, WRAP_WIDTH, PUML_FONT } from '../mx/c4/theme.mjs'
 
 /**
  * The `*Db` C4 types whose template emits drawio `shape=cylinder3`
@@ -58,47 +58,70 @@ function leafPitch(fromPx: number, toPx: number): number {
  * render-compare gate, ADR 0010).
  */
 export function measureNode(entity: EntityDescriptor): { width: number; height: number } {
-  const TITLE_PX = ELEMENT_TITLE_PX, BODY_PX = ELEMENT_BODY_PX
   const { INSET, TOP_GAP, BOT_GAP } = PUML_LEAF_BOX
-  // PlantUML's rendered font sizes for the pitch lookup (NOT catalyst's
-  // div-CSS sizes): stereotype/tech/description render at 12, the bold
-  // Name at 16 in PlantUML's `-tsvg` — the geometry the box mirrors.
-  const PUML_STEREO_PX = 12, PUML_TITLE_PX = 16, PUML_BODY_PX = 12
+  // ADR 0011 cause D: model the box at PlantUML's ACTUAL rendered
+  // font per run (NOT catalyst's div-CSS 11) so the box mirrors
+  // PlantUML's geometry — stereo 12, Name 16, tech 12, description
+  // **14** (PlantUML default; C4 defines no $ELEMENT_FONT_SIZE). The
+  // prior model used 12 for the description, under-counting both its
+  // wrap line-count and its baseline pitch (~20 px short per box).
+  // catalyst's own label renders smaller (11), so it fits the
+  // PlantUML-sized box by construction.
+  const { STEREO, NAME, TECH, DESC } = PUML_FONT
 
-  // Title may carry explicit PlantUML `\n` breaks — measure each rendered
-  // line, the box must fit the WIDEST and stack ALL of them vertically.
-  const titleLines = splitLabelLines(entity.label ?? entity.alias)
+  // ADR 0011 C3: PlantUML wraps EVERY element text run at `skinparam
+  // wrapWidth` (C4-PlantUML `$DEFAULT_WRAP_WIDTH = 200`, cited). Honour
+  // explicit `\n` first, then word-wrap each segment at WRAP_WIDTH —
+  // at THAT run's PlantUML font, so the wrapped LINE COUNT matches
+  // PlantUML's (the prior model wrapped the description to the short
+  // title width AND at the wrong font → far fewer lines → boxes 2–5×
+  // narrower and ~20 px short). A blank segment (`a\n\nb`) keeps a
+  // real empty line so its vertical space stays.
+  const wrapAt = (s: string | undefined, px: number, bold: boolean): string[] =>
+    splitLabelLines(s).flatMap((seg) =>
+      seg.trim() === '' ? [''] : wrap(seg, WRAP_WIDTH, px, bold))
+
+  const titleLines = wrapAt(entity.label ?? entity.alias, NAME, true)
   const titleW = titleLines.reduce(
-    (m, l) => Math.max(m, textWidth(l, TITLE_PX, true)), 0)
-  // Stereotype line «Type» (always emitted, 11px). Technology, when present,
-  // is its OWN bracketed line (11px) — matches the restructured templates.
-  const stereoW = textWidth(`«${entity.type}»`, BODY_PX, false)
+    (m, l) => Math.max(m, textWidth(l, NAME, true)), 0)
+  const stereoLines = wrapAt(`«${entity.type}»`, STEREO, false)
+  const stereoW = stereoLines.reduce(
+    (m, l) => Math.max(m, textWidth(l, STEREO, false)), 0)
   const hasTech = !!entity.technology
-  const techW = hasTech ? textWidth(`[${entity.technology}]`, BODY_PX, false) : 0
+  const techLines = hasTech ? wrapAt(`[${entity.technology}]`, TECH, false) : []
+  const techW = techLines.reduce(
+    (m, l) => Math.max(m, textWidth(l, TECH, false)), 0)
 
-  const contentW = Math.max(titleW, stereoW, techW)
-  // Honour explicit breaks first, then word-wrap each segment to the box
-  // width. An intentionally-blank segment (`a\n\nb`) keeps a real empty
-  // line so its vertical space is reserved.
-  const descLines = splitLabelLines(entity.description).flatMap((seg) =>
-    seg.trim() === '' ? [''] : wrap(seg, Math.max(contentW, 1), BODY_PX, false))
+  const descLines = wrapAt(entity.description, DESC, false)
   const longestDescW = descLines.reduce(
-    (m, l) => Math.max(m, textWidth(l, BODY_PX, false)), 0)
+    (m, l) => Math.max(m, textWidth(l, DESC, false)), 0)
 
-  // Content-fit width: widest rendered line + the MEASURED 10px PlantUML
-  // text-inset each side (ADR 0010). fontkit `textWidth` is catalyst's
-  // own rendered glyph width, so the emitted label fits by construction.
+  // Content-fit width: widest WRAPPED line + the MEASURED 10px PlantUML
+  // text-inset each side (ADR 0010), measured at PlantUML's per-run
+  // font (above) so the box matches PlantUML's; catalyst's own 11px
+  // label is narrower and fits by construction.
   const textW = Math.ceil(
     Math.max(titleW, stereoW, techW, longestDescW) + 2 * INSET)
 
-  // The emitted line stack, in PlantUML font-size terms, for the
-  // pitch-summed height (ADR 0010 fact 2 closed form):
-  //   [stereo 12] [Name 16 × titleLines] [tech 12?] [desc 12 × descLines]
+  // Line stack in PlantUML font-size terms for the pitch-summed height
+  // (ADR 0010 fact 2 closed form): [stereo 12][Name 16×][tech 12?]
+  // [BLANK spacer 14 — only when there IS a description][desc 14×].
+  // ADR 0011 cause D: PlantUML emits ONE blank `&#160;` line at the
+  // description font (14) between the Name and the first description
+  // line (directly observed in `-tsvg`: stereo y70 → Name y91 →
+  // " " y110 → desc y129; a no-description leaf has NEITHER spacer
+  // nor desc, matching ADR-0010's verified 2-line 58.14 minimum). The
+  // P4b model omitted this spacer → every description-bearing box was
+  // ~1 line (~19 px) short — the cause-D height deficit. The PITCH
+  // map carries the measured 16>14 / 14>14 / 12>14 transitions.
+  const hasDesc = entity.description != null
+    && String(entity.description).trim() !== ''
   const stack: number[] = [
-    PUML_STEREO_PX,
-    ...titleLines.map(() => PUML_TITLE_PX),
-    ...(hasTech ? [PUML_BODY_PX] : []),
-    ...descLines.map(() => PUML_BODY_PX),
+    ...stereoLines.map(() => STEREO),
+    ...titleLines.map(() => NAME),
+    ...techLines.map(() => TECH),
+    ...(hasDesc ? [DESC] : []),          // PlantUML's blank desc-font spacer
+    ...descLines.map(() => DESC),
   ]
   let pitchSum = 0
   for (let i = 1; i < stack.length; i++) pitchSum += leafPitch(stack[i - 1], stack[i])

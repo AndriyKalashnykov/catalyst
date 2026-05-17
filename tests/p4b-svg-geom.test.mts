@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 // @ts-expect-error — plain .mjs analysis tool, no d.ts (intentional)
 import { entityGeom } from '../scripts/p4b-svg-geom.mjs'
-import { PUML_LEAF_BOX } from '../src/mx/c4/theme.mjs'
+import { PUML_LEAF_BOX, PUML_FONT } from '../src/mx/c4/theme.mjs'
 
 // Contract-lock for the P4b measurement parser. ADR 0010's category-1
 // constants (10px inset; topGap 22.83 / pitch 20.62 / botGap 14.69 ⇒
@@ -103,6 +103,35 @@ describe('PUML_LEAF_BOX === measured PlantUML oracle (no-hardcode gate)', () => 
     const [g] = entityGeom(LEAF3)
     const p = g.pitches.find((q: { from: number; to: number }) => q.from === 16 && q.to === 12)!
     expect(PUML_LEAF_BOX.PITCH['16>12']).toBeCloseTo(p.d, 2)
+  })
+
+  // ADR 0011 cause D: the description renders at PlantUML's default
+  // font 14 with a blank font-14 SPACER between Name and desc.
+  // Verbatim subset of the REAL `-tsvg` for topology-linear-chain
+  // entity `a` — one <text> per BASELINE (PlantUML's per-word runs
+  // share a baseline → entityGeom yields d=0 for them, irrelevant to
+  // the LINE pitch; dropping them keeps the exact baseline deltas).
+  // Baselines: «system» fs12 @69.896, Name fs16 @90.5161, blank
+  // spacer fs14 @110.17, desc fs14 @129.2379 ⇒ pitches 12>16=20.62,
+  // 16>14=19.65, 14>14=19.07. CI-safe (no fs/java); locks the three
+  // new measured 14-font constants against the oracle so they cannot
+  // silently rot in plain `npm test` (the verbatim safeguard the
+  // no-magic / equivalence-gate discipline requires).
+  const LEAF_DESC = `<!--entity a--><g id="elem_a"><rect fill="#1168BD" height="96.272" style="stroke:#3C7FC0;stroke-width:0.5;" width="151.7815" x="80.7018" y="47.0679"/><text fill="#FFFFFF" font-family="sans-serif" font-size="12" font-style="italic" lengthAdjust="spacing" textLength="47.8923" x="132.6464" y="69.896">&#171;system&#187;</text><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="bold" lengthAdjust="spacing" textLength="51.2161" x="130.9845" y="90.5161">Ingest</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="3.64" x="154.7725" y="110.17">&#160;</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="56.5458" x="90.7018" y="129.2379">Receives</text></g>`
+
+  it('16→14 and 14→14 pitches match verbatim desc-bearing leaf `a` (cause D)', () => {
+    const { STEREO, NAME, DESC } = PUML_FONT          // 12 / 16 / 14 — named, not literal
+    const [g] = entityGeom(LEAF_DESC)
+    expect(g.fonts).toBe([STEREO, NAME, DESC, DESC].join('+'))
+    const pd = (from: number, to: number) =>
+      g.pitches.find((q: { from: number; to: number }) => q.from === from && q.to === to)!.d
+    const key = (from: number, to: number) => `${from}>${to}`
+    // Constant vs oracle-measured, both keyed off PUML_FONT (no
+    // transcribed font-size literal): each PITCH constant MUST equal
+    // the pitch parsed from the verbatim `-tsvg`.
+    expect(PUML_LEAF_BOX.PITCH[key(STEREO, NAME)]).toBeCloseTo(pd(STEREO, NAME), 2) // stereo→Name
+    expect(PUML_LEAF_BOX.PITCH[key(NAME, DESC)]).toBeCloseTo(pd(NAME, DESC), 2)     // Name→blank spacer
+    expect(PUML_LEAF_BOX.PITCH[key(DESC, DESC)]).toBeCloseTo(pd(DESC, DESC), 2)     // spacer→description
   })
 
   // Live-oracle scan: the corpus has exactly ONE leaf exercising a real

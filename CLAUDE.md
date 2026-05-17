@@ -190,8 +190,14 @@ Completed-work root-cause prose lives in git history + ADRs +
 >    gated PR; PROMOTE `wRatio`/`hRatio` advisory→contract BEFORE C3
 >    (data-driven threshold).** Implement in that order; C1 may be
 >    declined (width not worth re-tangling edges — a valid outcome).
->    See memory `derived-artifact-enforcement-gate`. Hardest open
->    item; the one the user is reacting to.
+>    **STATUS 2026-05-17: step 0 (#96) + C3 + cause D (desc font
+>    14 + blank spacer, fact-observed) SHIPPED; ratchet re-baselined
+>    (pre-C3 was a proven bug artifact); routed-edge label
+>    de-collision added (fixed the C3+D-exposed c4-deployment
+>    labelHit); factcheck CLEAN 26/26. NEXT = C2** (synthetic
+>    fan/label rank-width — the dominant cause B; diagram ratios
+>    still need it). See ADR 0011 §Status + memory
+>    `derived-artifact-enforcement-gate`.
 > 1. **Sequence diagrams** (#12, ADR 0007) — phased. **Phase (a)
 >    `SeqParser` ✅ DONE 2026-05-17** (`src/seq/`, 29-test matrix,
 >    net-new). Phase (b) WIP parked on branch

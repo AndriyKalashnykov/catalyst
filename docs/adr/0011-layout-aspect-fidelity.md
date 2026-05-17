@@ -174,6 +174,39 @@ on a dense + sparse + parallel-fan fixture.
   follow-up (the gate-asymmetry that let this ship is the defect class
   in memory `derived-artifact-enforcement-gate`).
 
+## Status — step 0 + C3 + cause D shipped (2026-05-17)
+
+- **Step 0** (ratio ratchet, PR #96) — merged.
+- **C3** (`WRAP_WIDTH = 200`, cited C4-PlantUML `$DEFAULT_WRAP_WIDTH`)
+  fixed the description-wrap-to-title-width narrowing.
+- **Cause D (newly found during C3 verification, fact-observed in
+  `-tsvg`):** PlantUML renders the C4 `$descr`/Name fallback at its
+  DEFAULT font **14** (C4 defines no `$ELEMENT_FONT_SIZE`;
+  `$STEREOTYPE_/$TECHN_FONT_SIZE = 12`) AND emits ONE blank font-14
+  **spacer line between Name and description** (`&#160;` run). The P4b
+  model used font 12 and no spacer ⇒ every description box ~1 line
+  (~20 px) short. Fix: `PUML_FONT = {STEREO12, NAME16, TECH12,
+  DESC14}` + a modelled blank spacer + the measured `16>14 / 14>14 /
+  12>14` pitches (verbatim-locked, `tests/p4b-svg-geom.test`).
+  Per-leaf proof: `topology-linear-chain` box 76→97 ≈ PlantUML 96.
+- **Re-baseline justified, not laundered:** the pre-C3 ratchet
+  baseline was a proven cramming-bug ARTIFACT (pre-C3 boxes were
+  narrow+tall by the bug; `hRatio≈1` coincidental). C3+D boxes are
+  proven correct per-leaf vs PlantUML, so the baseline was regenerated
+  (ADR's "re-baseline after C3" plan); zero `ratioBad`, all box
+  geometry CLEAN. C2/C1 ratchet it further toward true parity.
+- **One real residual fixed at root, not laundered:** C3+D's correctly
+  bigger `cache` box made the `c4-deployment` `api→db` "SQL" label
+  clip it (`labelHit=1`). Root: the routed non-laned edge branch in
+  `catalyst.mts` was the ONLY label-emit path WITHOUT an obstacle
+  de-collision (laned uses `slideLabelAlongLane`, straight uses
+  `resolveLabelOverlap`). Added the same `slideLabelAlongLane` safety
+  net there ⇒ `make factcheck` **CLEAN 26/26**. (`make factcheck` is
+  the authoritative whole-path `labelHit` contract, in the PR gate;
+  the primitive is unit-tested in `edge-lanes.test`.)
+- **Remaining:** C2 (synthetic fan/label rank-width — the dominant
+  cause B; diagram-level ratios still need it), then C1 spike.
+
 ## Why ADR
 
 It changes nearly every diagram's geometry, reverses/qualifies a prior
