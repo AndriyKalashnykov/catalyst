@@ -84,20 +84,25 @@ Everything below is researched, not speculative. Sizes are honest.
 > gallery image-embed right-sized (#64/#65), **ADR 0007
 > sequence-diagram DESIGN (#66)**. All fact-checked vs pinned
 > C4-PlantUML, byte-scope + render-compare gated.
+ > Then `$lineStyle`/`$borderStyle`/`$shadowing`/`$thickness`
+> faithful mapping shipped (#68, Item-2). A full **gallery visual
+> audit** of all 20 fixtures was then run from latest sources.
 > **(1)** Working tree clean; just `git fetch origin --prune && git
 > reset --hard origin/main` to start fresh.
-> **(2) Live backlog (priority order):**
-> – **item 1 = Sequence-diagram IMPLEMENTATION** — design is
-> settled in `docs/adr/0007-sequence-diagram-support.md`; execute
-> it phased (parser+ordering → linear layout+emit → render-compare
-> gate → v2 fragments), each phase its own gated PR. This is now
-> the largest open item.
-> – **item 2 = C4 surface true residuals only** (genuinely
-> LOW/opportunistic): `$sprite`, `$shadowing`/custom `$lineStyle`/
-> `SET_SKETCH_STYLE`, `SHOW_LEGEND*`, `AddProperty`/property
-> tables, dropped PlantUML `note` callouts. Per-type DB/Queue
-> COLOUR and Boundary subtitle are NOT here (shipped/were-already-
-> correct — see corrected `docs/C4-COVERAGE.md`).
+> **(2) Live backlog — TOP PRIORITY is the new
+> "▶▶ GALLERY VISUAL AUDIT" section below (P1–P8, image-linked).**
+> Suggested order: **P4 systemic oversized-box/sparse-layout FIRST**
+> (cascades into P3 long-label blow-up + P6 nested-title collision +
+> the diagonal-chain aesthetic), then **P1 multi-edge lane
+> separation (SEVERE — rel-parallel-duplicate orphans 2 of 3
+> edges)**, then P2 directional hints, P5 hub label cram, P7 short-
+> edge label cram, P8 tag stereotype. Each pattern lists the exact
+> `docs/gallery/img/<stem>.{puml,drawio}.png` pair to re-diff after
+> a fix. Then: Sequence-diagram IMPLEMENTATION (design settled in
+> `docs/adr/0007-sequence-diagram-support.md`, #66; phased), and the
+> remaining genuinely-low C4 residuals (`$sprite`,
+> `SET_SKETCH_STYLE`/`LAYOUT_AS_SKETCH`, `SHOW_LEGEND*`,
+> `AddProperty`, dropped `note`; `$lineStyle`/`$shadowing` DONE #68).
 > – Optional: 3 no-PR stale remote branches
 > (`add-typescript-and-dagre-types`, `copilot/fix-linting-and-
 > testing-issues`, `tsconfig-forward-compat`) — user-decision to
@@ -407,6 +412,126 @@ Everything below is researched, not speculative. Sizes are honest.
 > approach. #19 ibm-wm `c4-container`/deployment acceptance runs
 > at the next release-chain consumption (standard
 > catalyst→puml2drawio→ibm-wm flow), as with every prior fix.
+
+### ▶▶ GALLERY VISUAL AUDIT 2026-05-16 — defect catalog + plan (TOP PRIORITY)
+
+Comprehensive puml-vs-drawio audit of all **20 corpus fixtures**,
+regenerated from latest `main` (post-#68) via `make gallery`, compared
+at normalized common-height scale (NOT the downscaled committed PNG —
+the #19 lesson). Supersedes the older #19/#23 reviews (which predate
+PRs #56/#58/#60/#63). Every item links the EXACT images to re-check a
+fix/spike against: `docs/gallery/img/<stem>.puml.png` (ground truth)
+vs `docs/gallery/img/<stem>.drawio.png` (catalyst); regenerate with
+`make gallery` then diff those pairs.
+
+**Verdict: 10 PASS, 8 defect patterns.** PASS = edge-empty-descriptions,
+edge-unicode-specialchars (#44 holds), edge-multiline-labels,
+level-dynamic (#45), level-system-landscape (post #24/#56/#60),
+rel-layout-constraints, topology-cyclic, topology-disconnected,
+topology-wide-rank (deliberate anti-ribbon radial), topology-linear-chain
+(order fact-checked correct: Ingest→…→Report top-down in BOTH; edges
+a→b→c→d→e not reversed).
+
+Patterns, priority-ordered (each: affected fixtures + images, root-cause
+hypothesis, approach, verification gate). **Aesthetic fidelity to
+PlantUML is a first-class requirement here (the #19 gate's whole
+point) — "looks different but content correct" is NOT a pass.**
+
+**P1 — Multi-edge lane separation broken (SEVERE).**
+Fixtures/images: `rel-parallel-duplicate.{puml,drawio}.png` (SEVEREST —
+3 parallel A→B: only `async` drawn; `callback`/`sync` labels ORPHANED
+at canvas top/bottom with NO visible edge), `rel-tech-vs-notech.*`
+(antiparallel `verb with technology`+`back-rel no tech` cram at the
+Producer↔Auditor junction), `rel-bidirectional.*` (A↔C `calls`/
+`callbacks` label cram). Root-cause hypo: `assignEdgeLanes` +
+`catalyst.mts` emit for ≥2 same-pair edges fails to emit every edge's
+waypoints/label in the parallel case (labels fall back to drawio
+auto-anchor → flung to extremes) and under-separates the antiparallel
+case. Approach: spike `assignEdgeLanes` on the 3-parallel + 2-anti
+inputs; verify every parsed relation emits a distinct visible edge
+(corpus-sanity already has a route-distinctness gate — extend it to
+assert *edge presence per relation* + label proximity bound). Gate:
+the 3 images above re-rendered show N edges for N relations, labels
+on their own edge, none orphaned.
+
+**P2 — Directional hints not honored (SIGNIFICANT).**
+Image: `rel-directional.{puml,drawio}.png`. PlantUML = perfect compass
+(North↑/South↓/West←/East→); catalyst places North BELOW the hub,
+West ABOVE, South LEFT (only `right`≈East ok). Root-cause hypo: ELK
+layered/stress does not consume the parsed `Rel_U/D/L/R` direction as
+a placement constraint (only edge-reversal for U/D, nothing for L/R,
+and even U/D wrong here). Approach: feed direction as an ELK
+`partitioning`/position constraint or a layout-only ranking/ordering
+edge per direction; spike on this exact fixture. Gate: re-rendered
+`rel-directional.drawio.png` matches the compass in
+`rel-directional.puml.png`.
+
+**P3 — Long edge label → layout blow-up (SIGNIFICANT).**
+Image: `rel-long-labels.{puml,drawio}.png`. catalyst spreads the two
+nodes ~4.7× wider than PlantUML (label barely wrapped; ELK reserves a
+huge label rect). PlantUML wraps the long label into a tight ~4-line
+narrow column, nodes close. Root-cause hypo: the edge-label wrap cap
+fed to `measureEdgeLabel`/ELK is far too wide for a long label (or
+not applied), so ELK pads enormous horizontal space. Approach: cap
+the edge-label wrap width to a PlantUML-like narrow column
+(font-derived, not magic); re-feed ELK. Interacts with P4. Gate:
+re-rendered width within ~1.3× of `rel-long-labels.puml.png`.
+
+**P4 — SYSTEMIC: oversized boxes / sparse + diagonal layout
+(CROSS-CUTTING, highest leverage).** Visible in ~every fixture:
+catalyst element boxes are dramatically larger and the layout far
+sparser/diagonal vs PlantUML's compact straight layout (clearest:
+`topology-linear-chain.{puml,drawio}.png` straight column vs diagonal
+staircase; `rel-layout-constraints.*`; amplifies P3 + P6). This single
+trait is the upstream amplifier of the long-label blow-up (P3), the
+nested-boundary title collisions (P6), the “feels too big” README/
+gallery sizing (#64/#65), and the diagonal-chain aesthetic. Root-cause
+hypo: `C4_MIN` per-type floor sizes and/or ELK node/edge spacing are
+too generous vs PlantUML; `NETWORK_SIMPLEX` staggers when over-spaced.
+Approach: investigate `C4_MIN` (`src/mx/c4/theme.mts`) + ELK
+`spacing.*` vs PlantUML's actual box metrics; spike a tighter floor +
+spacing and re-gate the WHOLE gallery byte+visual (high blast radius —
+golden/parity are topology-only so safe, but render-compare ALL 20).
+Fixing P4 should cascade-improve P3/P6 and the chain aesthetic.
+Highest-leverage investigation; do FIRST (others may shrink).
+
+**P5 — Context/stress hub label proximity (MEDIUM).**
+Images: `topology-hub-spoke.{puml,drawio}.png` (`publishes`/`routes
+to` crammed around the Event Bus hub), `topology-wide-rank.*` (dispatch
+label tightness in the radial). The #24 Context work helped solo edges
+but dense radial hubs still cluster labels. Approach: extend the #24
+resolveLabelOverlap / lane offset to the radial-hub many-edge case.
+Gate: re-rendered hub labels clear of the hub box + each other.
+
+**P6 — Nested-boundary title clearance residual (MEDIUM, #25-class).**
+Image: `topology-deep-nesting.{puml,drawio}.png`. Nested boundary
+title bands (`Platform [system]`, `Core Services [system]`) collide
+with child box tops; `[enterprise]`/`[system]` subtitle text itself is
+correct (#60). Likely a P4 symptom (oversized child fills the boundary,
+top hits the title band). Re-test AFTER P4. Gate: title bands clear of
+child boxes in the re-rendered image.
+
+**P7 — Short-hierarchical-edge label cram (LOW-MED).**
+Images: `edge-tags-styling.{puml,drawio}.png` (`sync call [REST]`
+tight on the Gateway→Core arrowhead), `level-dynamic.*` (`1: opens`
+tight at the first junction). 2-point hierarchical edges where the
+label sits on the arrowhead near the source. Approach: small along-edge
+label offset for short 2-point hierarchical edges (the non-laned
+2-point branch — distinct from #24/#56). Gate: those two images show
+the label clear of the arrowhead/box.
+
+**P8 — `«tag»` stereotype text not rendered (LOW).**
+Image: `edge-tags-styling.{puml,drawio}.png` — Core shows `«System»`;
+PlantUML shows `«critical»«system»` (tag stereotype text). Tag COLOUR
+is correctly applied (the important part); only the extra stereotype
+line is missing. Approach: prepend matched tag stereotypes to the
+element `«type»` line. Gate: re-rendered Core shows `«critical»`.
+
+Suggested order: **P4 first** (cascades into P3/P6 + chain aesthetic),
+then P1 (severe correctness), P2, P5, P7, P8. Re-run the full
+`make gallery` + the per-pattern image diffs after each.
+
+---
 
 1. **Sequence-diagram support — IMPLEMENTATION (design DONE).**
    catalyst fail-louds on `C4_Sequence`/PlantUML sequence. The

@@ -4,7 +4,7 @@
       <root>
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
-        <object placeholders="1" c4Name="Platform" c4Type="System_Boundary" c4Technology="" c4Description="" label="&lt;div style=&quot;font-weight:bold;&quot;&gt;%c4Name%&lt;/div&gt;&lt;div style=&quot;font-size:11px;&quot;&gt;[%c4Type%]&lt;/div&gt;" id="sys">
+        <object placeholders="1" c4Name="Platform" c4Type="System_Boundary" c4Technology="" c4Description="" label="&lt;div style=&quot;font-weight:bold;&quot;&gt;%c4Name%&lt;/div&gt;&lt;div style=&quot;font-size:11px;&quot;&gt;[system]&lt;/div&gt;" id="sys">
           <mxCell style="rounded=0;whiteSpace=wrap;html=1;dashed=1;labelBackgroundColor=none;strokeColor=#666666;fillColor=none;fontColor=#333333;align=center;verticalAlign=top;spacingTop=4;fontStyle=0;fontSize=12;metaEdit=1;resizable=1;container=1;collapsible=0" parent="1" vertex="1">
             <mxGeometry as="geometry" height="2247" width="494" x="636" y="259"/>
           </mxCell>
@@ -201,6 +201,7 @@
                 <mxPoint x="220" y="163"/>
                 <mxPoint x="390" y="163"/>
               </Array>
+              <mxPoint x="26" y="25" as="offset"/>
             </mxGeometry>
           </mxCell>
         </object>
@@ -211,6 +212,7 @@
                 <mxPoint x="220" y="353"/>
                 <mxPoint x="390" y="353"/>
               </Array>
+              <mxPoint x="26" y="25" as="offset"/>
             </mxGeometry>
           </mxCell>
         </object>
@@ -221,6 +223,7 @@
                 <mxPoint x="220" y="543"/>
                 <mxPoint x="390" y="543"/>
               </Array>
+              <mxPoint x="26" y="25" as="offset"/>
             </mxGeometry>
           </mxCell>
         </object>
@@ -231,6 +234,7 @@
                 <mxPoint x="220" y="733"/>
                 <mxPoint x="390" y="733"/>
               </Array>
+              <mxPoint x="26" y="25" as="offset"/>
             </mxGeometry>
           </mxCell>
         </object>
@@ -241,6 +245,7 @@
                 <mxPoint x="220" y="923"/>
                 <mxPoint x="390" y="923"/>
               </Array>
+              <mxPoint x="26" y="25" as="offset"/>
             </mxGeometry>
           </mxCell>
         </object>
@@ -251,6 +256,7 @@
                 <mxPoint x="220" y="1113"/>
                 <mxPoint x="390" y="1113"/>
               </Array>
+              <mxPoint x="26" y="25" as="offset"/>
             </mxGeometry>
           </mxCell>
         </object>
@@ -263,6 +269,7 @@
                 <mxPoint x="640" y="2521"/>
                 <mxPoint x="122" y="2521"/>
               </Array>
+              <mxPoint x="-549" y="851" as="offset"/>
             </mxGeometry>
           </mxCell>
         </object>
@@ -275,6 +282,7 @@
                 <mxPoint x="651" y="2531"/>
                 <mxPoint x="392" y="2531"/>
               </Array>
+              <mxPoint x="-290" y="880" as="offset"/>
             </mxGeometry>
           </mxCell>
         </object>
@@ -285,6 +293,7 @@
                 <mxPoint x="756" y="802"/>
                 <mxPoint x="662" y="802"/>
               </Array>
+              <mxPoint x="-31" y="909" as="offset"/>
             </mxGeometry>
           </mxCell>
         </object>
@@ -297,6 +306,7 @@
                 <mxPoint x="673" y="2541"/>
                 <mxPoint x="932" y="2541"/>
               </Array>
+              <mxPoint x="228" y="679" as="offset"/>
             </mxGeometry>
           </mxCell>
         </object>
@@ -309,6 +319,7 @@
                 <mxPoint x="684" y="2531"/>
                 <mxPoint x="1202" y="2531"/>
               </Array>
+              <mxPoint x="487" y="449" as="offset"/>
             </mxGeometry>
           </mxCell>
         </object>
@@ -321,6 +332,7 @@
                 <mxPoint x="695" y="2521"/>
                 <mxPoint x="1472" y="2521"/>
               </Array>
+              <mxPoint x="746" y="219" as="offset"/>
             </mxGeometry>
           </mxCell>
         </object>
