@@ -4,17 +4,17 @@
       <root>
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
-        <object placeholders="1" c4Name="Acme Corp" c4Type="Enterprise_Boundary" c4Technology="" c4Description="" label="&lt;div style=&quot;font-weight:bold;font-size:13px;&quot;&gt;%c4Name%&lt;/div&gt;&lt;div style=&quot;font-size:11px;&quot;&gt;[%c4Type%]&lt;/div&gt;" id="ent">
+        <object placeholders="1" c4Name="Acme Corp" c4Type="Enterprise_Boundary" c4Technology="" c4Description="" label="&lt;div style=&quot;font-weight:bold;font-size:13px;&quot;&gt;%c4Name%&lt;/div&gt;&lt;div style=&quot;font-size:11px;&quot;&gt;[enterprise]&lt;/div&gt;" id="ent">
           <mxCell style="rounded=0;whiteSpace=wrap;html=1;dashed=1;dashPattern=8 4;labelBackgroundColor=none;strokeColor=#444444;strokeWidth=2;fillColor=none;fontColor=#222222;align=center;verticalAlign=top;spacingTop=4;fontSize=13;metaEdit=1;resizable=1;container=1;collapsible=0" parent="1" vertex="1">
             <mxGeometry as="geometry" height="855" width="244" x="12" y="12"/>
           </mxCell>
         </object>
-        <object placeholders="1" c4Name="Platform" c4Type="System_Boundary" c4Technology="" c4Description="" label="&lt;div style=&quot;font-weight:bold;&quot;&gt;%c4Name%&lt;/div&gt;&lt;div style=&quot;font-size:11px;&quot;&gt;[%c4Type%]&lt;/div&gt;" id="plat">
+        <object placeholders="1" c4Name="Platform" c4Type="System_Boundary" c4Technology="" c4Description="" label="&lt;div style=&quot;font-weight:bold;&quot;&gt;%c4Name%&lt;/div&gt;&lt;div style=&quot;font-size:11px;&quot;&gt;[system]&lt;/div&gt;" id="plat">
           <mxCell style="rounded=0;whiteSpace=wrap;html=1;dashed=1;labelBackgroundColor=none;strokeColor=#666666;fillColor=none;fontColor=#333333;align=center;verticalAlign=top;spacingTop=4;fontStyle=0;fontSize=12;metaEdit=1;resizable=1;container=1;collapsible=0" parent="1" vertex="1">
             <mxGeometry as="geometry" height="615" width="236" x="16" y="248"/>
           </mxCell>
         </object>
-        <object placeholders="1" c4Name="Core Services" c4Type="System_Boundary" c4Technology="" c4Description="" label="&lt;div style=&quot;font-weight:bold;&quot;&gt;%c4Name%&lt;/div&gt;&lt;div style=&quot;font-size:11px;&quot;&gt;[%c4Type%]&lt;/div&gt;" id="core">
+        <object placeholders="1" c4Name="Core Services" c4Type="System_Boundary" c4Technology="" c4Description="" label="&lt;div style=&quot;font-weight:bold;&quot;&gt;%c4Name%&lt;/div&gt;&lt;div style=&quot;font-size:11px;&quot;&gt;[system]&lt;/div&gt;" id="core">
           <mxCell style="rounded=0;whiteSpace=wrap;html=1;dashed=1;labelBackgroundColor=none;strokeColor=#666666;fillColor=none;fontColor=#333333;align=center;verticalAlign=top;spacingTop=4;fontStyle=0;fontSize=12;metaEdit=1;resizable=1;container=1;collapsible=0" parent="1" vertex="1">
             <mxGeometry as="geometry" height="375" width="228" x="20" y="484"/>
           </mxCell>

@@ -4,7 +4,7 @@
       <root>
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
-        <object placeholders="1" c4Name="Retailer" c4Type="Enterprise_Boundary" c4Technology="" c4Description="" label="&lt;div style=&quot;font-weight:bold;font-size:13px;&quot;&gt;%c4Name%&lt;/div&gt;&lt;div style=&quot;font-size:11px;&quot;&gt;[%c4Type%]&lt;/div&gt;" id="e">
+        <object placeholders="1" c4Name="Retailer" c4Type="Enterprise_Boundary" c4Technology="" c4Description="" label="&lt;div style=&quot;font-weight:bold;font-size:13px;&quot;&gt;%c4Name%&lt;/div&gt;&lt;div style=&quot;font-size:11px;&quot;&gt;[enterprise]&lt;/div&gt;" id="e">
           <mxCell style="rounded=0;whiteSpace=wrap;html=1;dashed=1;dashPattern=8 4;labelBackgroundColor=none;strokeColor=#444444;strokeWidth=2;fillColor=none;fontColor=#222222;align=center;verticalAlign=top;spacingTop=4;fontSize=13;metaEdit=1;resizable=1;container=1;collapsible=0" parent="1" vertex="1">
             <mxGeometry as="geometry" height="347" width="943" x="8" y="228"/>
           </mxCell>
@@ -82,6 +82,7 @@
                 <mxPoint x="585" y="129"/>
                 <mxPoint x="585" y="219"/>
               </Array>
+              <mxPoint x="45" y="12" as="offset"/>
             </mxGeometry>
           </mxCell>
         </object>
