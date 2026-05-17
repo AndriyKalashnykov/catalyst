@@ -42,7 +42,7 @@ function flatten(entities: EntityDescriptor[]): EntityDescriptor[] {
 interface EmittedNode { id: string; c4Name: string; c4Description: string; c4Technology: string }
 /** `route` = waypoint coords + label offset — the visible path signature. Two
  *  edges between the same node pair with an identical signature would overlap. */
-interface EmittedEdge { source: string; target: string; c4Name: string; route: string }
+interface EmittedEdge { source: string; target: string; c4Name: string; route: string; waypointCount: number; hasOffset: boolean }
 
 /**
  * Parse the emitted draw.io XML via a real XML parser (not a regex — a raw
@@ -68,9 +68,14 @@ async function parseXml(xml: string): Promise<{ nodes: Map<string, EmittedNode>;
     } else if (cell.edge === '1') {
       const geo = obj.mxCell?.[0]?.mxGeometry?.[0] ?? {};
       const wps = (geo.Array?.[0]?.mxPoint ?? []).map((p: { $: { x: string; y: string } }) => `${p.$.x},${p.$.y}`).join(';');
-      const off = (geo.mxPoint ?? []).find((p: { $: { as?: string } }) => p.$?.as === 'offset')?.$ ?? {};
+      const wpArr = (geo.Array?.[0]?.mxPoint ?? []);
+      const offPt = (geo.mxPoint ?? []).find((p: { $: { as?: string } }) => p.$?.as === 'offset');
+      const off = offPt?.$ ?? {};
       const route = `wp[${wps}]|off(${off.x ?? ''},${off.y ?? ''})`;
-      edges.push({ source: cell.source, target: cell.target, c4Name: o.c4Name ?? '', route });
+      edges.push({
+        source: cell.source, target: cell.target, c4Name: o.c4Name ?? '', route,
+        waypointCount: wpArr.length, hasOffset: offPt !== undefined,
+      });
     }
   }
   return { nodes, edges, raw: xml };
@@ -128,6 +133,28 @@ describe('corpus structural sanity gate', () => {
       for (const [key, routes] of byPair) {
         if (routes.length < 2) continue;
         expect(new Set(routes).size, `${name}: ${routes.length} edges between pair ${key} must have distinct routes (no collinear overlap)`).toBe(routes.length);
+      }
+
+      // 4c. Label-offset SCOPE LOCK (#24 / #24-hier). A catalyst-emitted
+      //     `<mxPoint as="offset">` is only ever produced by one of three
+      //     deterministic paths, each of which emits ≥1 waypoint: the laned
+      //     fan (lane waypoint or shifted interior bends), the #24 Context
+      //     solo edge (one synthetic centre-midpoint), or the #24-hier
+      //     non-laned multi-bend edge (poly>2 interior bends). A STRAIGHT
+      //     2-point edge (e.g. the edge-large-graph `calls` chain) must
+      //     therefore NEVER carry a label offset — that is exactly the
+      //     disproved v2-spike failure mode and the scope boundary the
+      //     #24-hier fix must not cross. Empirically true for all 20
+      //     fixtures (85 edges); locked here so future scope drift —
+      //     broadening the offset onto straight edges, or a regression
+      //     re-introducing it — fails loudly instead of silently shipping.
+      for (const e of edges) {
+        if (e.hasOffset) {
+          expect(
+            e.waypointCount,
+            `${name}: edge ${e.source}->${e.target} carries a label offset but has 0 waypoints — offset scope must stay laned / #24 / #24-hier (never a straight 2-point edge)`,
+          ).toBeGreaterThan(0);
+        }
       }
 
       // 5. Description preservation (bug #3): an entity that declared a
