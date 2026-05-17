@@ -44,6 +44,16 @@
     },
     {
       "customType": "regex",
+      "description": "Keep the render-tooling scripts' DRAWIO_EXPORT_IMAGE fallback default in lock-step with the Makefile docker pin (the script literal is the no-env fallback; the Makefile recipe sets the env). The Makefile pin is tracked by customManager #1 (docker, tag-only); WITHOUT this manager the scripts/*.mjs fallback silently drifts when Renovate bumps only the Makefile — the stale-duplicate defect class. Tag-only currentValue mirrors the Makefile docker packageRule (config:best-practices' docker:pinDigests would otherwise rewrite to tag@sha256 and break this regex).",
+      "managerFilePatterns": ["/^scripts/(render-compare|gallery)\\.mjs$/"],
+      "matchStrings": [
+        "process\\.env\\.DRAWIO_EXPORT_IMAGE\\s*\\?\\?\\s*'[^:']+:(?<currentValue>v?\\d[\\w.+-]*)'"
+      ],
+      "depNameTemplate": "rlespinasse/drawio-export",
+      "datasourceTemplate": "docker"
+    },
+    {
+      "customType": "regex",
       "description": "C4-PlantUML stdlib pin in the `!include` URL across every .puml fixture/sample and the docs/README that embed it. Tracked by GitHub release tag (plantuml-stdlib/C4-PlantUML cuts vX.Y.Z tags).",
       "managerFilePatterns": [
         "/\\.puml$/",
