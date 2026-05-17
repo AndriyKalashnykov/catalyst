@@ -175,6 +175,18 @@ export const PALETTE = {
  *    2: Enterprise_Boundary's heavier frame.
  *  - `REL_ARROW_SIZE` 14: edge end/startArrow size; `REL_JUMP_SIZE`
  *    16: line-jump arc size.
+ *  - `DASH_PATTERN_DOTTED` "1 4": draw.io `dashPattern` for a dotted
+ *    line. Verified BOTH ends are underspecified: C4-PlantUML's
+ *    `DottedLine()` → the skinparam keyword `line.dotted` (no pixel
+ *    spec — it is a keyword, not a measurement); and mxGraph/draw.io
+ *    has no single canonical dotted value either (`dashPattern` is a
+ *    per-choice style string, not an `mxConstants` entry; bare
+ *    `dashed=1` uses the renderer's internal default). So no citable
+ *    constant exists on either side — "1 4" (1px on, 4px off) is a
+ *    deliberate, single-sourced DOCUMENTED CONVENTION (a clearly
+ *    dotted vs the default dashed look), explicitly not a measured
+ *    metric and not a guess at a defined value. `BoldLine()` reuses
+ *    `STROKE_WIDTH_EMPHASIS` (the existing cited heavy stroke).
  */
 export const SHAPE = {
   ARC_SIZE: 10,
@@ -183,6 +195,7 @@ export const SHAPE = {
   STROKE_WIDTH_EMPHASIS: 2,
   REL_ARROW_SIZE: 14,
   REL_JUMP_SIZE: 16,
+  DASH_PATTERN_DOTTED: '1 4',
 } as const
 
 /**

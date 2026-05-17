@@ -15,11 +15,20 @@
  * guarantee.
  */
 
+import { SHAPE } from '../mx/c4/theme.mjs';
+
 export interface StyleOverride {
     fillColor?: string;
     fontColor?: string;
     strokeColor?: string;
     dashed?: 0 | 1;
+    /** draw.io `dashPattern` — set for the C4 "dotted" line/border style. */
+    dashPattern?: string;
+    /** draw.io `strokeWidth` — C4 "bold" line style or an explicit
+     *  `$lineThickness` / `$borderThickness`. */
+    strokeWidth?: number;
+    /** draw.io `shadow` — C4 `$shadowing="true"|"false"`. */
+    shadow?: 0 | 1;
 }
 
 export interface ParsedStyles {
@@ -57,8 +66,45 @@ function toOverride(args: string): StyleOverride {
     if (tc) o.fontColor = tc; // rel text colour
     if (bc) o.strokeColor = bc;
     if (lc) o.strokeColor = lc; // rel line colour
-    const ls = kw(args, 'lineStyle');
-    if (ls && /dash/i.test(ls)) o.dashed = 1;
+    // C4-PlantUML v2.13.0: DashedLine()/DottedLine()/BoldLine()/SolidLine()
+    // resolve to the literal strings "dashed"/"dotted"/"bold"/"solid".
+    // Elements/boundaries carry it as $borderStyle, relations as
+    // $lineStyle (verified against C4.puml + the tag/Update* signatures).
+    // Faithful draw.io mapping:
+    //   dashed → dashed=1
+    //   dotted → dashed=1 + dashPattern (fine dots)
+    //   bold   → thicker strokeWidth (the cited emphasis width)
+    //   solid  → explicitly NOT dashed (clears any base dashed)
+    // The value appears in SOURCE as the C4-PlantUML helper CALL
+    // `DashedLine()` (it only resolves to the literal "dashed" at
+    // PlantUML runtime — catalyst parses text, so it sees the call);
+    // the resolved literal form ("dashed") is also valid C4-PlantUML.
+    // Canonicalise both → dashed|dotted|bold|solid by stripping a
+    // trailing `Line()` / `()`.
+    const lineStyle = (kw(args, 'lineStyle') ?? kw(args, 'borderStyle') ?? '')
+        .toLowerCase().replace(/[^a-z]/g, '').replace(/line$/, '');
+    switch (lineStyle) {
+        case 'dashed': o.dashed = 1; break;
+        case 'dotted': o.dashed = 1; o.dashPattern = SHAPE.DASH_PATTERN_DOTTED; break;
+        case 'bold': o.strokeWidth = SHAPE.STROKE_WIDTH_EMPHASIS; break;
+        case 'solid': o.dashed = 0; break;
+        default: break; // unknown/empty — leave base style untouched
+    }
+    // $lineThickness ($lineStyle's numeric sibling for relations) /
+    // $borderThickness (elements) → an explicit strokeWidth; an explicit
+    // numeric thickness wins over the "bold" keyword's emphasis default.
+    const thick = kw(args, 'lineThickness') ?? kw(args, 'borderThickness');
+    if (thick !== undefined && thick.trim() !== '') {
+        const n = Number(thick);
+        if (Number.isFinite(n) && n > 0) o.strokeWidth = n;
+    }
+    // $shadowing="true"|"false" → draw.io shadow=1|0.
+    const sh = kw(args, 'shadowing');
+    if (sh !== undefined) {
+        const v = sh.trim().toLowerCase();
+        if (v === 'true') o.shadow = 1;
+        else if (v === 'false') o.shadow = 0;
+    }
     return o;
 }
 
@@ -144,6 +190,9 @@ export class StyleParser {
         if (override.fontColor) map.set('fontColor', override.fontColor);
         if (override.strokeColor) map.set('strokeColor', override.strokeColor);
         if (override.dashed !== undefined) map.set('dashed', String(override.dashed));
+        if (override.dashPattern !== undefined) map.set('dashPattern', override.dashPattern);
+        if (override.strokeWidth !== undefined) map.set('strokeWidth', String(override.strokeWidth));
+        if (override.shadow !== undefined) map.set('shadow', String(override.shadow));
         return [...map.entries()].map(([k, v]) => (v === '' ? k : `${k}=${v}`)).join(';');
     }
 }
