@@ -45,7 +45,17 @@ describe('Bug 1 — XML escaping of catalyst-authored attribute values', () => {
     // bug). `>` may stay literal (harmless in text); `&`→`&` (real
     // ampersand preserved). This asserts the FIXED contract.
     const root = doc.mxfile.diagram[0].mxGraphModel[0].root[0];
-    const names = (root.object ?? []).map((o: { $: { c4Name?: string } }) => o.$.c4Name);
+    // `<br/>` is catalyst's verified wrap-break encoding (identical form
+    // across the whole factcheck-CLEAN / golden-GREEN corpus). Under
+    // ADR-0010 content-fit sizing the relationship verb legitimately
+    // wraps where the old fixed 200px box kept it one line — so strip
+    // the wrap break before the content-equality check. The ESCAPING
+    // contract this test guards (no raw `&`/`<`/`>`; `<`→`&lt;`,
+    // `&`→`&`) is asserted unchanged by the raw-markup-char regex above
+    // AND by the exact expected strings below — only the wrap-induced
+    // line breaks are normalised away, not any escaping.
+    const names = (root.object ?? [])
+      .map((o: { $: { c4Name?: string } }) => (o.$.c4Name ?? '').replace(/<br\/>/g, ' '));
     expect(names).toContain('A & B &lt;C> D');               // entity verb-less name — `<`→`&lt;`
     expect(names).toContain('calls & waits &lt;sync>');      // relationship verb — `<`→`&lt;`
   });

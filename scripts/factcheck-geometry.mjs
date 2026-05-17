@@ -301,7 +301,16 @@ function factcheck(stem, dir = CORPUS) {
     let nodeOverlap = 0
     for (let i = 0; i < C.nodes.length; i++)
       for (let j = i + 1; j < C.nodes.length; j++)
-        if (partialOverlap(C.nodes[i], C.nodes[j])) nodeOverlap++
+        if (partialOverlap(C.nodes[i], C.nodes[j])) {
+          nodeOverlap++
+          if (process.env.FACTCHECK_DEBUG) {
+            const a = C.nodes[i], b = C.nodes[j]
+            process.stderr.write(`  nodeOverlap: ${a.alias} ` +
+              `{x:${Math.round(a.x)},y:${Math.round(a.y)},w:${Math.round(a.w)},h:${Math.round(a.h)}} ` +
+              `~ ${b.alias} ` +
+              `{x:${Math.round(b.x)},y:${Math.round(b.y)},w:${Math.round(b.w)},h:${Math.round(b.h)}}\n`)
+          }
+        }
     // --- boundaryBand: each container's top-inset before its FIRST child
     // (min child.y − container.y) vs PlantUML's measured band. The P6 gate. ---
     const bands = []

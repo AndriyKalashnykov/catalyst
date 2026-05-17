@@ -1,7 +1,7 @@
 import { EntityDescriptor } from '../puml/EntityDescriptor.interface.mjs'
 import { textWidth, renderedLineHeight, spaceAdvance, wrap } from '../text/TextMetrics.mjs'
 import { splitLabelLines, wrapEdgeLabelLines } from '../text/labelLines.mjs'
-import { ELEMENT_TITLE_PX, ELEMENT_BODY_PX, RELATIONSHIP_LABEL_PX, CYLINDER3_CAP_PX, C4_MIN } from '../mx/c4/theme.mjs'
+import { ELEMENT_TITLE_PX, ELEMENT_BODY_PX, RELATIONSHIP_LABEL_PX, CYLINDER3_CAP_PX, PUML_LEAF_BOX } from '../mx/c4/theme.mjs'
 
 /**
  * The `*Db` C4 types whose template emits drawio `shape=cylinder3`
@@ -19,21 +19,51 @@ const CYLINDER3_TYPES = new Set([
 ])
 
 /**
- * Text-measured leaf-node size (L3). Sizes a shape to its rendered label
- * using REAL font metrics (fontkit + bundled Liberation Sans, via
- * TextMetrics) — no estimated ratios. Models the exact label HTML the c4
- * shape classes emit, in C4-PlantUML canonical order (stereotype on top):
+ * PlantUML's measured inter-baseline pitch for a font-size transition
+ * (ADR 0010 / `PUML_LEAF_BOX.PITCH`, the category-1 measured metric).
+ * A C4 element's emitted line stack only ever uses the three measured
+ * transitions. A same-font line break the 26-fixture gate never
+ * exercises (an explicit-`\n` multi-line Name → 16→16) has no PlantUML
+ * ground truth in the corpus; fall back to the value draw.io ACTUALLY
+ * applies for it — mxGraph `renderedLineHeight` of the larger font,
+ * per the renderer-style cascade. A renderer-true value, NOT a guessed
+ * constant; never reached by the gate corpus.
+ */
+function leafPitch(fromPx: number, toPx: number): number {
+  return PUML_LEAF_BOX.PITCH[`${fromPx}>${toPx}`]
+    ?? renderedLineHeight(Math.max(fromPx, toPx))
+}
+
+/**
+ * Content-fit leaf-node size (L3, ADR 0010 / backlog P4b). Sizes a
+ * shape to its rendered label using REAL font metrics (fontkit +
+ * bundled Liberation Sans, via TextMetrics) for width, and PlantUML's
+ * MEASURED box geometry (`PUML_LEAF_BOX`) for height — no fixed
+ * per-type floor, no estimated ratios. Models the exact label HTML the
+ * c4 shape classes emit, in C4-PlantUML canonical order (stereotype on
+ * top):
  *   stereo — `«Type»`, 11px italic   (the stereotype line, always present)
  *   title  — c4Name, 16px bold       (`font-size:16px;font-weight:bold`)
  *   tech   — `[Technology]`, 11px     (ONLY when the entity has technology)
  *   descr  — c4Description, 11px      (`font-size:11px`), word-wrapped
- * Padding is the font's own space advance (a real metric, not an invented
- * constant); height is the sum of real per-line heights at the renderer's
- * line box (TextMetrics.renderedLineHeight = mxGraph 1.2).
+ *
+ * Width  = ceil( widest rendered line + 2×INSET ).
+ * Height = TOP_GAP + Σ(measured pitch over the emitted line stack) +
+ *          BOT_GAP + cylinder3 cap reserve.
+ * The height pitches are keyed by PlantUML's RENDERED font sizes
+ * (stereotype 12 / Name 16 / tech & description 12) — the box matches
+ * PlantUML's box for the line set, which is consistently roomier than
+ * catalyst's own mxGraph-rendered text block for these sizes, so the
+ * label cannot overflow (verified by the BLOCKING factcheck +
+ * render-compare gate, ADR 0010).
  */
 export function measureNode(entity: EntityDescriptor): { width: number; height: number } {
   const TITLE_PX = ELEMENT_TITLE_PX, BODY_PX = ELEMENT_BODY_PX
-  const pad = spaceAdvance(TITLE_PX, true)            // font-derived padding unit
+  const { INSET, TOP_GAP, BOT_GAP } = PUML_LEAF_BOX
+  // PlantUML's rendered font sizes for the pitch lookup (NOT catalyst's
+  // div-CSS sizes): stereotype/tech/description render at 12, the bold
+  // Name at 16 in PlantUML's `-tsvg` — the geometry the box mirrors.
+  const PUML_STEREO_PX = 12, PUML_TITLE_PX = 16, PUML_BODY_PX = 12
 
   // Title may carry explicit PlantUML `\n` breaks — measure each rendered
   // line, the box must fit the WIDEST and stack ALL of them vertically.
@@ -55,7 +85,24 @@ export function measureNode(entity: EntityDescriptor): { width: number; height: 
   const longestDescW = descLines.reduce(
     (m, l) => Math.max(m, textWidth(l, BODY_PX, false)), 0)
 
-  const textW = Math.ceil(Math.max(titleW, stereoW, techW, longestDescW) + 2 * pad)
+  // Content-fit width: widest rendered line + the MEASURED 10px PlantUML
+  // text-inset each side (ADR 0010). fontkit `textWidth` is catalyst's
+  // own rendered glyph width, so the emitted label fits by construction.
+  const textW = Math.ceil(
+    Math.max(titleW, stereoW, techW, longestDescW) + 2 * INSET)
+
+  // The emitted line stack, in PlantUML font-size terms, for the
+  // pitch-summed height (ADR 0010 fact 2 closed form):
+  //   [stereo 12] [Name 16 × titleLines] [tech 12?] [desc 12 × descLines]
+  const stack: number[] = [
+    PUML_STEREO_PX,
+    ...titleLines.map(() => PUML_TITLE_PX),
+    ...(hasTech ? [PUML_BODY_PX] : []),
+    ...descLines.map(() => PUML_BODY_PX),
+  ]
+  let pitchSum = 0
+  for (let i = 1; i < stack.length; i++) pitchSum += leafPitch(stack[i - 1], stack[i])
+
   // `cylinder3` (the `*Db` types) draws an elliptical cap of
   // CYLINDER3_CAP_PX at BOTH ends; that band is text-unsafe (top cap
   // crowds the stereotype line, bottom cap clips the last description
@@ -65,30 +112,13 @@ export function measureNode(entity: EntityDescriptor): { width: number; height: 
   // metric (theme.mjs), proven by render-compare — not a guess.
   const capReserve =
     CYLINDER3_TYPES.has(entity.type) ? 2 * CYLINDER3_CAP_PX : 0
-  const textH = Math.ceil(
-    renderedLineHeight(BODY_PX) +                      // «Type» stereotype
-    titleLines.length * renderedLineHeight(TITLE_PX) + // title (1+ lines)
-    (hasTech ? renderedLineHeight(BODY_PX) : 0) +      // [Technology] (if any)
-    descLines.length * renderedLineHeight(BODY_PX) +   // wrapped description
-    2 * pad +                                          // top/bottom breathing
-    capReserve)                                        // cylinder3 caps (0 for non-Db)
 
-  // Floor at the established C4 element box convention. fontkit measures the
-  // raw glyph box, but the drawio C4 shape RENDERS larger (CSS line-height,
-  // the rounded-rect chrome, the always-present `[Type]` stereotype line) —
-  // unmeasurable without a renderer. These per-type minimums are the
-  // conventional C4 element dimensions used by C4-PlantUML / Structurizr
-  // (and the project's own pre-existing sizes that rendered without
-  // cramming); they are a documented floor, NOT the sole metric — long
-  // labels still grow the box past them via the measured values above.
-  const t = entity.type
-  const [minW, minH] =
-    t.startsWith('System') || t.startsWith('Person') ? C4_MIN.SYSTEM
-    : t.startsWith('Container') ? C4_MIN.CONTAINER
-    : t.startsWith('Component') ? C4_MIN.COMPONENT
-    : C4_MIN.NODE                                      // Node / other leaves
+  // Content-fit height: PlantUML's measured box geometry for this line
+  // set (ADR 0010 fact 2: TOP_GAP + Σ pitch + BOT_GAP), plus the
+  // cylinder caps. No fixed per-type floor — the box IS its content.
+  const textH = Math.ceil(TOP_GAP + pitchSum + BOT_GAP + capReserve)
 
-  return { width: Math.max(textW, minW), height: Math.max(textH, minH) }
+  return { width: textW, height: textH }
 }
 
 /**

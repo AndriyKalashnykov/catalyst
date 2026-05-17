@@ -211,16 +211,56 @@ export const SHAPE = {
 } as const
 
 /**
- * Per-C4-type minimum leaf box `[width, height]` — the conventional
- * C4-PlantUML / Structurizr element dimensions `measureNode` floors
- * at so a short-label shape does not render cramped; it grows past
- * these when the measured text is larger (see `measureNode` for the
- * floor-vs-measure contract). Documented domain constants; values
- * verbatim from the prior inline literals — byte-identical.
+ * Content-fit leaf-box geometry — the MEASURED PlantUML element box
+ * metrics that replace the old fixed per-type `C4_MIN` floor (ADR
+ * 0010, backlog P4b). The prior 220×140-class constants were a
+ * mis-attributed category-(2) "citation" — they cited "C4-PlantUML /
+ * Structurizr" but PlantUML (catalyst's fidelity oracle) defines NO
+ * such minimum; it is content-fit with tight padding. The floor
+ * over-sized the smallest same-type box 2.7–7.8× (the quantified
+ * "empty box" defect; see `docs/research/p4b-box-metrics.md`).
+ *
+ * Every value below is a **category-(1) measured metric**: extracted
+ * directly from PlantUML's `-tsvg` rect-vs-text bbox across all 26
+ * gate fixtures (124 leaves) by `scripts/p4b-svg-geom.mjs`, and
+ * contract-locked against the verbatim `-tsvg` of System leaf "Delta"
+ * by `tests/p4b-svg-geom.test.mts` so the numbers cannot silently
+ * rot. Reproduce: `make factcheck` then
+ * `SVG_DIR=build/factcheck-svg node scripts/p4b-box-metrics.mjs`.
+ *
+ *  - `INSET` 10: horizontal text-inset, each side. Exact for 123/124
+ *    leaves (the lone exception, `c4-exhaustive/dev`, is a classified
+ *    Person+9-line-sprite glyph class — audited, not noise).
+ *  - `TOP_GAP` 22.83: rect.y → first text baseline.
+ *  - `BOT_GAP` 14.69: last text baseline → rect.bottom.
+ *  - `PITCH`: inter-baseline distance keyed `"<fromPx>>(<toPx>"`, by
+ *    PlantUML's rendered font sizes (stereotype 12 / Name 16 / tech &
+ *    description 12). The three transitions a C4 element ever emits:
+ *      «stereo»(12)→Name(16) = 20.62
+ *      Name(16)→[tech|desc](12) = 17.52
+ *      [tech|desc](12)→desc(12) = 16.34
+ *    (16.34 is the FULL-PRECISION live `-tsvg` value; ADR 0010's prose
+ *    rounded it to "16" — the equivalence test `tests/p4b-svg-geom.test`
+ *    asserts these constants equal the measured oracle, which caught and
+ *    corrected the rounding. ADR 0010 fact 2 updated to match.)
+ *    Closed form (ADR 0010 fact 2, correct by construction not fitted):
+ *      leafMinHeight = TOP_GAP + Σ(PITCH over the actual line set) + BOT_GAP
+ *    Verify the 2-line minimum: 22.83 + 20.62 + 14.69 = 58.14, which
+ *    is *exactly* PlantUML's measured smallest box height (entity `d`,
+ *    empty-desc `c`). A same-font line break that the 26-fixture gate
+ *    never exercises (e.g. an explicit-`\n` multi-line Name) has no
+ *    PlantUML ground truth in the corpus; `measureNode` falls back to
+ *    the value draw.io ACTUALLY applies for it (mxGraph
+ *    `renderedLineHeight`, per the renderer-style cascade) — a
+ *    renderer-true value, not a guessed constant.
  */
-export const C4_MIN = {
-  SYSTEM: [220, 140],
-  CONTAINER: [200, 120],
-  COMPONENT: [180, 100],
-  NODE: [160, 90],
+export const PUML_LEAF_BOX = {
+  INSET: 10,
+  TOP_GAP: 22.83,
+  BOT_GAP: 14.69,
+  PITCH: {
+    '12>16': 20.62,
+    '16>12': 17.52,
+    '12>12': 16.34,
+  } as Record<string, number>,
 } as const
