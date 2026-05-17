@@ -156,13 +156,26 @@ export function assignEdgeLanes(
       // each other. The centre lane (shift 0) keeps offset (0,0).
       const lane = idx - (idxs.length - 1) / 2
       const shift = lane * effGap
-      // Per-lane box-border attach points (P10). Use the RELATION's own
-      // source→target so the arrowhead end is correct; offset the attach
-      // along the border facing the other box by this lane's `shift`
-      // (canonical-frame perpendicular, so antiparallel partners get
-      // opposite offsets and never coincide). Fraction = centre (0.5) ±
-      // shift / box-extent, clamped to the border [0,1]. Falls back to
-      // centre (0.5) for the unknown-endpoint case.
+      // Per-lane box-border attach points (P10/P12). Use the RELATION's
+      // own source→target so the arrowhead end is correct; spread the
+      // attach fraction along the border facing the other box.
+      //
+      // P12 root-fix: the previous form was
+      // `clamp01(0.5 + px·shift / (2·hw))` — the lane's GEOMETRIC
+      // perpendicular displacement mapped to a [0,1] border fraction
+      // and CLAMPED. With ≥4 same-pair edges the outer lanes' shift
+      // (±2·effGap, effGap driven by label width) overflows the box
+      // half-extent, so two or more lanes saturate at the SAME corner
+      // (c4-all-rel-variants a→b: rel0→1.0, rel1→0.96 — 9 px apart →
+      // visual merge). The attach spread is a SEPARATE concern from the
+      // routed-line/label spread (`effGap`): K attach points must be
+      // EVENLY distributed across the whole border, never clamped.
+      // Fraction = 0.5 + dir·lane/(K−1): the canonical "K points evenly
+      // in [0,1]" (extremes at the corners, step 1/(K−1) ⇒ adjacent
+      // attaches are border-extent/(K−1) px apart — provably separated,
+      // no constant). `dir` = sign of the perpendicular component so
+      // each lane's attach stays on the side toward its own waypoint
+      // (no self-cross) and antiparallel partners keep opposite sides.
       const S = nodeCenter.get(relations[relIdx].source)
       const T = nodeCenter.get(relations[relIdx].target)
       let exit = { x: HALF, y: HALF }
@@ -170,17 +183,22 @@ export function assignEdgeLanes(
       if (S && T) {
         const sdx = T.cx - S.cx, sdy = T.cy - S.cy
         const vertical = Math.abs(sdy) >= Math.abs(sdx)
-        const fx = (off: number, hw: number) => clamp01(HALF + off / (2 * hw))
-        const perpOff = px * shift // canonical perpendicular displacement
-        const perpOffV = py * shift
+        const K = idxs.length
+        // even fraction across the border by signed lane index
+        const spread = (dir: number): number =>
+          clamp01(HALF + (K > 1 ? (dir >= 0 ? 1 : -1) * lane / (K - 1) : 0))
         if (vertical) {
-          // leave/enter on the top/bottom edge; spread along X
-          exit = { x: fx(perpOff, S.hw), y: sdy > 0 ? 1 : 0 }
-          entry = { x: fx(perpOff, T.hw), y: sdy > 0 ? 0 : 1 }
+          // leave/enter on the top/bottom edge; spread along X.
+          // Sign by px (perpendicular x) so the attach is on the same
+          // side as this lane's waypoint (mcx + px·shift).
+          const fx = spread(px)
+          exit = { x: fx, y: sdy > 0 ? 1 : 0 }
+          entry = { x: fx, y: sdy > 0 ? 0 : 1 }
         } else {
-          // leave/enter on the left/right edge; spread along Y
-          exit = { x: sdx > 0 ? 1 : 0, y: fx(perpOffV, S.hh) }
-          entry = { x: sdx > 0 ? 0 : 1, y: fx(perpOffV, T.hh) }
+          // leave/enter on the left/right edge; spread along Y (py).
+          const fy = spread(py)
+          exit = { x: sdx > 0 ? 1 : 0, y: fy }
+          entry = { x: sdx > 0 ? 0 : 1, y: fy }
         }
       }
       out.set(relIdx, {
@@ -200,6 +218,92 @@ export function assignEdgeLanes(
 
 /** Axis-aligned rectangle (top-left + size) — a node's box in absolute px. */
 export interface NodeRect { x: number; y: number; w: number; h: number }
+
+/** Epsilon for the "fully contains" test — MUST equal the factcheck
+ *  `labelHit` gate's `contains(...,eps)` inset so this de-collision
+ *  triggers on EXACTLY the cases the gate flags (and stays inert,
+ *  hence byte-identical, on the cases it passes). */
+const CONTAIN_EPS = 2
+
+/** Half the integer-coordinate quantum. Emitted mxPoint offsets are
+ *  `Math.round`-ed, so the rendered label centre can differ from the
+ *  computed one by ≤0.5 px on each axis. Clearing the label rect
+ *  inflated by this envelope guarantees the quantised (rounded) rect
+ *  the renderer/gate actually sees still clears — without it the
+ *  closed-form tangent `t` leaves a sub-pixel graze that rounding tips
+ *  back into a `labelHit`. This is the quantisation half-step, not a
+ *  tuned spacing constant. */
+const ROUND_ENVELOPE = 0.5
+
+/**
+ * Minimal slide ALONG a lane line to lift a label off every obstacle.
+ *
+ * A multi-edge laned label rides its own lane line at `centre`
+ * (= the rendered route's midpoint + the lane's PERPENDICULAR offset).
+ * That perpendicular position is load-bearing — it is what fans the
+ * group's labels apart — so de-colliding with an unrelated leaf must
+ * move the label ALONG the lane line (axis = unit source→target), never
+ * across it. Sliding along the axis cannot reduce the ≥`effGap`
+ * perpendicular separation, so sibling labels stay fanned by
+ * construction.
+ *
+ * Returns the smallest signed `t` (px) for which `centre + axis·t`
+ * clears every obstacle under the SAME predicate `factcheck-geometry`'s
+ * `labelHit` uses — a real intersection that is neither containment
+ * direction, with the identical `CONTAIN_EPS` inset — so the slide
+ * fires on exactly the gate's defect set. Closed-form candidate-set
+ * optimiser (the optimum on a line is at an axis-contact boundary),
+ * same shape as `resolveLabelOverlap`. Returns 0 when already clear
+ * (⇒ caller emits the unchanged lane offset ⇒ byte-identical for every
+ * fixture the gate already passes) and 0 when no candidate clears
+ * (fail-safe: never move a label somewhere no better).
+ */
+export function slideLabelAlongLane(
+  centre: { x: number; y: number },
+  axis: { x: number; y: number },
+  labelW: number,
+  labelH: number,
+  obstacles: ReadonlyArray<NodeRect>,
+): number {
+  if (labelW <= 0 || labelH <= 0 || obstacles.length === 0) return 0
+  const ax = axis.x, ay = axis.y
+  if (ax === 0 && ay === 0) return 0
+  // Inflate the label half-extent by the rounding envelope so a chosen
+  // tangent `t` clears even after the emitted offset is integer-rounded.
+  const hlw = labelW / 2 + ROUND_ENVELOPE, hlh = labelH / 2 + ROUND_ENVELOPE
+  const ew = labelW + 2 * ROUND_ENVELOPE, eh = labelH + 2 * ROUND_ENVELOPE
+  const hits = (t: number): boolean => {
+    const rx = centre.x + ax * t - hlw, ry = centre.y + ay * t - hlh
+    return obstacles.some((o) => {
+      const inter = rx < o.x + o.w && rx + ew > o.x &&
+                    ry < o.y + o.h && ry + eh > o.y
+      if (!inter) return false
+      // gate-identical containment exception (either direction ⇒ not a hit)
+      const rContainsO = rx - CONTAIN_EPS <= o.x && ry - CONTAIN_EPS <= o.y &&
+        rx + ew + CONTAIN_EPS >= o.x + o.w &&
+        ry + eh + CONTAIN_EPS >= o.y + o.h
+      const oContainsR = o.x - CONTAIN_EPS <= rx && o.y - CONTAIN_EPS <= ry &&
+        o.x + o.w + CONTAIN_EPS >= rx + ew &&
+        o.y + o.h + CONTAIN_EPS >= ry + eh
+      return !rContainsO && !oContainsR
+    })
+  }
+  if (!hits(0)) return 0
+  // Candidate slides: where the label rect just touches an obstacle on
+  // an axis (moving past separates it). Solve centre+axis·t ± half == edge.
+  const cands: number[] = [0]
+  for (const o of obstacles) {
+    if (ax !== 0) {
+      cands.push((o.x - hlw - centre.x) / ax, (o.x + o.w + hlw - centre.x) / ax)
+    }
+    if (ay !== 0) {
+      cands.push((o.y - hlh - centre.y) / ay, (o.y + o.h + hlh - centre.y) / ay)
+    }
+  }
+  cands.sort((u, v) => Math.abs(u) - Math.abs(v))
+  for (const t of cands) if (!hits(t)) return t
+  return 0
+}
 
 const aabbOverlap = (
   ax: number, ay: number, aw: number, ah: number,

@@ -97,13 +97,45 @@ Standalone, independently-maintained library (no upstream; never add an
 
 Everything below is researched, not speculative. Sizes are honest.
 
-> ▶ **RESUME HERE — session handoff 2026-05-17 (refreshed #4).**
+> ▶ **RESUME HERE — session handoff 2026-05-17 (refreshed #5).**
 > **`make factcheck` is now THE gate** (CLAUDE.md "Build/test/verify"):
 > numeric PlantUML→drawio comparator over ALL 26 conversions (20
 > gallery corpus + 6 C4-spec fixtures) vs PlantUML `-tsvg`. NO
 > eyeballing — every visual claim cites a factcheck metric. The repo
 > AUTO-MERGES PRs on green CI (no manual merge/Monitor needed; just
 > push + `gh pr create`, then `git reset --hard origin/main`).
+>
+> - **✅ P12 DONE 2026-05-17 — `make factcheck` CLEAN 26/26** (was
+>   23/26; 341/341 tests). THREE fact-verified root causes, NOT the
+>   handoff's disproved hypothesis (which it warned against):
+>   1. **`c4-container` labelHit=2 — #24-hier base-point bug.** The
+>      multi-bend branch (catalyst.mts, the `else if poly>2`) computed
+>      `offset = ELK-label-centre − polylineMidpoint(ELK_poly)` but
+>      catalyst emits only the INTERIOR waypoints and lets drawio
+>      re-anchor endpoints to CELL CENTRES — so the offset was
+>      calibrated against ELK's attach-point poly yet applied against
+>      drawio's centre-endpoint route (~186 px base-point mismatch →
+>      label onto `docker`). Fix: anchor on the rendered route
+>      `[A-centre,…interior,B-centre]` (provable vs the oracle).
+>   2. **`c4-all-rel-variants`/`c4-exhaustive` labelHit — laned label
+>      on an unrelated leaf.** New pure helper `slideLabelAlongLane`
+>      (edge-lanes.mts) slides the label ALONG its lane line (axis =
+>      src→tgt unit), minimal gate-predicate-identical distance,
+>      ±0.5 px rounding-envelope; 0 when clear ⇒ byte-identical for
+>      the 24 already-clean. Wired at the lane emit site.
+>   3. **`c4-all-rel-variants` attachMerge — clamp-merge + 1 gate
+>      false-positive.** Real: `clamp01(0.5+px·shift/2hw)` saturated
+>      ≥4-lane outer attach fractions at the SAME corner → replaced
+>      with even border distribution `0.5+dir·lane/(K−1)` (provably
+>      ≥extent/(K−1) apart, never clamps). Gate FP (6th class, fixed):
+>      `attachMerge` compared only attach-X, flagging a Y-separated
+>      HORIZONTAL fan (b→c, 66 px apart) → now EUCLIDEAN 2-D attach
+>      distance using exitY/entryY. New `FACTCHECK_DEBUG` env on the
+>      comparator (durable labelHit+attachMerge diagnostics).
+>   Visual corroboration (render-compare): c4-container labels off
+>   `docker`; c4-all-rel-variants — all 17 labels clear, attaches
+>   fanned. New memories: see `factcheck-harness-gate` (6th FP class),
+>   `lane-label-decollision`.
 >
 > - **MERGED:** #70 P4 (Context→`layered`, ADR 0008; cascaded P3/P5/P7
 >   resolved), #71 P1 (lane labels), #72 P6 (boundary title band),
@@ -116,27 +148,31 @@ Everything below is researched, not speculative. Sizes are honest.
 >
 > **REMAINING (priority order), each its own factcheck-gated PR:**
 >
-> - **P12** (task #18 has the full fact-checked state) — REAL
->   harness-verified spec defects. `c4-container` ingress→apps
->   "Routes /" + lb→apps "Allocates LoadBalancer IP" labels land on
->   `docker`. **DISPROVED by fact-check**: it is NOT "resolveLabelOverlap
->   returns null / offset insufficient" — that fn returns large offsets
->   ({324,-61}/{257,147}) it *believes* clear all obstacles. **Verified
->   direction:** the de-collision obstacle set (catalyst.mts `else`
->   branch) is built from leaf `nodeCenter`, so `docker` (a boundary/
->   cluster) is never an obstacle and the chosen offset lands on it →
->   fix = include cluster/boundary rects as obstacles (and/or make
->   resolveLabelOverlap 2-D). Plus `c4-all-rel-variants`
->   attachMerge=3+labelHit=2 (P10 exit/entry gap on some same-pair
->   rel-variant combos — separate root) and `c4-exhaustive`
->   labelHit=1. Gate → `make factcheck` CLEAN 26/26. Do NOT re-chase
->   the disproved null hypothesis.
+> - **P12 — ✅ DONE** (see the ✅ block above; `make factcheck`
+>   CLEAN 26/26, 341/341). No longer the entry point.
 > - **P2** (#5) — Rel_L/R: ELK partitioning spiked, insufficient;
 >   needs deeper layout spike. Advisory (rankOrder), not a contract.
 > - **P4b** (#11) — box-emptiness: measured PlantUML targets
 >   recorded; cross-cutting all-fixture visual change, ADR-worthy.
 > - **#15** codebase magic-constant audit; **#17** geometry-path↔
 >   harness-check coverage matrix.
+> - [ ] **P13 — gallery page column-width uniformity (user-requested
+>   2026-05-17).** On `docs/gallery/` the per-fixture "Source PlantUML"
+>   vs "catalyst → draw.io" image pair currently renders at wildly
+>   different widths across use cases (e.g. topology-wide-rank is very
+>   wide, topology-linear-chain very narrow), so the page reads ragged.
+>   GOAL: every fixture's two embedded images occupy the SAME width
+>   column-to-column down the page (and ideally the two within a pair
+>   match each other). Needs smart scaling — of the rendered nodes
+>   and/or of the embedded `<img>` sizing (note `md-image-embedding`:
+>   ~26× corpus aspect spread, scale-2 PNGs, gallery is
+>   `scripts/gallery.mjs`-generated). RESEARCH how the field solves
+>   non-uniform diagram-grid layouts (fixed-width thumbnails +
+>   object-fit, per-image normalized scale, max-width container,
+>   aspect-ratio boxes), spike ≥2 approaches, compare results
+>   side-by-side, implement the best. Gate: regenerated gallery is
+>   visually uniform-width; no factcheck/geometry change (presentation
+>   only — must not perturb the emit path).
 > - **Sequence diagrams** (#12, ADR 0007) — largest; MUST ship with
 >   factcheck coverage (lifelines/messages/order) per user directive.
 > Older handoff history below for context.

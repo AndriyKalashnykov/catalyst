@@ -3,7 +3,7 @@ import { Mx, MxGeometry } from './mx/Mx.mjs'
 import { MxPoint } from './mx/MxPoint.mjs'
 import { RelParser } from './puml/RelParser.mjs'
 import { LayoutEngine, LayoutResult } from './layout/LayoutEngine.mjs'
-import { assignEdgeLanes, resolveLabelOverlap, polylineMidpoint, type NodeCenter, type NodeRect } from './layout/edgeLanes.mjs'
+import { assignEdgeLanes, resolveLabelOverlap, slideLabelAlongLane, polylineMidpoint, type NodeCenter, type NodeRect } from './layout/edgeLanes.mjs'
 import { measureEdgeLabel } from './layout/measureNode.mjs'
 import { spaceAdvance } from './text/TextMetrics.mjs'
 import { RELATIONSHIP_LABEL_PX } from './mx/c4/theme.mjs'
@@ -167,27 +167,65 @@ async function layoutData2mx(layoutData: LayoutResult, pumlElements: EntityDescr
     const lane = edgeLanes.get(i)
     const poly = layoutEdgeByRelIdx.get(i)
     if (lane) {
+      // Collect the interior waypoints actually emitted so the label
+      // anchor below is computed against the SAME polyline the renderer
+      // (and the factcheck oracle) sees — never ELK's raw attach-point
+      // poly (the P12 base-point lesson, mirrored here for laned edges).
+      const laneInterior: { x: number; y: number }[] = []
       if (poly && poly.length > 2 && !clusterIds.has(rel.source) && !clusterIds.has(rel.target)) {
         // ELK produced a real obstacle-aware polyline for this laned edge —
         // preserve its bends, just shift each interior point into the lane
         // (rather than discarding the route for a single midpoint waypoint).
         for (const p of poly.slice(1, -1)) {
-          g.addArrayPoint(new MxPoint(
-            Math.round(p.x + lane.perp.x * lane.shift),
-            Math.round(p.y + lane.perp.y * lane.shift),
-          ))
+          laneInterior.push({
+            x: Math.round(p.x + lane.perp.x * lane.shift),
+            y: Math.round(p.y + lane.perp.y * lane.shift),
+          })
         }
       } else {
         // Common case (per spike: ELK returns straight 2-point sections for
         // adjacent same-pair edges) — synthesize the lane midpoint waypoint.
-        g.addArrayPoint(new MxPoint(lane.waypoint.x, lane.waypoint.y))
+        laneInterior.push({ x: lane.waypoint.x, y: lane.waypoint.y })
       }
+      for (const p of laneInterior) g.addArrayPoint(new MxPoint(p.x, p.y))
       // Fan the label off the shared midpoint via an absolute offset mxPoint
       // (drawio-export honors this; it ignores the geometry.x fraction).
-      g.addPoint(new MxPoint(lane.labelOffset.dx, lane.labelOffset.dy, 'offset'))
+      // P12: the lane offset alone (perpendicular spread) places the label
+      // ON its lane line — but that line can cross an UNRELATED leaf that
+      // ELK happened to rank in the corridor (c4-all-rel-variants `d`,
+      // c4-exhaustive `sys`). The perpendicular position is load-bearing
+      // (it fans the group's labels), so de-collide by sliding ALONG the
+      // lane line only. Anchor = the rendered route's midpoint + the lane
+      // offset, exactly what the factcheck `labelHit` gate computes, so
+      // the slide fires on precisely the gate's defect set and is inert
+      // (byte-identical) everywhere it already passes.
+      let labelDx = lane.labelOffset.dx, labelDy = lane.labelOffset.dy
+      const A = nodeCenter.get(rel.source)
+      const B = nodeCenter.get(rel.target)
+      if (A && B) {
+        const route = [{ x: A.cx, y: A.cy }, ...laneInterior, { x: B.cx, y: B.cy }]
+        const m = polylineMidpoint(route)
+        const centre = { x: m.x + labelDx, y: m.y + labelDy }
+        const vx = B.cx - A.cx, vy = B.cy - A.cy
+        const len = Math.hypot(vx, vy) || 1
+        const axis = { x: vx / len, y: vy / len }
+        const d = measureEdgeLabel(rel.label, rel.description, edgeLabelCap(rel.source, rel.target))
+        const obstacles: NodeRect[] = []
+        for (const [id, c] of nodeCenter) {
+          if (id === rel.source || id === rel.target) continue
+          obstacles.push({ x: c.cx - c.hw, y: c.cy - c.hh, w: c.hw * 2, h: c.hh * 2 })
+        }
+        const t = slideLabelAlongLane(centre, axis, d.width, d.height, obstacles)
+        if (t !== 0) {
+          labelDx = Math.round(labelDx + axis.x * t)
+          labelDy = Math.round(labelDy + axis.y * t)
+        }
+      }
+      g.addPoint(new MxPoint(labelDx, labelDy, 'offset'))
     } else if (poly && poly.length > 2 && !clusterIds.has(rel.source) && !clusterIds.has(rel.target)) {
-      for (const p of poly.slice(1, -1)) {
-        g.addArrayPoint(new MxPoint(Math.round(p.x), Math.round(p.y)))
+      const interior = poly.slice(1, -1).map((p) => ({ x: Math.round(p.x), y: Math.round(p.y) }))
+      for (const p of interior) {
+        g.addArrayPoint(new MxPoint(p.x, p.y))
       }
       // #24-hier: a non-laned MULTI-BEND hierarchical edge. ELK already
       // reserved a non-overlapping label rect (layoutEdgeLabelByRelIdx),
@@ -199,9 +237,25 @@ async function layoutData2mx(layoutData: LayoutResult, pumlElements: EntityDescr
       // mxPoint mechanism the lane fan + Context solo paths use; scoped
       // to THIS branch only (2-point `calls` chain, laned, and
       // Context(#24) paths are untouched ⇒ byte-identical).
+      //
+      // P12: the anchor MUST be computed over the polyline drawio
+      // ACTUALLY renders, not ELK's raw `poly`. catalyst emits only the
+      // INTERIOR waypoints (poly.slice(1,-1)) and lets drawio re-attach
+      // the endpoints to the source/target CELL CENTRES — so ELK's
+      // node-attach-point endpoints are discarded. Computing the offset
+      // against `polylineMidpoint(poly)` (ELK attach endpoints) but
+      // applying it against drawio's `[A-centre,…interior,B-centre]`
+      // route is a base-point mismatch: in c4-container it displaced the
+      // ingress→apps "Routes /" and lb→apps labels ~186 px onto the
+      // `docker` leaf. Anchor on the same route the comparator/drawio
+      // use so `renderedMidpoint + offset === ELK-label-centre` by
+      // construction (provable against the factcheck oracle, not eyeballed).
       const lbl = layoutEdgeLabelByRelIdx.get(i)
-      if (lbl && poly) {
-        const mid = polylineMidpoint(poly)
+      const A = nodeCenter.get(rel.source)
+      const B = nodeCenter.get(rel.target)
+      if (lbl && A && B) {
+        const route = [{ x: A.cx, y: A.cy }, ...interior, { x: B.cx, y: B.cy }]
+        const mid = polylineMidpoint(route)
         g.addPoint(new MxPoint(
           Math.round(lbl.x + lbl.width / 2 - mid.x),
           Math.round(lbl.y + lbl.height / 2 - mid.y),
