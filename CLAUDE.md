@@ -95,32 +95,42 @@ Standalone, independently-maintained library (no upstream; never add an
 
 Everything below is researched, not speculative. Sizes are honest.
 
-> ▶ **RESUME HERE — session handoff 2026-05-17 (refreshed #3).**
-> Gallery-audit sweep, each fact-checked NUMERICALLY (no eyeballing)
-> via the new `scripts/factcheck-geometry.mjs` (catalyst emitted
-> geometry vs PlantUML `-tsvg` ground truth) + drawio-export pixel
-> probes:
+> ▶ **RESUME HERE — session handoff 2026-05-17 (refreshed #4).**
+> **`make factcheck` is now THE gate** (CLAUDE.md "Build/test/verify"):
+> numeric PlantUML→drawio comparator over ALL 26 conversions (20
+> gallery corpus + 6 C4-spec fixtures) vs PlantUML `-tsvg`. NO
+> eyeballing — every visual claim cites a factcheck metric. The repo
+> AUTO-MERGES PRs on green CI (no manual merge/Monitor needed; just
+> push + `gh pr create`, then `git reset --hard origin/main`).
 >
-> - **P4 MERGED #70** — Context→always-`layered` (ADR 0008). Root
->   cause was the algorithm, not `C4_MIN`. Cascaded: **P3, P5, P7
->   RESOLVED by P4** (verified: P3 wRatio 0.87≤1.3 was ~4.7; P5
->   labelHit 0; P7 ~45-50u inter-rank label clearance).
-> - **P1 MERGED #71** — multi-edge labels ride their own lane line
->   (labelHit 0, node-geom byte-identical to P4).
-> - **P6 DONE (PR pending)** — titlePadding +1 real clearance line;
->   pixel-measured band 33→49u, ~15-17u clearance (was ~1u).
-> - **NEW P9** (surfaced by the numeric harness, eyeball missed it):
->   ELK layered over-ranks bidirectional/cyclic graphs vs dot
->   (rel-bidirectional/rel-tech-vs-notech rankOrder:false, hRatio
->   2.3-2.4). P4-era, not P1.
+> - **MERGED:** #70 P4 (Context→`layered`, ADR 0008; cascaded P3/P5/P7
+>   resolved), #71 P1 (lane labels), #72 P6 (boundary title band),
+>   #73 P8 (tag stereotypes), #74 P10 (per-lane attach pts), #75 P9
+>   (cycleBreaking=DEPTH_FIRST), #76 (harness offset-aware + complete
+>   26-conversion gate). 334/334 tests.
+> - **ALL original gallery-audit defects P1–P11 DONE** (P11 was a
+>   harness artifact; 5 harness false-positives each fact-checked &
+>   fixed). Corpus **20/20 clean**.
 >
-> Remaining: P6 PR → merge; then **P8** (tag stereotype, design
-> ready), **P2** (Rel_L/R — ELK partitioning spike, hard),
-> **P9** (cycle/same-rank, related to P2), **P4b** (box-emptiness,
-> cross-cutting/deferred), then sequence diagrams (ADR 0007).
-> Methodology: every visual claim MUST be backed by
-> `factcheck-geometry.mjs` numbers + pixel probe, never eyeball.
-> Older handoff #2 history below for context.
+> **REMAINING (priority order), each its own factcheck-gated PR:**
+>
+> - **P12** (task #18) — REAL defects the spec-fixture coverage
+>   exposed, harness-verified (not artifacts): `c4-container`
+>   ingress→apps "Routes /" + lb→apps "Allocates LoadBalancer IP"
+>   labels overlap leaf `docker`@(790,308) — resolveLabelOverlap
+>   offset insufficient vs a non-endpoint leaf; `c4-all-rel-variants`
+>   attachMerge=3+labelHit=2 (P10 exit/entry gap on some same-pair
+>   rel-variant combos); `c4-exhaustive` labelHit=1. Gate → CLEAN
+>   26/26.
+> - **P2** (#5) — Rel_L/R: ELK partitioning spiked, insufficient;
+>   needs deeper layout spike. Advisory (rankOrder), not a contract.
+> - **P4b** (#11) — box-emptiness: measured PlantUML targets
+>   recorded; cross-cutting all-fixture visual change, ADR-worthy.
+> - **#15** codebase magic-constant audit; **#17** geometry-path↔
+>   harness-check coverage matrix.
+> - **Sequence diagrams** (#12, ADR 0007) — largest; MUST ship with
+>   factcheck coverage (lifelines/messages/order) per user directive.
+> Older handoff history below for context.
 >
 > ▶ (prior) **session handoff 2026-05-16 (refreshed #2).**
 > All this-session PRs MERGED; `main` synced (`ce30c50`), 317/317.
