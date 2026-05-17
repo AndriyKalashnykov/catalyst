@@ -57,6 +57,18 @@ This project adheres to [Keep a CHANGELOG](http://keepachangelog.com/).
 
 ### Fixed
 
+- **Bidirectional / 2-cycle relations no longer over-rank into a tall
+  chain.** ELK's default `GREEDY` cycle-breaking reverses an arbitrary
+  edge of an `a↔c` 2-cycle (`Rel(a,c)`+`Rel(c,a)`, or a `BiRel`),
+  spreading the pair across THREE ranks where PlantUML's `dot` keeps it
+  compact (source rank; both targets one rank below). Switched the
+  layered layout to `cycleBreaking.strategy=DEPTH_FIRST`, which
+  reproduces `dot`'s compaction: `rel-bidirectional` /
+  `rel-tech-vs-notech` height drops ≈484→324u (hRatio 2.3→1.45) and
+  their node rank-order now matches the PlantUML SVG ground truth.
+  Validated on the real catalyst graphs — every other cyclic fixture
+  (`topology-cyclic`, `rel-parallel-duplicate`) and all DAGs are
+  byte-identical; only the 2 over-ranked fixtures change.
 - **Antiparallel / parallel (laned) edges no longer visually merge into
   one line.** Laned edges emitted `orthogonalEdgeStyle` with no
   exit/entry constraints, so draw.io attached every same-pair edge at

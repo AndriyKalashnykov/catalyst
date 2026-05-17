@@ -296,6 +296,19 @@ class LayoutEngine {
           // flat-compound Container tangle is node placement, not hierarchy
           // mode. No emit-model change needed (flat+absolute stays).
           'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX',
+          // P9: DEPTH_FIRST cycle-breaking (over the GREEDY default).
+          // GREEDY breaks a 2-cycle (a↔c from Rel(a,c)+Rel(c,a), or a
+          // BiRel) by reversing an arbitrary edge, which spreads the
+          // pair across THREE ranks — PlantUML's `dot` keeps it compact
+          // (source rank; both targets one rank below). DEPTH_FIRST
+          // reproduces dot's compaction. Validated on the real catalyst
+          // ELK graphs (measured bbox height): rel-bidirectional &
+          // rel-tech-vs-notech 484→324u (the over-rank fix); every
+          // other cyclic fixture (topology-cyclic, rel-parallel-
+          // duplicate) AND all DAGs byte-identical — zero regression.
+          // (elkjs 0.11.1: the *layering* MODEL_ORDER strategies crash;
+          // only cycleBreaking is touched.)
+          'elk.layered.cycleBreaking.strategy': 'DEPTH_FIRST',
           ...this.graphOpts
         }
 
