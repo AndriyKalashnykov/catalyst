@@ -127,14 +127,17 @@ Handled by `src/puml/StyleParser.mts` (colour kwargs `$bgColor`/`$fontColor`/`$b
 | Primitive | State |
 |---|---|
 | `AddElementTag($tagStereo, $bgColor, $fontColor, $borderColor)` | ✓ (applied to elements whose `$tags` matches) |
-| `AddRelTag($tag, $textColor, $lineColor, $lineStyle)` | ✓ (applied to rels whose `$tags` matches; `DashedLine()` → `dashed=1`) |
+| `AddRelTag($tag, $textColor, $lineColor, $lineStyle, $lineThickness)` | ✓ (applied to rels whose `$tags` matches; full faithful line-style map below) |
 | `AddBoundaryTag($tag, $bgColor, $borderColor, $fontColor)` | ✓ (applied to boundaries whose `$tags` matches) |
 | `UpdateElementStyle($elementName, ...)` | ✓ for mapped kinds (person/system/container/component + `_ext`/`_db`/`_queue`); unmapped kinds ignored |
 | `UpdateRelStyle` / `UpdateBoundaryStyle` | ✓ (global default override) |
 | `$tags="critical"` inline on shape / rel / boundary | ✓ (`+`-separated multi-tag supported; last tag wins on conflict) |
 | `$link=https://...` | ✓ (emitted as clickable `link=` attribute on the drawio object) |
 | `$sprite=img:foo` / `$sprite=&icon` | ✗ (parsed as `sprite`; not rendered — drawio has no PlantUML sprite registry. Parsing never breaks) |
-| `$shadowing`, custom `$lineStyle` (Bold/Dotted), `SET_SKETCH_STYLE` | ✗ (parsed/skipped; not mapped to drawio equivalents) |
+| `$lineStyle`/`$borderStyle` = `DashedLine()`/`DottedLine()`/`BoldLine()`/`SolidLine()` (helper-call OR resolved-literal form) | ✓ **2026-05-16** — faithful map: dashed→`dashed=1`, dotted→`dashed=1;dashPattern=1 4`, bold→`strokeWidth` (cited emphasis), solid→`dashed=0`. Render-compare verified |
+| `$lineThickness` / `$borderThickness` (numeric) | ✓ → explicit `strokeWidth`; an explicit value wins over the `bold` keyword default |
+| `$shadowing="true"\|"false"` | ✓ → draw.io `shadow=1\|0` (render-compare verified: drop shadow) |
+| `SET_SKETCH_STYLE` / `LAYOUT_AS_SKETCH` | ✗ (sketch/handwritten mode — draw.io `sketch=1`; next Item-2 sub-task, fact-check pending) |
 
 ## Legend / display
 
