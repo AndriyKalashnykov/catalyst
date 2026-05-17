@@ -141,7 +141,17 @@ for (const [title, prefix, blurb] of CLASSES) {
     lines.push('');
     lines.push('| Source PlantUML | catalyst → draw.io |');
     lines.push('|---|---|');
-    lines.push(`| ![${stem} source](img/${stem}.puml.png) | ![${stem} drawio](img/${stem}.drawio.png) |`);
+    // Height-bounded HTML <img>, NOT bare `![](…)`. The corpus spans a
+    // ~26x aspect-ratio range (tall chains → wide fans); a bare embed
+    // renders every scale=2 PNG at full native size, so tall diagrams
+    // tower over the page. `height=360` + GitHub's built-in
+    // `max-width:100%` gives a two-sided bound with no per-image tuning:
+    // tall images are capped to 360px high; wide images are bound by
+    // column width (aspect preserved — max-width wins over the height
+    // attr). 360 keeps the median (~850px native at scale=2) crisp.
+    const cell = (kind) =>
+      `<img src="img/${stem}.${kind}.png" alt="${stem} ${kind}" height="360">`;
+    lines.push(`| ${cell('puml')} | ${cell('drawio')} |`);
     lines.push('');
     lines.push('<details><summary>PlantUML source</summary>');
     lines.push('');
