@@ -38,12 +38,22 @@ Standalone, independently-maintained library (no upstream; never add an
   boundaryBands`, plus advisory `rankOrder / wRatio / hRatio`. No args
   → whole-corpus `CLEAN N/20` summary; `node scripts/factcheck-geometry.mjs
   <stem>…` → per-fixture JSON. A fixture is "clean" ONLY when every
-  contract metric is 0. **Visual claims about a fixture MUST cite a
-  factcheck number, never a PNG eyeball** (the harness itself was built
-  by fact-checking and fixing each of its own false-positives — offset-
+  contract metric is 0 — now **EIGHT**: the prior 7 + `ratioBad`
+  (ADR 0011 step 0). `ratioBad` promoted `wRatio`/`hRatio`
+  advisory→**contract** via a committed per-fixture **ratchet**
+  (`tests/factcheck-ratio-baseline.json`; predicate
+  `scripts/factcheck-ratio.mjs`, unit-tested): `|1−ratio|` may only
+  improve or hold vs baseline. **An intentional layout/geometry change
+  that moves ratios MUST regenerate the baseline** —
+  `SVG_DIR=build/factcheck-svg CORPUS_DIR=tests/fixtures/corpus
+  UPDATE_FACTCHECK_BASELINE=1 node scripts/factcheck-geometry.mjs` —
+  and commit it (same discipline as `golden-update`; the ratchet only
+  tightens toward parity). **Visual claims about a fixture MUST cite a
+  factcheck number, never a PNG eyeball** (the harness was built by
+  fact-checking and fixing each of its own false-positives — offset-
   aware label anchor, mxGraph last-key style, `<br/>`/`\n`/XML-escape
-  normalisation, advisory rank-order). Needs java + a one-time
-  `make gallery` to fetch `plantuml.jar`.
+  normalisation). Needs java + a one-time `make gallery` to fetch
+  `plantuml.jar`.
 - Visual proof (corroborative only): `PLANTUML_VERSION=1.2026.2
   RENDER_SRC=<puml> RENDER_OUT=<dir> make render-compare` (java+docker;
   PlantUML PNG + catalyst→drawio PNG side by side). `make gallery`

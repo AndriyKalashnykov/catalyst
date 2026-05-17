@@ -26,14 +26,21 @@
  *   - nodeOverlap: PARTIAL node overlaps (containment = legit nesting)
  *   - boundaryBands: each container's title band before its first child
  *
- * A fixture is "clean" iff the SEVEN CONTRACT metrics are 0:
+ * A fixture is "clean" iff the EIGHT CONTRACT metrics are 0:
  * entityMiss=relMiss=arrowBad=labelDrop=attachMerge=labelHit=
- * nodeOverlap=0 (see the `clean` predicate below). `rankOrder`,
- * `wRatio`, `hRatio` and `boundaryBands` are ADVISORY — reported but
- * NOT clean-disqualifying: ELK `layered` and PlantUML `dot` are both
- * valid engines that legitimately differ in same-rank order / minor
- * placement. A real over-ranking is judged as an extreme ratio
- * explicitly, not via strict order equality. The path→metric coverage
+ * nodeOverlap=0 AND `ratioBad`=0 (see the `clean` predicate below).
+ * `ratioBad` (ADR 0011 step 0) PROMOTES the former-advisory
+ * `wRatio`/`hRatio` to a CONTRACT via a committed per-fixture
+ * RATCHET (`tests/factcheck-ratio-baseline.json`, regen with
+ * `UPDATE_FACTCHECK_BASELINE=1`; predicate in `factcheck-ratio.mjs`,
+ * unit-tested): `|1−ratio|` may only DECREASE or hold vs baseline —
+ * a fidelity regression on EITHER bbox axis now fails the gate (it
+ * shipped silently while these were advisory — 14 fixtures at wRatio
+ * 0.19–0.67; memory `derived-artifact-enforcement-gate`). `rankOrder`
+ * and `boundaryBands` remain ADVISORY (ELK `layered` and PlantUML
+ * `dot` legitimately differ in same-rank order / minor placement;
+ * judged via the ratio ratchet, not strict order equality).
+ * The path→metric coverage
  * matrix is `docs/FACTCHECK-COVERAGE.md` (#17): every emit path has
  * ≥1 guarding contract metric — no blind spots. A non-zero contract
  * metric is a defect regardless of how the PNG looks.
@@ -49,7 +56,7 @@
  * geometry/emit change; extend it (not a throwaway script) when a new
  * fidelity contract is added.
  */
-import { readFileSync } from 'node:fs'
+import { readFileSync, existsSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { Catalyst } from '../dist/catalyst.mjs'
 import { measureEdgeLabel } from '../dist/layout/measureNode.mjs'
@@ -60,6 +67,9 @@ import { measureEdgeLabel } from '../dist/layout/measureNode.mjs'
 // midpoint (ignoring the offset falsely flagged every #56 re-seated
 // edge — a harness bug, not a product defect).
 import { polylineMidpoint } from '../dist/layout/edgeLanes.mjs'
+// ADR 0011 step-0 ratio ratchet — pure, contract-locked by
+// tests/factcheck-ratio.test.mts (extracted like p4b-svg-geom.mjs).
+import { RATIO_TOL, ratioContract } from './factcheck-ratio.mjs'
 
 const SVG_DIR = process.env.SVG_DIR ?? '/tmp/svg'
 const CORPUS = process.env.CORPUS_DIR ?? 'tests/fixtures/corpus'
@@ -68,6 +78,32 @@ const CORPUS = process.env.CORPUS_DIR ?? 'tests/fixtures/corpus'
 const PUML_EXT = '.puml'
 const SVG_EXT = '.svg'
 const ENC = 'utf8'
+
+/**
+ * ADR 0011 step 0 — `wRatio`/`hRatio` PROMOTED advisory → CONTRACT via a
+ * committed per-fixture baseline RATCHET (the golden-snapshot pattern;
+ * cf. `tests/golden/`). The contract is fidelity-monotone: for each
+ * fixture the distance `|1 − ratio|` (catalyst diagram bbox ÷ PlantUML)
+ * may only DECREASE or hold vs the committed baseline — never regress
+ * away from PlantUML by more than one quantisation quantum, on EITHER
+ * axis. A fix that improves a fixture passes (distance drops); then
+ * `UPDATE_FACTCHECK_BASELINE=1` re-commits the tighter baseline so the
+ * ratchet converges toward parity (no guessed absolute threshold — the
+ * ADR-0010 no-magic discipline). This closes the silent-rot class: 14
+ * fixtures at wRatio 0.19–0.67 had shipped "CLEAN" because the axis was
+ * advisory (memory `derived-artifact-enforcement-gate`).
+ *
+ * `RATIO_TOL` + the ratchet predicate live in `factcheck-ratio.mjs`
+ * (pure, unit-tested) — imported above; `void RATIO_TOL` keeps the
+ * symbol referenced for the doc cross-link without an unused warning.
+ */
+void RATIO_TOL
+const RATIO_BASELINE_FILE = join(
+  process.env.CATALYST_ROOT ?? '.', 'tests', 'factcheck-ratio-baseline.json')
+const RATIO_BASELINE = existsSync(RATIO_BASELINE_FILE)
+  ? JSON.parse(readFileSync(RATIO_BASELINE_FILE, ENC))
+  : {}
+const UPDATE_BASELINE = process.env.UPDATE_FACTCHECK_BASELINE === '1'
 
 /** draw.io <object>/<mxCell> attribute names this comparator reads. Named
  *  once so a typo can't silently make a check pass (the literals were
@@ -408,21 +444,24 @@ function factcheck(stem, dir = CORPUS) {
           }
         }
     }
-    // `clean` = the CONTRACTS held: nothing dropped, arrows correct, no
-    // visual merge, no label-on-leaf, no node overlap. rankOrder and
-    // wRatio/hRatio are ADVISORY diagnostics, NOT clean-disqualifiers:
-    // ELK `layered` and PlantUML `dot` are both valid hierarchical
-    // engines that legitimately differ in same-rank ordering / minor
-    // rank placement without dropping or mis-rendering anything. A real
-    // P9-class over-ranking shows up as an extreme hRatio (≫1) on a
-    // graph PlantUML compacts — judge that explicitly, not via strict
-    // order equality (which false-positives on every large/constrained
-    // graph).
+    // `clean` = the CONTRACTS held: nothing dropped, arrows correct,
+    // no visual merge, no label-on-leaf, no node overlap, AND no
+    // bbox-ratio fidelity regression (`ratioBad`, ADR 0011). Only
+    // `rankOrder` stays ADVISORY: ELK `layered` and PlantUML `dot`
+    // legitimately differ in same-rank ordering without dropping or
+    // mis-rendering anything (strict order equality false-positives on
+    // every large/constrained graph). Over-ranking / over-compaction
+    // is now caught by the ratio ratchet, not order equality.
+    // ADR 0011: wRatio/hRatio are now a CONTRACT via the baseline
+    // ratchet — `ratioBad` joins the clean predicate (no fidelity
+    // regression on either bbox axis vs the committed baseline).
+    const { ratioBad, missing: ratioMissing } = ratioContract(RATIO_BASELINE, stem, wRatio, hRatio)
     const clean = entityMiss === 0 && relMiss === 0 && arrowBad === 0 &&
       labelDrop === 0 && attachMerge === 0 && labelHit === 0 &&
-      nodeOverlap === 0
+      nodeOverlap === 0 && ratioBad === 0
     return { stem, clean, entityMiss, relMiss, arrowBad, labelDrop,
-             attachMerge, rankOrder, wRatio, hRatio, labelHit, nodeOverlap,
+             attachMerge, rankOrder, wRatio, hRatio, ratioBad, ratioMissing,
+             labelHit, nodeOverlap,
              boundaryBands: bands,
              pml: `${P.W}x${P.H}`, cat: `${Math.round(C.W)}x${Math.round(C.H)}` }
   })
@@ -443,7 +482,7 @@ const enumerate = () => FIXTURE_DIRS.flatMap((dir) =>
     .map((f) => ({ stem: f.slice(0, -PUML_EXT.length), dir })))
 
 const args = process.argv.slice(2)
-if (args.length > 0) {
+if (args.length > 0 && !UPDATE_BASELINE) {
   const all = enumerate()
   for (const s of args) {
     const e = all.find((x) => x.stem === s)
@@ -452,13 +491,26 @@ if (args.length > 0) {
 } else {
   const all = enumerate().sort((a, b) => a.stem.localeCompare(b.stem))
   let cleanCount = 0
+  const fresh = {}
   for (const { stem, dir } of all) {
     const r = await factcheck(stem, dir)
+    fresh[stem] = { w: r.wRatio, h: r.hRatio }
+    if (UPDATE_BASELINE) continue
     if (r.clean) { cleanCount++; continue }
+    const ratio = r.ratioBad
+      ? ` ratioBad=1 (w=${r.wRatio} h=${r.hRatio} vs baseline w=${RATIO_BASELINE[stem]?.w} h=${RATIO_BASELINE[stem]?.h})`
+      : (r.ratioMissing ? ` [no ratio baseline — run UPDATE_FACTCHECK_BASELINE=1]` : '')
     console.log(
       `${r.stem.padEnd(26)} arrowBad=${r.arrowBad} attachMerge=${r.attachMerge} ` +
       `labelHit=${r.labelHit} entityMiss=${r.entityMiss} relMiss=${r.relMiss} ` +
-      `labelDrop=${r.labelDrop} nodeOverlap=${r.nodeOverlap}`)
+      `labelDrop=${r.labelDrop} nodeOverlap=${r.nodeOverlap}${ratio}`)
   }
-  console.log(`CLEAN ${cleanCount}/${all.length}`)
+  if (UPDATE_BASELINE) {
+    const sorted = Object.fromEntries(
+      Object.keys(fresh).sort().map((k) => [k, fresh[k]]))
+    writeFileSync(RATIO_BASELINE_FILE, JSON.stringify(sorted, null, 2) + '\n')
+    console.log(`factcheck ratio baseline written: ${RATIO_BASELINE_FILE} (${Object.keys(sorted).length} fixtures)`)
+  } else {
+    console.log(`CLEAN ${cleanCount}/${all.length}`)
+  }
 }

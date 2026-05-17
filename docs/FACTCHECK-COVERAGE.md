@@ -13,7 +13,7 @@ See also: `scripts/factcheck-geometry.mjs` (the comparator),
 
 ## Metric classification (the true contract)
 
-A fixture is **clean** iff all **seven contract metrics are 0**
+A fixture is **clean** iff all **eight contract metrics are 0**
 (`scripts/factcheck-geometry.mjs`, the `clean` predicate):
 
 | Contract metric | What a non-zero means | 0 == |
@@ -25,11 +25,15 @@ A fixture is **clean** iff all **seven contract metrics are 0**
 | `attachMerge` | same-pair edges whose BOTH endpoint attach points are within `ATTACH_SEP_MIN` in the **2-D** plane (Euclidean, P12 fix) | parallel edges visually distinct |
 | `labelHit` | an edge-label rect lands over a NON-endpoint leaf | no label on an unrelated box |
 | `nodeOverlap` | a PARTIAL node–node overlap (containment = legit nesting, excluded) | no box collision |
+| `ratioBad` | (ADR 0011) the parity distance `abs(1−wRatio)` **or** `abs(1−hRatio)` grew > one quantisation quantum (0.01) vs the committed per-fixture baseline (`tests/factcheck-ratio-baseline.json`; ratchet, regen via `UPDATE_FACTCHECK_BASELINE=1`; predicate `scripts/factcheck-ratio.mjs`, unit-tested) | no bbox-aspect fidelity regression vs PlantUML on either axis |
 
 **Advisory** diagnostics — reported, NOT clean-disqualifying (ELK
-`layered` and PlantUML `dot` are both valid engines that legitimately
-differ here; a real over-ranking shows as an extreme ratio, judged
-explicitly): `rankOrder`, `wRatio`, `hRatio`, `boundaryBands`.
+`layered` and PlantUML `dot` legitimately differ in same-rank order):
+`rankOrder`, `boundaryBands`. (`wRatio`/`hRatio` themselves are still
+reported raw, but a *regression* in them is now the **contract**
+`ratioBad` — ADR 0011 promoted this axis advisory→contract because 14
+fixtures at wRatio 0.19–0.67 had shipped "CLEAN" while it was advisory;
+memory `derived-artifact-enforcement-gate`.)
 
 ## Path → guarding metric matrix
 
@@ -55,11 +59,14 @@ metric — **no emit path is unguarded**.
 
 ## Known coverage gaps (documented, not silent)
 
-1. **Advisory-only dimensions are not contracts.** `rankOrder` /
-   `wRatio` / `hRatio` differences between ELK and dot are *expected*
-   and do not gate. A genuine P9-class over-ranking is caught as an
-   extreme `hRatio` judged explicitly (see ADR 0009), not by strict
-   order equality.
+1. **Advisory-only dimensions are not contracts.** Only `rankOrder`
+   (same-rank ordering legitimately differs ELK↔dot) and
+   `boundaryBands` remain advisory. `wRatio`/`hRatio` were advisory
+   until ADR 0011 promoted a *regression* in them to the contract
+   `ratioBad` (the silent-rot fix): the raw ratio still differs
+   ELK↔dot by design, but it may no longer regress AWAY from PlantUML
+   vs the committed baseline. A P9-class over-ranking/compaction is
+   now caught by that ratchet, not by strict order equality.
 2. **`boundaryBands`** is reported but advisory; the hard
    title-band contract is the `compound-title-clearance` /
    `compound-boundary` unit tests + `nodeOverlap` (a too-small band
