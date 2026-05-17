@@ -117,7 +117,7 @@ class Mx {
         return this.doc.MxFile.diagram.MxGraphModel.root
     }
 
-    async addMxC4(alias: string, geometry: MxGeometry, type: string, name: string, technology?: string, description?: string, parent?: string, styleOverride?: StyleOverride, link?: string): Promise<void> {
+    async addMxC4(alias: string, geometry: MxGeometry, type: string, name: string, technology?: string, description?: string, parent?: string, styleOverride?: StyleOverride, link?: string, stereotypeTags: string[] = []): Promise<void> {
 
         let c4Type = type
         let label = ''
@@ -249,11 +249,30 @@ class Mx {
         // PlantUML would render. Base style is untouched when no override.
         style = StyleParser.applyOverride(style, styleOverride)
 
+        // P8: matched element-tag stereotypes render as extra `«tag»`
+        // segments BEFORE the `«type»` line, exactly as C4-PlantUML shows
+        // them (e.g. `$tags="critical"` + `AddElementTag("critical")` →
+        // `«critical»«System»`). The element templates emit a literal
+        // `«%c4Type%»`; splice a `%c4Stereotype%` placeholder in front so
+        // one substituted value carries all matched tags. Done ONLY when
+        // there are matched tags, and `c4Type` (the structural attribute
+        // golden/parity fingerprint reads) is left untouched — so every
+        // untagged element stays byte-for-byte identical.
+        let c4Stereotype: string | undefined
+        if (stereotypeTags.length > 0 && label.includes('«%c4Type%»')) {
+            // `tag»«` per tag → `«%c4Stereotype%%c4Type%»` becomes
+            // `«tag1»«tag2»«Type»`. Tag names are c4Text-escaped; the
+            // `»«` separators are structural and intentionally literal.
+            c4Stereotype = stereotypeTags.map((tg) => `${c4Text(tg)}»«`).join('')
+            label = label.replace('«%c4Type%»', '«%c4Stereotype%%c4Type%»')
+        }
+
         const t: c4 = {
             $: {
                 placeholders: 1,
                 c4Name: c4Text(name),
                 c4Type,
+                ...(c4Stereotype !== undefined ? { c4Stereotype } : {}),
                 // Pre-bracket the VALUE (mirrors addMxC4Relationship) so the
                 // element templates use a bare `%c4Technology%` — rendering
                 // "[Tech]" when present and an empty <div> when absent,

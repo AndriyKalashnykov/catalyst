@@ -8,6 +8,20 @@ This project adheres to [Keep a CHANGELOG](http://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Added
+
+- **Element-tag stereotypes are now rendered.** An element whose
+  `$tags` match an `AddElementTag` declaration shows those tags as
+  `«tag»` stereotype segments before the `«type»` line, exactly as
+  C4-PlantUML does (e.g. `$tags="critical"` →
+  `«critical»«System»`; multiple tags chain in authored order). A new
+  `c4Stereotype` placeholder is spliced before `«c4Type»`; the
+  structural `c4Type` attribute (read by the golden/parity
+  fingerprint) is left untouched, and elements without a matching tag
+  emit no `c4Stereotype` — so all untagged output is byte-identical
+  (only `edge-tags-styling` changes in the corpus). Tag colour styling
+  was already applied; this adds the missing stereotype text.
+
 ### Fixed
 
 - **Nested boundary title bands no longer collide with the first child
