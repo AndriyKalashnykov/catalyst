@@ -91,7 +91,7 @@ describe('Catalyst Library', () => {
 
   it('should parse relations from PlantUML content', async () => {
     const { Catalyst } = await import('../src/catalyst.mjs');
-    
+
     const pumlContent = `
       @startuml
       System(sys1, "System 1")
@@ -99,9 +99,9 @@ describe('Catalyst Library', () => {
       Rel(sys1, sys2, "uses")
       @enduml
     `;
-    
+
     const relations = Catalyst.parseRelations(pumlContent);
-    
+
     expect(relations).toBeDefined();
     expect(Array.isArray(relations)).toBe(true);
   });

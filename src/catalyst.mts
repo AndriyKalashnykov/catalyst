@@ -85,7 +85,12 @@ async function layoutData2mx(layoutData: LayoutResult, pumlElements: EntityDescr
       const info = parser.getObjectWithPropertyAndValueInHierarchy(pumlElements, 'alias', node.id)
 
       if (info) {
-        await mx.addMxC4(node.id, g, info.type, info.label, info.technology, info.description, undefined, overrideFor(info.type, info.tags, styles), info.link)
+        // P8: tags that have an AddElementTag declaration render as
+        // `«tag»` stereotype segments (same split rule as overrideFor).
+        const stereotypeTags = (info.tags ?? '')
+          .split('+').map((s) => s.trim())
+          .filter((tg) => tg && styles.elementTags.has(tg))
+        await mx.addMxC4(node.id, g, info.type, info.label, info.technology, info.description, undefined, overrideFor(info.type, info.tags, styles), info.link, stereotypeTags)
         emittedIds.add(node.id)
         const nx = node.x ?? 0, ny = node.y ?? 0
         nodeCenter.set(node.id, {

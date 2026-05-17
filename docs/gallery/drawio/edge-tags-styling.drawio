@@ -9,7 +9,7 @@
             <mxGeometry as="geometry" height="140" width="220" x="12" y="12"/>
           </mxCell>
         </object>
-        <object placeholders="1" c4Name="Core" c4Type="System" c4Technology="" c4Description="Mission critical" label="&lt;div style=&quot;font-size:11px;font-style:italic;color:#cccccc;&quot;&gt;«%c4Type%»&lt;/div&gt;&lt;div style=&quot;font-size:16px;font-weight:bold;&quot;&gt;%c4Name%&lt;/div&gt;&lt;div style=&quot;font-size:11px;color:#cccccc;&quot;&gt;%c4Description%&lt;/div&gt;" id="b">
+        <object placeholders="1" c4Name="Core" c4Type="System" c4Stereotype="critical»«" c4Technology="" c4Description="Mission critical" label="&lt;div style=&quot;font-size:11px;font-style:italic;color:#cccccc;&quot;&gt;«%c4Stereotype%%c4Type%»&lt;/div&gt;&lt;div style=&quot;font-size:16px;font-weight:bold;&quot;&gt;%c4Name%&lt;/div&gt;&lt;div style=&quot;font-size:11px;color:#cccccc;&quot;&gt;%c4Description%&lt;/div&gt;" id="b">
           <mxCell style="rounded=1;whiteSpace=wrap;html=1;labelBackgroundColor=none;fillColor=#c0392b;fontColor=#ffffff;align=center;verticalAlign=top;arcSize=10;strokeColor=#0D5091;metaEdit=1;resizable=1" parent="1" vertex="1">
             <mxGeometry as="geometry" height="140" width="220" x="12" y="254"/>
           </mxCell>
