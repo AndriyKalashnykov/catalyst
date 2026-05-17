@@ -40,22 +40,13 @@ export interface LaneGeometry {
   shift: number
 }
 
-/** Default lane spacing for the routed waypoint. */
+/** Default lane spacing for the routed waypoint (the minimum fan width
+ *  when labels are absent/narrow). When a group carries labels the
+ *  effective gap is widened to the group's widest label so each label,
+ *  sitting on its OWN lane line, clears the neighbouring lane's label —
+ *  see `assignEdgeLanes`. PlantUML fans parallel duplicates exactly this
+ *  way: each label rides next to its own curve, never stacked. */
 export const EDGE_LANE_GAP_PX = 44
-/** Label fan: perpendicular + along-edge px spread per lane (labels are wide,
- *  so they need a larger spread than the line waypoints). */
-export const LABEL_PERP_GAP_PX = 120
-export const LABEL_ALONG_GAP_PX = 150
-
-/** Distance from a box centre to where the ray `(ex,ey)` exits the box, for
- *  a rectangle with half-extents `(hw,hh)`. Pure geometry (rectangle ↔ ray
- *  intersection); used to cap the along-edge label offset at the real free
- *  span between the two node borders — no heuristic fraction. */
-function boxExitDistance(hw: number, hh: number, ex: number, ey: number): number {
-  const tx = ex !== 0 ? hw / Math.abs(ex) : Infinity
-  const ty = ey !== 0 ? hh / Math.abs(ey) : Infinity
-  return Math.min(tx, ty)
-}
 
 /**
  * @param relations  visible relations, in emission order; the index into this
@@ -63,6 +54,16 @@ function boxExitDistance(hw: number, hh: number, ex: number, ey: number): number
  * @param nodeCenter  alias → box centre.
  * @param isExcludedEndpoint  e.g. `id => clusterIds.has(id)` — boundary/cluster
  *                    endpoints are auto-routed by draw.io, never laned.
+ * @param gapPx  minimum lane spacing (used when labels are absent/narrow).
+ * @param labelWidthOf  optional: relIdx → measured label width (px). When
+ *                    given, each group's effective gap is widened to the
+ *                    group's widest label (+`labelPadPx`) so every label,
+ *                    placed ON its own lane line at the mid-gap, clears the
+ *                    neighbouring lane's label. Absent ⇒ behave as before
+ *                    (gap = `gapPx`).
+ * @param labelPadPx  font-derived breathing added to the label-driven gap
+ *                    (a real metric supplied by the caller, e.g. one space
+ *                    advance at the relationship-label font).
  * @returns  per-relation-index lane geometry, ONLY for relations that belong to
  *           a same-pair group of size ≥2 whose endpoints both have a centre.
  *           Single-edge pairs / self-loops / excluded endpoints are absent
@@ -73,6 +74,8 @@ export function assignEdgeLanes(
   nodeCenter: ReadonlyMap<string, NodeCenter>,
   isExcludedEndpoint: (id: string) => boolean,
   gapPx: number = EDGE_LANE_GAP_PX,
+  labelWidthOf?: (relIdx: number) => number,
+  labelPadPx: number = 0,
 ): Map<number, LaneGeometry> {
   // Group by unordered pair, preserving emission order within each group.
   // Key is JSON of the sorted pair (unambiguous for ANY alias content — no
@@ -106,29 +109,35 @@ export function assignEdgeLanes(
     const py = ex
     const mcx = (A.cx + B.cx) / 2
     const mcy = (A.cy + B.cy) / 2
+    // Effective gap: the lane lines (and the labels riding them) must be far
+    // enough apart that two adjacent labels — each ≤ the group's widest
+    // label, both centred on their own lane — never touch. Adjacent lane
+    // centres are `gap` apart and each label spans ≤ maxW, so gap ≥ maxW
+    // (+font breathing) guarantees clearance. Pure geometry, no guessed
+    // fraction. Falls back to `gapPx` when no label widths are supplied.
+    const maxLabelW = labelWidthOf
+      ? idxs.reduce((m, i) => Math.max(m, labelWidthOf(i) || 0), 0)
+      : 0
+    const effGap = Math.max(gapPx, Math.ceil(maxLabelW + labelPadPx))
     idxs.forEach((relIdx, idx) => {
       // Centre the fan on 0: a 2-edge pair splits to ±half, a 3-edge group to
-      // {-1,0,+1}·gap, etc. The waypoint separates the LINES; the label offset
-      // fans the (wide) LABELS along both perpendicular and edge directions so
-      // they never stack at the shared midpoint.
+      // {-1,0,+1}·gap, etc. The waypoint sets the LANE line. drawio-export
+      // anchors an edge label at the straight A↔B midpoint (NOT the routed
+      // waypoint — render-verified), so to seat the label ON its own lane
+      // line the offset must be exactly the lane's OWN perpendicular shift
+      // `(px,py)·shift` — i.e. the displacement from the midpoint anchor to
+      // the lane line. The previous code used a SEPARATE inflated constant
+      // (±120 perp / ±150 along) instead of the line's own shift, which
+      // flung every non-centre label off its line (the P1 defect). With
+      // `effGap` ≥ the group's widest label, adjacent on-line labels clear
+      // each other. The centre lane (shift 0) keeps offset (0,0).
       const lane = idx - (idxs.length - 1) / 2
-      const shift = lane * gapPx
-      // Perpendicular label spread is the safe axis (sideways, away from both
-      // boxes). The along-edge component is capped at the real free span
-      // between the two node borders, so the label can never be pushed onto
-      // or past either box — derived from geometry, not a guessed fraction.
-      const perpMag = lane * LABEL_PERP_GAP_PX
-      const alongRaw = lane * LABEL_ALONG_GAP_PX
-      const tA = boxExitDistance(A.hw, A.hh, ex, ey)
-      const tB = boxExitDistance(B.hw, B.hh, ex, ey)
-      const alongCap = Math.max(0, len / 2 - Math.max(tA, tB))
-      const alongMag = Math.sign(alongRaw) * Math.min(Math.abs(alongRaw), alongCap)
+      const shift = lane * effGap
       out.set(relIdx, {
         waypoint: { x: Math.round(mcx + px * shift), y: Math.round(mcy + py * shift) },
-        labelOffset: {
-          dx: Math.round(px * perpMag + ex * alongMag),
-          dy: Math.round(py * perpMag + ey * alongMag),
-        },
+        // `+ 0` normalises a signed-zero (`Math.round(0 * -shift)` → `-0`)
+        // so the offset compares/serialises as `0`, never `-0`.
+        labelOffset: { dx: Math.round(px * shift) + 0, dy: Math.round(py * shift) + 0 },
         perp: { x: px, y: py },
         shift,
       })

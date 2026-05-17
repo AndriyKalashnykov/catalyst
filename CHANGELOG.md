@@ -8,6 +8,20 @@ This project adheres to [Keep a CHANGELOG](http://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **Multi-edge (parallel/antiparallel) labels now ride their own lane
+  line instead of being flung off it.** The lane separator placed each
+  label using a separate inflated constant (±120 px perpendicular /
+  ±150 px along) rather than the lane's own shift, so every non-centre
+  label detached from its edge — parallel duplicates orphaned 2 of 3
+  labels. Now `labelOffset = (px,py)·shift` (the lane's exact
+  displacement from drawio's A↔B-midpoint label anchor), and the
+  per-group lane gap widens to the group's widest measured label so
+  adjacent on-line labels clear each other — the way PlantUML fans
+  parallel duplicates. Only the 3 corpus fixtures with multi-edge
+  groups change; the other 17 are byte-identical.
+
 ### Changed
 
 - **Context diagrams now use the same `layered` (Graphviz-`dot`-style)
