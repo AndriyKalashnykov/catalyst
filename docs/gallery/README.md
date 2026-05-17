@@ -19,7 +19,7 @@ Stresses the ELK layout engine: rank ordering, fan-out, wide ranks, cycles, disc
 
 | Source PlantUML | catalyst → draw.io |
 |---|---|
-| <img src="img/topology-cyclic.puml.png" alt="topology-cyclic puml" height="360"> | <img src="img/topology-cyclic.drawio.png" alt="topology-cyclic drawio" height="360"> |
+| <img src="img/topology-cyclic.puml.png" alt="topology-cyclic puml" width="420"> | <img src="img/topology-cyclic.drawio.png" alt="topology-cyclic drawio" width="420"> |
 
 <details><summary>PlantUML source</summary>
 
@@ -42,7 +42,7 @@ Rel(c, a, "requeues")
 
 | Source PlantUML | catalyst → draw.io |
 |---|---|
-| <img src="img/topology-deep-nesting.puml.png" alt="topology-deep-nesting puml" height="360"> | <img src="img/topology-deep-nesting.drawio.png" alt="topology-deep-nesting drawio" height="360"> |
+| <img src="img/topology-deep-nesting.puml.png" alt="topology-deep-nesting puml" width="420"> | <img src="img/topology-deep-nesting.drawio.png" alt="topology-deep-nesting drawio" width="420"> |
 
 <details><summary>PlantUML source</summary>
 
@@ -72,7 +72,7 @@ Rel(auth, usr, "looks up")
 
 | Source PlantUML | catalyst → draw.io |
 |---|---|
-| <img src="img/topology-disconnected.puml.png" alt="topology-disconnected puml" height="360"> | <img src="img/topology-disconnected.drawio.png" alt="topology-disconnected drawio" height="360"> |
+| <img src="img/topology-disconnected.puml.png" alt="topology-disconnected puml" width="420"> | <img src="img/topology-disconnected.drawio.png" alt="topology-disconnected drawio" width="420"> |
 
 <details><summary>PlantUML source</summary>
 
@@ -96,7 +96,7 @@ System(lonely, "Standalone Cron")
 
 | Source PlantUML | catalyst → draw.io |
 |---|---|
-| <img src="img/topology-hub-spoke.puml.png" alt="topology-hub-spoke puml" height="360"> | <img src="img/topology-hub-spoke.drawio.png" alt="topology-hub-spoke drawio" height="360"> |
+| <img src="img/topology-hub-spoke.puml.png" alt="topology-hub-spoke puml" width="420"> | <img src="img/topology-hub-spoke.drawio.png" alt="topology-hub-spoke drawio" width="420"> |
 
 <details><summary>PlantUML source</summary>
 
@@ -126,7 +126,7 @@ Rel(hub, s6, "routes to")
 
 | Source PlantUML | catalyst → draw.io |
 |---|---|
-| <img src="img/topology-linear-chain.puml.png" alt="topology-linear-chain puml" height="360"> | <img src="img/topology-linear-chain.drawio.png" alt="topology-linear-chain drawio" height="360"> |
+| <img src="img/topology-linear-chain.puml.png" alt="topology-linear-chain puml" width="420"> | <img src="img/topology-linear-chain.drawio.png" alt="topology-linear-chain drawio" width="420"> |
 
 <details><summary>PlantUML source</summary>
 
@@ -152,7 +152,7 @@ Rel(d, e, "exposes", "SQL")
 
 | Source PlantUML | catalyst → draw.io |
 |---|---|
-| <img src="img/topology-wide-rank.puml.png" alt="topology-wide-rank puml" height="360"> | <img src="img/topology-wide-rank.drawio.png" alt="topology-wide-rank drawio" height="360"> |
+| <img src="img/topology-wide-rank.puml.png" alt="topology-wide-rank puml" width="420"> | <img src="img/topology-wide-rank.drawio.png" alt="topology-wide-rank drawio" width="420"> |
 
 <details><summary>PlantUML source</summary>
 
@@ -190,7 +190,7 @@ Bidirectional, directional hints, with/without technology, long labels, layout-o
 
 | Source PlantUML | catalyst → draw.io |
 |---|---|
-| <img src="img/rel-bidirectional.puml.png" alt="rel-bidirectional puml" height="360"> | <img src="img/rel-bidirectional.drawio.png" alt="rel-bidirectional drawio" height="360"> |
+| <img src="img/rel-bidirectional.puml.png" alt="rel-bidirectional puml" width="420"> | <img src="img/rel-bidirectional.drawio.png" alt="rel-bidirectional drawio" width="420"> |
 
 <details><summary>PlantUML source</summary>
 
@@ -213,7 +213,7 @@ Rel(c, a, "callbacks", "webhook")
 
 | Source PlantUML | catalyst → draw.io |
 |---|---|
-| <img src="img/rel-directional.puml.png" alt="rel-directional puml" height="360"> | <img src="img/rel-directional.drawio.png" alt="rel-directional drawio" height="360"> |
+| <img src="img/rel-directional.puml.png" alt="rel-directional puml" width="420"> | <img src="img/rel-directional.drawio.png" alt="rel-directional drawio" width="420"> |
 
 <details><summary>PlantUML source</summary>
 
@@ -239,7 +239,7 @@ Rel_R(hub, e, "right")
 
 | Source PlantUML | catalyst → draw.io |
 |---|---|
-| <img src="img/rel-layout-constraints.puml.png" alt="rel-layout-constraints puml" height="360"> | <img src="img/rel-layout-constraints.drawio.png" alt="rel-layout-constraints drawio" height="360"> |
+| <img src="img/rel-layout-constraints.puml.png" alt="rel-layout-constraints puml" width="420"> | <img src="img/rel-layout-constraints.drawio.png" alt="rel-layout-constraints drawio" width="420"> |
 
 <details><summary>PlantUML source</summary>
 
@@ -264,7 +264,7 @@ Lay_Distance(c, d, 2)
 
 | Source PlantUML | catalyst → draw.io |
 |---|---|
-| <img src="img/rel-long-labels.puml.png" alt="rel-long-labels puml" height="360"> | <img src="img/rel-long-labels.drawio.png" alt="rel-long-labels drawio" height="360"> |
+| <img src="img/rel-long-labels.puml.png" alt="rel-long-labels puml" width="420"> | <img src="img/rel-long-labels.drawio.png" alt="rel-long-labels drawio" width="420"> |
 
 <details><summary>PlantUML source</summary>
 
@@ -284,7 +284,7 @@ Rel(a, b, "submits a payment authorization request and waits synchronously for s
 
 | Source PlantUML | catalyst → draw.io |
 |---|---|
-| <img src="img/rel-parallel-duplicate.puml.png" alt="rel-parallel-duplicate puml" height="360"> | <img src="img/rel-parallel-duplicate.drawio.png" alt="rel-parallel-duplicate drawio" height="360"> |
+| <img src="img/rel-parallel-duplicate.puml.png" alt="rel-parallel-duplicate puml" width="420"> | <img src="img/rel-parallel-duplicate.drawio.png" alt="rel-parallel-duplicate drawio" width="420"> |
 
 <details><summary>PlantUML source</summary>
 
@@ -306,7 +306,7 @@ Rel_Back(b, a, "callback", "webhook")
 
 | Source PlantUML | catalyst → draw.io |
 |---|---|
-| <img src="img/rel-tech-vs-notech.puml.png" alt="rel-tech-vs-notech puml" height="360"> | <img src="img/rel-tech-vs-notech.drawio.png" alt="rel-tech-vs-notech drawio" height="360"> |
+| <img src="img/rel-tech-vs-notech.puml.png" alt="rel-tech-vs-notech puml" width="420"> | <img src="img/rel-tech-vs-notech.drawio.png" alt="rel-tech-vs-notech drawio" width="420"> |
 
 <details><summary>PlantUML source</summary>
 
@@ -333,7 +333,7 @@ One canonical diagram per C4 abstraction (Component, Dynamic, System Landscape).
 
 | Source PlantUML | catalyst → draw.io |
 |---|---|
-| <img src="img/level-component.puml.png" alt="level-component puml" height="360"> | <img src="img/level-component.drawio.png" alt="level-component drawio" height="360"> |
+| <img src="img/level-component.puml.png" alt="level-component puml" width="420"> | <img src="img/level-component.drawio.png" alt="level-component drawio" width="420"> |
 
 <details><summary>PlantUML source</summary>
 
@@ -359,7 +359,7 @@ Rel(svc, cache, "caches", "Lettuce")
 
 | Source PlantUML | catalyst → draw.io |
 |---|---|
-| <img src="img/level-dynamic.puml.png" alt="level-dynamic puml" height="360"> | <img src="img/level-dynamic.drawio.png" alt="level-dynamic drawio" height="360"> |
+| <img src="img/level-dynamic.puml.png" alt="level-dynamic puml" width="420"> | <img src="img/level-dynamic.drawio.png" alt="level-dynamic drawio" width="420"> |
 
 <details><summary>PlantUML source</summary>
 
@@ -383,7 +383,7 @@ RelIndex(3, api, db, "SELECT", "SQL")
 
 | Source PlantUML | catalyst → draw.io |
 |---|---|
-| <img src="img/level-system-landscape.puml.png" alt="level-system-landscape puml" height="360"> | <img src="img/level-system-landscape.drawio.png" alt="level-system-landscape drawio" height="360"> |
+| <img src="img/level-system-landscape.puml.png" alt="level-system-landscape puml" width="420"> | <img src="img/level-system-landscape.drawio.png" alt="level-system-landscape drawio" width="420"> |
 
 <details><summary>PlantUML source</summary>
 
@@ -417,7 +417,7 @@ Tags / dashed rels, Unicode & XML-special chars, label-only entities, a ~30-node
 
 | Source PlantUML | catalyst → draw.io |
 |---|---|
-| <img src="img/edge-empty-descriptions.puml.png" alt="edge-empty-descriptions puml" height="360"> | <img src="img/edge-empty-descriptions.drawio.png" alt="edge-empty-descriptions drawio" height="360"> |
+| <img src="img/edge-empty-descriptions.puml.png" alt="edge-empty-descriptions puml" width="420"> | <img src="img/edge-empty-descriptions.drawio.png" alt="edge-empty-descriptions drawio" width="420"> |
 
 <details><summary>PlantUML source</summary>
 
@@ -441,7 +441,7 @@ Rel(b, c, "queues")
 
 | Source PlantUML | catalyst → draw.io |
 |---|---|
-| <img src="img/edge-large-graph.puml.png" alt="edge-large-graph puml" height="360"> | <img src="img/edge-large-graph.drawio.png" alt="edge-large-graph drawio" height="360"> |
+| <img src="img/edge-large-graph.puml.png" alt="edge-large-graph puml" width="420"> | <img src="img/edge-large-graph.drawio.png" alt="edge-large-graph drawio" width="420"> |
 
 <details><summary>PlantUML source</summary>
 
@@ -509,7 +509,7 @@ Rel(svc6, ext6, "integrates", "REST")
 
 | Source PlantUML | catalyst → draw.io |
 |---|---|
-| <img src="img/edge-multiline-labels.puml.png" alt="edge-multiline-labels puml" height="360"> | <img src="img/edge-multiline-labels.drawio.png" alt="edge-multiline-labels drawio" height="360"> |
+| <img src="img/edge-multiline-labels.puml.png" alt="edge-multiline-labels puml" width="420"> | <img src="img/edge-multiline-labels.drawio.png" alt="edge-multiline-labels drawio" width="420"> |
 
 <details><summary>PlantUML source</summary>
 
@@ -537,7 +537,7 @@ Rel(admin, secret, "writes\nleaf cert + key to", "K8s API")
 
 | Source PlantUML | catalyst → draw.io |
 |---|---|
-| <img src="img/edge-tags-styling.puml.png" alt="edge-tags-styling puml" height="360"> | <img src="img/edge-tags-styling.drawio.png" alt="edge-tags-styling drawio" height="360"> |
+| <img src="img/edge-tags-styling.puml.png" alt="edge-tags-styling puml" width="420"> | <img src="img/edge-tags-styling.drawio.png" alt="edge-tags-styling drawio" width="420"> |
 
 <details><summary>PlantUML source</summary>
 
@@ -561,7 +561,7 @@ Rel(b, c, "emits events", "Kafka", $tags="async")
 
 | Source PlantUML | catalyst → draw.io |
 |---|---|
-| <img src="img/edge-unicode-specialchars.puml.png" alt="edge-unicode-specialchars puml" height="360"> | <img src="img/edge-unicode-specialchars.drawio.png" alt="edge-unicode-specialchars drawio" height="360"> |
+| <img src="img/edge-unicode-specialchars.puml.png" alt="edge-unicode-specialchars puml" width="420"> | <img src="img/edge-unicode-specialchars.drawio.png" alt="edge-unicode-specialchars drawio" width="420"> |
 
 <details><summary>PlantUML source</summary>
 

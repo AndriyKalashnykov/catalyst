@@ -34,6 +34,11 @@ import { Catalyst } from '../dist/catalyst.mjs';
 const PLANTUML_VERSION = process.env.PLANTUML_VERSION ?? '1.2026.2';
 const DRAWIO_IMAGE = process.env.DRAWIO_EXPORT_IMAGE ?? 'rlespinasse/drawio-export:v4.51.0';
 const DRAWIO_SCALE = process.env.DRAWIO_EXPORT_SCALE ?? '2';
+// Regenerate ONLY docs/gallery/README.md from the already-rendered
+// images (skip the java/docker render + catalyst convert). Lets a
+// markdown-template change (e.g. P13's embed-width tweak) regenerate
+// deterministically with ZERO committed-PNG churn — no re-render.
+const MD_ONLY = process.env.GALLERY_MD_ONLY === '1';
 const CORPUS_DIR = resolve(process.env.CORPUS_DIR ?? 'tests/fixtures/corpus');
 const OUT = resolve(process.env.GALLERY_OUT ?? 'docs/gallery');
 const IMG = join(OUT, 'img');
@@ -59,6 +64,9 @@ if (fixtures.length === 0) {
   process.exit(1);
 }
 
+if (MD_ONLY) {
+  console.log('· GALLERY_MD_ONLY=1 — regenerating README.md from existing images (no render)');
+} else {
 // 1. PlantUML: render the whole corpus dir in one JVM invocation.
 const jar = process.env.PLANTUML_JAR ?? join(OUT, 'plantuml.jar');
 if (!existsSync(jar)) {
@@ -111,6 +119,7 @@ for (const f of fixtures) {
   else console.warn(`! no drawio png for ${stem}`);
 }
 cleanExport();
+}
 
 // 4. Gallery README — grouped by class, both images side by side.
 const lines = [];
@@ -141,16 +150,24 @@ for (const [title, prefix, blurb] of CLASSES) {
     lines.push('');
     lines.push('| Source PlantUML | catalyst → draw.io |');
     lines.push('|---|---|');
-    // Height-bounded HTML <img>, NOT bare `![](…)`. The corpus spans a
-    // ~26x aspect-ratio range (tall chains → wide fans); a bare embed
-    // renders every scale=2 PNG at full native size, so tall diagrams
-    // tower over the page. `height=360` + GitHub's built-in
-    // `max-width:100%` gives a two-sided bound with no per-image tuning:
-    // tall images are capped to 360px high; wide images are bound by
-    // column width (aspect preserved — max-width wins over the height
-    // attr). 360 keeps the median (~850px native at scale=2) crisp.
+    // P13: WIDTH-uniform HTML <img>, NOT bare `![](…)` and NOT
+    // `height=` (the prior bound). GitHub's sanitizer strips
+    // `style=`/`class` (github/markup, fact-checked 2026-05-17), so
+    // CSS object-fit / max-height / aspect-boxes are unavailable —
+    // only the width|height ATTR bounds an image, and only ONE axis
+    // (both ⇒ aspect distortion). The corpus spans a ~26× aspect
+    // range; `height=360` therefore made every COLUMN a different
+    // width (the reported "ragged" defect). `width="420"` makes every
+    // column — and the two images within a pair — exactly 420 px wide
+    // (P13's explicit goal). 420 ≈ ½ the scale-2 median native width
+    // ⇒ zero upscale for the common case (retina crisp); only
+    // extreme-aspect outliers scale. A tall diagram now renders tall —
+    // inherent to "uniform width" and the accepted trade. Full
+    // rationale + weighted comparison: docs/research/p13-gallery-
+    // uniformity.md; deliberately overrides md-image-embedding memory
+    // for the gallery (memory updated to record the override).
     const cell = (kind) =>
-      `<img src="img/${stem}.${kind}.png" alt="${stem} ${kind}" height="360">`;
+      `<img src="img/${stem}.${kind}.png" alt="${stem} ${kind}" width="420">`;
     lines.push(`| ${cell('puml')} | ${cell('drawio')} |`);
     lines.push('');
     lines.push('<details><summary>PlantUML source</summary>');
