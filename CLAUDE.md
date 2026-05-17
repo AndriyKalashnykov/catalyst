@@ -163,21 +163,25 @@ Completed-work root-cause prose lives in git history + ADRs +
 >
 > ### ▶▶ NEXT SESSION (priority order)
 >
-> 0. **Layout-aspect fidelity (ELK `layered` vs Graphviz `dot`) — THE
->    real fix for the "narrow diagram / humongous fonts" complaint.**
->    Measured 2026-05-17: catalyst boxes are PlantUML-correct PER LEAF
->    (`p4b-box-metrics`: cat 93×59 ≈ pml 92×58) but ELK lays whole
->    diagrams out 0.19–0.67× PlantUML's WIDTH on **14/20** gallery
->    fixtures (it stacks/compacts where dot spreads). P4b box sizing
->    is fine; this is a layout-engine aspect divergence. P13's
->    uniform-width embed amplified it 3–5× and was REVERTED (see
->    durable item). Real fix: tune ELK spacing/aspect toward dot
->    (the P-series layout backlog) — research+spike+gate per ADR
->    discipline; **promote `wRatio`/`hRatio` from advisory → a
->    contract factcheck metric** (a measured fidelity axis with only
->    an advisory gate let 14 fixtures ship "CLEAN" — see memory
->    `derived-artifact-enforcement-gate`). Hardest open item; the one
->    the user is actually reacting to.
+> 0. **Layout-aspect fidelity (ELK `layered` vs `dot`) — DECISION
+>    BASE COMMITTED: `docs/adr/0011-layout-aspect-fidelity.md`.** THE
+>    real fix for the "narrow diagram / humongous fonts" complaint.
+>    4 primary-sourced research sweeps + measurement (2026-05-17):
+>    boxes are PlantUML-correct per-leaf; the 0.19–0.67× WIDTH gap on
+>    14/20 fixtures has THREE root causes — **A** catalyst forces
+>    `nodePlacement=NETWORK_SIMPLEX` (Phase-4 crossing win, narrowing
+>    cost), **B** `dot` makes every edge label/parallel-edge a
+>    width-bearing ranked node, ELK reserves only a band (dominant;
+>    sole cause of the ~3× parallel blow-up), **C** `measureNode`
+>    wraps desc to title-width not `WRAP_WIDTH=200`. **Sequenced
+>    decision (ADR 0011): C3 (wrap=200) → C2 (synthetic fan/label
+>    rank-width, P2-pattern) → C1 (BK placement ONLY if crossing
+>    budget holds) — each its own factcheck+byte+render-compare
+>    gated PR; PROMOTE `wRatio`/`hRatio` advisory→contract BEFORE C3
+>    (data-driven threshold).** Implement in that order; C1 may be
+>    declined (width not worth re-tangling edges — a valid outcome).
+>    See memory `derived-artifact-enforcement-gate`. Hardest open
+>    item; the one the user is reacting to.
 > 1. **Sequence diagrams** (#12, ADR 0007) — phased. **Phase (a)
 >    `SeqParser` ✅ DONE 2026-05-17** (`src/seq/`, 29-test matrix,
 >    net-new). Phase (b) WIP parked on branch
