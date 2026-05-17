@@ -75,19 +75,32 @@ Standalone, independently-maintained library (no upstream; never add an
 
 Everything below is researched, not speculative. Sizes are honest.
 
-> ▶ **RESUME HERE — session handoff 2026-05-17.**
-> **P4 (diagonal/sparse) DONE** on branch
-> `fix/p4-context-layered-not-stress` (PR pending): root cause was the
-> Context→`stress` algorithm, not `C4_MIN`/spacing. Fact-checked vs
-> PlantUML ground truth (PlantUML = `dot` = hierarchical for Context
-> too), removed the whole stress/declump/`isHierarchical`/`context`
-> machinery, **always `layered`**. 324/324, ADR 0008, byte-scope
-> proven (15 Context changed, 5 hier byte-identical), render-compare
-> PASS. Next: open the PR + merge, then **P1** (multi-edge lane
-> label-orphan — partially improved by P4 but sync/callback labels
-> still flung), then P2/P3/P5(re-audit, likely resolved)/P6/P7/P8,
-> then **P4b** (box-emptiness, deferred), then sequence-diagram impl
-> (ADR 0007). Older handoff #2 history below for context.
+> ▶ **RESUME HERE — session handoff 2026-05-17 (refreshed #3).**
+> Gallery-audit sweep, each fact-checked NUMERICALLY (no eyeballing)
+> via the new `scripts/factcheck-geometry.mjs` (catalyst emitted
+> geometry vs PlantUML `-tsvg` ground truth) + drawio-export pixel
+> probes:
+>
+> - **P4 MERGED #70** — Context→always-`layered` (ADR 0008). Root
+>   cause was the algorithm, not `C4_MIN`. Cascaded: **P3, P5, P7
+>   RESOLVED by P4** (verified: P3 wRatio 0.87≤1.3 was ~4.7; P5
+>   labelHit 0; P7 ~45-50u inter-rank label clearance).
+> - **P1 MERGED #71** — multi-edge labels ride their own lane line
+>   (labelHit 0, node-geom byte-identical to P4).
+> - **P6 DONE (PR pending)** — titlePadding +1 real clearance line;
+>   pixel-measured band 33→49u, ~15-17u clearance (was ~1u).
+> - **NEW P9** (surfaced by the numeric harness, eyeball missed it):
+>   ELK layered over-ranks bidirectional/cyclic graphs vs dot
+>   (rel-bidirectional/rel-tech-vs-notech rankOrder:false, hRatio
+>   2.3-2.4). P4-era, not P1.
+>
+> Remaining: P6 PR → merge; then **P8** (tag stereotype, design
+> ready), **P2** (Rel_L/R — ELK partitioning spike, hard),
+> **P9** (cycle/same-rank, related to P2), **P4b** (box-emptiness,
+> cross-cutting/deferred), then sequence diagrams (ADR 0007).
+> Methodology: every visual claim MUST be backed by
+> `factcheck-geometry.mjs` numbers + pixel probe, never eyeball.
+> Older handoff #2 history below for context.
 >
 > ▶ (prior) **session handoff 2026-05-16 (refreshed #2).**
 > All this-session PRs MERGED; `main` synced (`ce30c50`), 317/317.
@@ -529,13 +542,19 @@ re-judge: P4 appears to have resolved most of this. Any residual is
 now a `layered` edge-label spacing question (not radial-hub), gate vs
 PlantUML.
 
-**P6 — Nested-boundary title clearance residual (MEDIUM, #25-class).**
-Image: `topology-deep-nesting.{puml,drawio}.png`. Nested boundary
-title bands (`Platform [system]`, `Core Services [system]`) collide
-with child box tops; `[enterprise]`/`[system]` subtitle text itself is
-correct (#60). Likely a P4 symptom (oversized child fills the boundary,
-top hits the title band). Re-test AFTER P4. Gate: title bands clear of
-child boxes in the re-rendered image.
+**P6 — ✅ DONE (PR pending).** NOT a P4 symptom: `titlePadding()`
+reserved only the 2-line title (≈33u) and a drawio-export probe
+render (pixel-measured, scale 1, centre column) proved the rendered
+`[type]` bottom lands exactly there → ~1u clearance, the collision.
+PlantUML SVG ground truth reserves ≈16–20u below its title. Fix:
+added one real-metric clearance line (`renderedLineHeight(EB_TITLE_PX)`)
+→ band ≈49u, pixel-re-measured ~15–17u clearance (Platform/Core
+Services `[system]` now clear API Gateway/Auth). Byte-scope: only the
+4 compound fixtures changed (deep-nesting, level-system-landscape,
+level-component, edge-large-graph), 16 byte-identical. 327/327; the
+`#25` test gained a NON-tautological empirical-floor gate. New
+`scripts/factcheck-geometry.mjs` (catalyst geom vs PlantUML SVG) is
+the rigorous numeric gate going forward — no eyeballing.
 
 **P7 — Short-hierarchical-edge label cram (LOW-MED).**
 Images: `edge-tags-styling.{puml,drawio}.png` (`sync call [REST]`
