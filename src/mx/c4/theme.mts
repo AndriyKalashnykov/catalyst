@@ -56,6 +56,18 @@ export const BOUNDARY_BODY_PX = 11
  *  measureEdgeLabel MUST measure at 10, not the mxGraph default 11. */
 export const RELATIONSHIP_LABEL_PX = 10
 
+/** DeploymentNode cell-level `fontSize` (#15 single-sourcing). This is
+ *  a DOCUMENTED CONVENTION, not a measurement and not a renderer
+ *  default: both sides were checked — C4-PlantUML/Structurizr define no
+ *  drawio cell `fontSize`, and mxGraph's default is 11
+ *  ({@link MX_DEFAULT_FONTSIZE}), so 12 is neither upstream-defined nor
+ *  the downstream default. DeploymentNode's label `<div>`s all carry
+ *  explicit inline font-sizes ({@link DEPLOYMENT_TITLE_PX} /
+ *  {@link ELEMENT_BODY_PX}), so per the renderer-style cascade this
+ *  cell value does not govern the rendered label text; it is retained
+ *  verbatim as the template's historical emitted value (byte-stable). */
+export const DEPLOYMENT_NODE_CELL_FONTSIZE = 12
+
 /**
  * drawio `cylinder3` elliptical-cap vertical extent, in cell units.
  * The `*Db` templates (`ContainerDb`/`SystemDb`/`ComponentDb`) emit
