@@ -2,8 +2,10 @@ import { ENTERPRISE_BOUNDARY_TITLE_PX, BOUNDARY_BODY_PX, PALETTE, MX, SHAPE } fr
 import { spaceAdvance } from '../../text/TextMetrics.mjs';
 
 class EnterpriseBoundary {
-    static async label() {
-        const html = `<div style="font-weight:bold;font-size:${ENTERPRISE_BOUNDARY_TITLE_PX}px;">%c4Name%</div><div style="font-size:${BOUNDARY_BODY_PX}px;">[%c4Type%]</div>`;
+    // See Boundary.label() — `legend` is the fact-checked C4-PlantUML
+    // subtitle word, baked in literally so c4Type stays structural.
+    static async label(legend: string) {
+        const html = `<div style="font-weight:bold;font-size:${ENTERPRISE_BOUNDARY_TITLE_PX}px;">%c4Name%</div><div style="font-size:${BOUNDARY_BODY_PX}px;">[${legend}]</div>`;
         const minifiedHtml = html.replace(/>\s+</g, '><');
         return this.encodeHtmlEntities(minifiedHtml);
     }

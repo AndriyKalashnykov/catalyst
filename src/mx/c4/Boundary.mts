@@ -2,8 +2,15 @@ import { BOUNDARY_TITLE_PX, BOUNDARY_BODY_PX, PALETTE, MX } from './theme.mjs';
 import { spaceAdvance } from '../../text/TextMetrics.mjs';
 
 class Boundary {
-    static async label() {
-        const html = `<div style="font-weight:bold;">%c4Name%</div><div style="font-size:${BOUNDARY_BODY_PX}px;">[%c4Type%]</div>`;
+    // `legend` is the C4-PlantUML subtitle word (boundaryLegend()):
+    // "System"/"Container"/"Enterprise" for the named macros, the
+    // explicit $type for a generic Boundary. Baked in literally (NOT a
+    // %c4Type% placeholder) so the structural c4Type attribute stays the
+    // raw macro name — golden/parity fingerprint unchanged; only the
+    // displayed subtitle matches PlantUML. encodeHtmlEntities runs over
+    // the whole string, so a user-supplied $type is escaped here too.
+    static async label(legend: string) {
+        const html = `<div style="font-weight:bold;">%c4Name%</div><div style="font-size:${BOUNDARY_BODY_PX}px;">[${legend}]</div>`;
         const minifiedHtml = html.replace(/>\s+</g, '><');
         return this.encodeHtmlEntities(minifiedHtml);
     }

@@ -135,6 +135,46 @@ BiRel(a, b, "Talks", "gRPC")
         // BiRel must NOT get endArrow=none — both ends keep an arrowhead.
         expect(style.split(';').filter((s) => s.startsWith('endArrow=')).at(-1)).toBe('endArrow=blockThin');
     });
+
+    // Whole-path contract for the boundary subtitle (boundaryLegend wired
+    // through Mx.addMxC4) — the boundaryLegend unit test proves the map,
+    // this proves the WIRING: emitted label carries the PlantUML
+    // lowercase tag, NOT the %c4Type% placeholder, while the structural
+    // c4Type attribute stays the raw macro (golden/parity invariant).
+    async function boundaryObj(xml: string, id: string): Promise<{ c4Type: string; label: string }> {
+        const doc = await parseStringPromise(xml);
+        const root = doc?.mxfile?.diagram?.[0]?.mxGraphModel?.[0]?.root?.[0] ?? {};
+        for (const obj of (root.object ?? [])) {
+            if ((obj.$ ?? {}).id === id) return { c4Type: obj.$.c4Type ?? '', label: obj.$.label ?? '' };
+        }
+        throw new Error(`no object id=${id}`);
+    }
+    const C4 = '@startuml\n!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Container.puml\n';
+
+    it('named boundaries render the PlantUML lowercase-tag subtitle, c4Type attribute unchanged', async () => {
+        const xml = await Catalyst.convert(
+            `${C4}System_Boundary(sb,"S"){System(s,"s")}\n`
+            + `Container_Boundary(cb,"C"){Container(c,"c")}\n`
+            + `Enterprise_Boundary(eb,"E"){System(e,"e")}\n@enduml`);
+        for (const [id, kind, tag] of [
+            ['sb', 'System_Boundary', 'system'],
+            ['cb', 'Container_Boundary', 'container'],
+            ['eb', 'Enterprise_Boundary', 'enterprise'],
+        ] as const) {
+            const o = await boundaryObj(xml, id);
+            expect(o.c4Type, `${id}: structural c4Type stays raw macro`).toBe(kind);
+            expect(o.label, `${id}: subtitle is the lowercase tag`).toContain(`[${tag}]`);
+            expect(o.label, `${id}: no %c4Type% placeholder leaked`).not.toContain('%c4Type%');
+        }
+    });
+
+    it('generic Boundary surfaces its explicit $type; bare Boundary stays [Boundary]', async () => {
+        const xml = await Catalyst.convert(
+            `${C4}Boundary(gb,"G","custom-zone"){System(g,"g")}\n`
+            + `Boundary(pb,"P"){System(p,"p")}\n@enduml`);
+        expect((await boundaryObj(xml, 'gb')).label).toContain('[custom-zone]');
+        expect((await boundaryObj(xml, 'pb')).label).toContain('[Boundary]');
+    });
 });
 
 describe('C4-PlantUML spec coverage — entity parser skip list', () => {
