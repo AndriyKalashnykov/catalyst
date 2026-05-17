@@ -75,33 +75,51 @@ Standalone, independently-maintained library (no upstream; never add an
 Everything below is researched, not speculative. Sizes are honest.
 
 > ▶ **RESUME HERE — session handoff 2026-05-16 (context-limit
-> cutoff).** Do these IN ORDER before new work:
-> 1. **Merge PR #53** `refactor/constants-singlesource` once CI green
->    (`gh pr merge 53 --squash --delete-branch`). It single-sources
->    ALL magic constants (PALETTE/SHAPE/C4_MIN in `theme.mts`, `MX`
->    flags, `DECIMAL_RADIX` in `src/constants.mts`) — proven
->    byte-identical vs a fresh post-#52 baseline across all 20
->    fixtures (3 incremental byte-gates), 287/287, mdlint green.
->    This COMPLETES old backlog item 3 (Palette+MX) → see its
->    ✅-note below.
-> 2. **Cleanup after #53 merges:** delete the now-superseded local
->    branch `refactor/palette-mxflag-singlesource` (its WIP
->    `dcd9657` was cherry-picked into #53) and drop the stale
->    `git stash@{0}` "decimal-radix-for-consolidated" (already
->    applied into #53). `git switch main && git reset --hard
->    origin/main`.
-> 3. **Then the live backlog is:** item 1 = `edge-large-graph`
->    #24-hier IMPLEMENTATION (design/root-cause/disproved-spike/
->    next-hypothesis already recorded in item 1 + PR #51 — re-cut a
->    branch from fresh `main`, execute the "next hypothesis", full
->    #24/#25-class render-compare gating); item 2 = C4 surface
->    residual gaps (LOW/opportunistic — only when a downstream
->    diagram needs one); item 4 = Sequence-diagram support (large,
->    design-first).
-> Other merged this session: v1.6.1 chain, #19 gate, #23 (3 fixes
+> cutoff).** Do these in order before new work.
+> **(1) Merge PR #53** `refactor/constants-singlesource` once CI
+> green (`gh pr merge 53 --squash --delete-branch`) — single-sources
+> ALL magic constants (PALETTE/SHAPE/C4_MIN in `theme.mts`, `MX`
+> flags, `DECIMAL_RADIX` in `src/constants.mts`), proven
+> byte-identical vs a fresh post-#52 baseline across all 20 fixtures
+> (3 incremental byte-gates), 287/287, mdlint green; COMPLETES old
+> backlog item 3 (Palette+MX → ✅-note below).
+> **(2) Cleanup after #53 + #54 merge:** delete the superseded local
+> branch `refactor/palette-mxflag-singlesource` (its WIP `dcd9657`
+> was cherry-picked into #53) and drop the stale `git stash@{0}`
+> "decimal-radix-for-consolidated" (already applied into #53); then
+> `git switch main && git fetch origin --prune && git reset --hard
+> origin/main`, and `git branch -D` any leftover merged locals.
+> **(3) Live backlog then:** item 1 = `edge-large-graph` #24-hier
+> IMPLEMENTATION (root-cause / disproved-spike / next-hypothesis
+> already in item 1 + PR #51 — re-cut from fresh `main`, execute the
+> "next hypothesis", full #24/#25-class render-compare gating);
+> item 2 = C4 surface residual gaps (LOW/opportunistic — only when a
+> downstream diagram needs one); item 3 = Sequence-diagram support
+> (large, design-first).
+> Merged this session: v1.6.1 chain, #19 gate, #23 (3 fixes
 > #43/#44/#45), #24 (#47), #25 (#49), C4-COVERAGE (#50),
-> edge-large-graph design (#51), fontZize fix (#52). The
-> `fontZize` audit closed (only typo'd style key, no propagation).
+> edge-large-graph design (#51), fontZize fix (#52); handoff #54.
+> The `fontZize` audit closed (only typo'd style key, no
+> propagation).
+
+---
+
+> ✅ **Palette + MX-flag single-sourcing — DONE (PR #53, pending
+> merge) 2026-05-16.** Was item 3. `theme.mts` now holds `PALETTE`
+> (every fill/stroke/font hex, **fact-checked provenance**:
+> catalyst-own, NOT byte-equal to C4-PlantUML v2.13.0 — verified
+> against the pinned source; some coincide, most don't, documented
+> inline), `SHAPE` (arcSize/strokeWidth/arrow+jump sizes), `C4_MIN`
+> (per-type leaf floors); `MX` enum applied for all bare `0/1`
+> flags; `DECIMAL_RADIX` (`src/constants.mts`) for the 3
+> `parseInt(…,10)`; `LayoutEngine` `spaceAdvance(11)`→
+> `MX_DEFAULT_FONTSIZE` ×2. Gate: corpus byte-diff vs a FRESH
+> post-#52 baseline — ALL 20 fixtures byte-identical (palette / MX /
+> numerics, 3 incremental gates); 287/287; mdlint. Provenance was
+> the only research risk and it was fact-checked, not guessed. Merge
+> #53 per the RESUME-HERE block.
+
+---
 
 > ✅ **Release chain v1.6.1 — DONE 2026-05-16.** catalyst v1.6.1
 > (tag `v1.6.1`, `^{}`=`113a661`; PRs #36+#37) → puml2drawio v1.5.4
@@ -400,21 +418,6 @@ Everything below is researched, not speculative. Sizes are honest.
    #19 — `ibm-wm layered-architecture` has 2; add a `note` row to
    C4-COVERAGE when tackled). Pick up individually only when a
    downstream diagram actually needs one; none block parity/golden.
-
-> ✅ **Palette + MX-flag single-sourcing — DONE (PR #53, pending
-> merge) 2026-05-16.** Was item 3. `theme.mts` now holds `PALETTE`
-> (every fill/stroke/font hex, **fact-checked provenance**:
-> catalyst-own, NOT byte-equal to C4-PlantUML v2.13.0 — verified
-> against the pinned source; some coincide, most don't, documented
-> inline), `SHAPE` (arcSize/strokeWidth/arrow+jump sizes), `C4_MIN`
-> (per-type leaf floors); `MX` enum applied for all bare `0/1`
-> flags; `DECIMAL_RADIX` (`src/constants.mts`) for the 3
-> `parseInt(…,10)`; `LayoutEngine` `spaceAdvance(11)`→
-> `MX_DEFAULT_FONTSIZE` ×2. Gate: corpus byte-diff vs a FRESH
-> post-#52 baseline — ALL 20 fixtures byte-identical (palette / MX /
-> numerics, 3 incremental gates); 287/287; mdlint. Provenance was
-> the only research risk and it was fact-checked, not guessed. Merge
-> #53 per the RESUME-HERE block.
 
 3. **Sequence-diagram support (deferred feature, large, design-first).**
    catalyst fail-louds on `C4_Sequence`/PlantUML sequence. New
