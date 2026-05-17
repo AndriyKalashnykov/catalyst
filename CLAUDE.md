@@ -163,9 +163,27 @@ Completed-work root-cause prose lives in git history + ADRs +
 >
 > ### ▶▶ NEXT SESSION (priority order)
 >
+> 0. **Layout-aspect fidelity (ELK `layered` vs Graphviz `dot`) — THE
+>    real fix for the "narrow diagram / humongous fonts" complaint.**
+>    Measured 2026-05-17: catalyst boxes are PlantUML-correct PER LEAF
+>    (`p4b-box-metrics`: cat 93×59 ≈ pml 92×58) but ELK lays whole
+>    diagrams out 0.19–0.67× PlantUML's WIDTH on **14/20** gallery
+>    fixtures (it stacks/compacts where dot spreads). P4b box sizing
+>    is fine; this is a layout-engine aspect divergence. P13's
+>    uniform-width embed amplified it 3–5× and was REVERTED (see
+>    durable item). Real fix: tune ELK spacing/aspect toward dot
+>    (the P-series layout backlog) — research+spike+gate per ADR
+>    discipline; **promote `wRatio`/`hRatio` from advisory → a
+>    contract factcheck metric** (a measured fidelity axis with only
+>    an advisory gate let 14 fixtures ship "CLEAN" — see memory
+>    `derived-artifact-enforcement-gate`). Hardest open item; the one
+>    the user is actually reacting to.
 > 1. **Sequence diagrams** (#12, ADR 0007) — phased. **Phase (a)
 >    `SeqParser` ✅ DONE 2026-05-17** (`src/seq/`, 29-test matrix,
->    net-new). **NEXT = phase (b):** deterministic linear
+>    net-new). Phase (b) WIP parked on branch
+>    `feat/seq-phase-b-layout-emit` (`c18a403`: seqLayout +
+>    Lifeline.mts emit + SeqConverter written; catalyst.mts dispatch,
+>    emit-contract tests, and rebase remain). **NEXT = phase (b):** deterministic linear
 >    `src/seq/seqLayout.mts` (lifelines evenly spaced on X by measured
 >    header width — reuse `measureNode`/font metrics; events monotone
 >    Y in source order; activations stacked rects) + `src/mx/seq/
@@ -182,8 +200,13 @@ Completed-work root-cause prose lives in git history + ADRs +
 >    needs a divider-free v1 sequence fixture).
 > 2. C4 surface TRUE residuals (`$sprite`, sketch, legend, dropped
 >    `note`) — low/opportunistic.
-> (P13 ✅ DONE 2026-05-17 — gallery emits uniform `<img width="420">`;
-> `docs/research/p13-gallery-uniformity.md`. P4b ✅ DONE this session.)
+> (P13 SHIPPED then REVERTED 2026-05-17 — uniform `width=420`
+> magnified the item-0 layout-aspect mismatch into "humongous fonts";
+> embed back to `height=360`. See `docs/research/p13-gallery-
+> uniformity.md` "REVERTED". P4b box-sizing ✅ correct (per-leaf
+> verified) — but its "render-compare at PlantUML parity" claim above
+> was overstated: only 2 of 3 fixtures were eyeballed; aspect is
+> item-0, not P4b.)
 > Re-confirm P1/P3/P5/P7 status against the post-P4b gallery before
 > spiking them — content-fit re-sized every box, so the
 > defect-catalog below may have shifted (re-render + re-judge via
@@ -213,22 +236,21 @@ Completed-work root-cause prose lives in git history + ADRs +
 >   byte-identical vs `origin/main`).
 > - **#17** (#82) — ✅ DONE 2026-05-17. `docs/FACTCHECK-COVERAGE.md`
 >   geometry-path↔harness-check coverage matrix.
-> - [x] **P13 — gallery column-width uniformity ✅ DONE 2026-05-17.**
->   Fact-checked the dominant constraint (GitHub strips `style=`/CSS
->   ⇒ no object-fit/max-height/aspect-box; only the width|height attr
->   bounds an image, one axis). Researched + weighted-compared 4
->   approaches (`docs/research/p13-gallery-uniformity.md`); winner =
->   uniform `<img width="420">` (every column + pair widths exactly
->   420 px; ~½ scale-2 median ⇒ crisp; tall renders tall = the
->   explicit accepted trade). Letterbox-to-tiles rejected on scope
->   (image dep + 40-PNG churn for height-uniformity the user did not
->   ask for). Diff confined to `scripts/gallery.mjs` (embed line +
->   new `GALLERY_MD_ONLY=1` zero-churn regen path) + regenerated
->   `docs/gallery/README.md`; NO `src/`, NO `docs/gallery/img/`
->   change. Gate: factcheck CLEAN 26/26 (emit path untouched),
->   lint+mdlint clean, 362 tests. Memory `md-image-embedding` updated
->   to record the gallery-specific override (bound *width* here vs
->   *height* for single-pair READMEs — axis is goal-specific).
+> - [x] **P13 — gallery column-width uniformity: SHIPPED (#90) then
+>   REVERTED 2026-05-17 (same day).** Approach was uniform
+>   `<img width="420">`. After the post-P4b gallery regen (#92) made
+>   the images visible the user rejected it ("humongous fonts … ugly
+>   garbage"). MEASURED root cause: catalyst boxes are PlantUML-
+>   correct per-leaf; the diagrams are intrinsically narrow because
+>   ELK lays them out 0.19–0.67× PlantUML's width (item-0 layout
+>   aspect), and `width=420` magnified that 3–5×. Reverted embed to
+>   `height=360` (caps the magnification). P13's "uniform width" idea
+>   is ABANDONED, not deferred — superseded by item-0 (fix the layout
+>   aspect itself). `docs/research/p13-gallery-uniformity.md`
+>   "REVERTED" section + memory `md-image-embedding` record the full
+>   evidence + the advisory→contract gate gap. The `GALLERY_MD_ONLY`
+>   zero-churn regen path (from P13) is kept (useful infra).
+>   The `GALLERY_DRAWIO_ONLY` drift gate (#93) is independent + kept.
 > - **Sequence diagrams** (#12, ADR 0007) — largest; MUST ship with
 >   factcheck coverage (lifelines/messages/order) per user directive.
 
