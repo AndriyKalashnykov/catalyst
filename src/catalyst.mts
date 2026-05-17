@@ -5,6 +5,8 @@ import { RelParser } from './puml/RelParser.mjs'
 import { LayoutEngine, LayoutResult } from './layout/LayoutEngine.mjs'
 import { assignEdgeLanes, resolveLabelOverlap, polylineMidpoint, type NodeCenter, type NodeRect } from './layout/edgeLanes.mjs'
 import { measureEdgeLabel } from './layout/measureNode.mjs'
+import { spaceAdvance } from './text/TextMetrics.mjs'
+import { RELATIONSHIP_LABEL_PX } from './mx/c4/theme.mjs'
 import { StyleParser } from './puml/StyleParser.mjs'
 import { DECIMAL_RADIX } from "./constants.mjs"
 import type { ParsedStyles, StyleOverride } from './puml/StyleParser.mjs'
@@ -135,7 +137,23 @@ async function layoutData2mx(layoutData: LayoutResult, pumlElements: EntityDescr
   }
 
   // Multi-edge lane separation — see src/layout/edgeLanes.mts for the why.
-  const edgeLanes = assignEdgeLanes(pumlRelations, nodeCenter, (id) => clusterIds.has(id))
+  // Feed each relation's MEASURED label width so the lane gap widens to the
+  // group's widest label: every label then rides its own lane line at the
+  // mid-gap (offset 0) without colliding with the neighbouring lane's
+  // label, the way PlantUML fans parallel duplicates. The wrap cap matches
+  // edgeLabelCap (what ELK reserved), and the breathing pad is one space
+  // advance at the relationship-label font — a real metric, not a guess.
+  const laneLabelWidth = (i: number): number =>
+    measureEdgeLabel(
+      pumlRelations[i].label,
+      pumlRelations[i].description,
+      edgeLabelCap(pumlRelations[i].source, pumlRelations[i].target),
+    ).width
+  const laneLabelPad = Math.ceil(spaceAdvance(RELATIONSHIP_LABEL_PX, false))
+  const edgeLanes = assignEdgeLanes(
+    pumlRelations, nodeCenter, (id) => clusterIds.has(id),
+    undefined, laneLabelWidth, laneLabelPad,
+  )
 
   for (let i = 0; i < pumlRelations.length; i++) {
     const rel = pumlRelations[i]

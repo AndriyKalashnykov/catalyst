@@ -7,8 +7,8 @@ import { assignEdgeLanes, EDGE_LANE_GAP_PX, type NodeCenter } from '../src/layou
  * chosen so the perpendicular/midpoint math is exact and assertable.
  *
  * AB: A=(0,0) B=(0,100), each 160×80 (hw=80, hh=40). Edge dir (ex,ey)=(0,1) →
- * perpendicular (px,py)=(-1,0), midpoint=(0,50). Ray exits each box at
- * ty=hh/|ey|=40, so the along-edge cap = len/2 − max(tA,tB) = 50 − 40 = 10.
+ * perpendicular (px,py)=(-1,0), midpoint=(0,50). The label rides its own
+ * lane line (labelOffset 0); separation is the waypoint/effGap.
  */
 const bx = (cx: number, cy: number): NodeCenter => ({ cx, cy, hw: 80, hh: 40 });
 const AB = (): Map<string, NodeCenter> =>
@@ -58,11 +58,16 @@ describe('assignEdgeLanes', () => {
     expect(w0.waypoint).toEqual({ x: 22, y: 50 });   // lane -0.5 → shift -22 → x=-(-22)
     expect(w1.waypoint).toEqual({ x: -22, y: 50 });
     expect(w0.waypoint).not.toEqual(w1.waypoint);
-    // px=-1,py=0; perpMag=lane·120; alongMag=clamp(lane·150,±10) (cap=10).
-    expect(w0.labelOffset).toEqual({ dx: 60, dy: -10 });
-    expect(w1.labelOffset).toEqual({ dx: -60, dy: 10 });
-    expect(w0.labelOffset.dx).toBe(-w1.labelOffset.dx);
-    expect(w0.labelOffset.dy).toBe(-w1.labelOffset.dy);
+    // New contract (P1 fix): labelOffset = the lane's OWN perpendicular
+    // shift `(px,py)·shift`, seating the label exactly on its lane line
+    // (drawio anchors at the A↔B midpoint, so this offset == waypoint −
+    // midpoint). NOT the old separate ±120/±150 fan that detached labels.
+    // px=-1,py=0,shift=∓22 ⇒ dx=±22, dy=0; == (waypoint.x, waypoint.y−50).
+    expect(w0.labelOffset).toEqual({ dx: 22, dy: 0 });
+    expect(w1.labelOffset).toEqual({ dx: -22, dy: 0 });
+    expect(w0.labelOffset.dx).toBe(w0.waypoint.x);          // on its lane line
+    expect(w1.labelOffset.dx).toBe(w1.waypoint.x);
+    expect(w0.labelOffset.dx).toBe(-w1.labelOffset.dx);     // symmetric
     // perp unit + signed shift exposed for the ELK-polyline (#3) path.
     expect(w0.perp).toEqual({ x: -1, y: 0 });
     expect(w0.shift).toBe(-22);
@@ -80,9 +85,12 @@ describe('assignEdgeLanes', () => {
     expect(c.waypoint).toEqual({ x: -EDGE_LANE_GAP_PX, y: 50 });
     expect(new Set([a, b, c].map((l) => `${l.waypoint.x},${l.waypoint.y}`)).size).toBe(3);
     expect(a.waypoint.x + b.waypoint.x + c.waypoint.x).toBe(0);
+    // Each label sits on its OWN lane line: offset == (px,py)·shift ==
+    // (waypoint.x − mcx, waypoint.y − mcy). mcx=0,mcy=50; px=-1,py=0.
     expect([a.labelOffset, b.labelOffset, c.labelOffset]).toEqual([
-      { dx: 120, dy: -10 }, { dx: 0, dy: 0 }, { dx: -120, dy: 10 },
+      { dx: EDGE_LANE_GAP_PX, dy: 0 }, { dx: 0, dy: 0 }, { dx: -EDGE_LANE_GAP_PX, dy: 0 },
     ]);
+    expect([a, b, c].every((l) => l.labelOffset.dx === l.waypoint.x)).toBe(true);
     expect([a.shift, b.shift, c.shift]).toEqual([-EDGE_LANE_GAP_PX, 0, EDGE_LANE_GAP_PX]);
   });
 
@@ -93,8 +101,11 @@ describe('assignEdgeLanes', () => {
     expect(new Set(ws.map((w) => `${w.x},${w.y}`)).size).toBe(4);
     expect(ws.some((w) => w.x === 0)).toBe(false);
     expect(ws.reduce((s, w) => s + w.x, 0)).toBe(0);
+    // Labels ride their own lane lines: 4 distinct offsets, each == its
+    // waypoint displacement from the midpoint (px,py)·shift.
     const offs = [0, 1, 2, 3].map((i) => lanes.get(i)!.labelOffset);
     expect(new Set(offs.map((o) => `${o.dx},${o.dy}`)).size).toBe(4);
+    expect([0, 1, 2, 3].every((i) => lanes.get(i)!.labelOffset.dx === lanes.get(i)!.waypoint.x)).toBe(true);
   });
 
   it('respects a custom waypoint gap (offset scales linearly)', () => {
@@ -133,24 +144,47 @@ describe('assignEdgeLanes', () => {
     expect(lanes.get(0)!.waypoint).not.toEqual(lanes.get(1)!.waypoint);
   });
 
-  // 8-c: along-edge component capped at the real free span between the two
-  // box borders (geometry-derived, no heuristic fraction) — a short, dense
-  // edge gets a SMALLER along offset than a long one.
-  it('clamps the along-edge label offset to the free span between boxes', () => {
-    const sm = (cx: number, cy: number): NodeCenter => ({ cx, cy, hw: 20, hh: 20 });
-    // Horizontal edges so the along-axis lands in dx (ex=1, perp px=0).
-    const longPair = assignEdgeLanes(
-      [{ source: 'A', target: 'B' }, { source: 'B', target: 'A' }],
-      new Map([['A', sm(0, 0)], ['B', sm(1000, 0)]]), never,
-    );
-    const shortPair = assignEdgeLanes(
-      [{ source: 'A', target: 'B' }, { source: 'B', target: 'A' }],
-      new Map([['A', sm(0, 0)], ['B', sm(120, 0)]]), never,
-    );
-    const longAlong = Math.abs(longPair.get(0)!.labelOffset.dx);  // dx == ex·alongMag (px=0)
-    const shortAlong = Math.abs(shortPair.get(0)!.labelOffset.dx);
-    expect(longAlong).toBe(75);            // cap(480) ≥ raw(75) ⇒ unclamped
-    expect(shortAlong).toBeLessThan(75);   // cap(40) < raw(75) ⇒ clamped
-    expect(shortAlong).toBe(40);           // len/2(60) − boxExit(20) = 40
+  // P1 fix: when label widths are supplied the per-group lane gap widens to
+  // the group's WIDEST label (+ pad) so every label, sitting on its own
+  // lane line, clears the neighbouring lane's label. Each label spans
+  // ≤ maxW and adjacent lane centres are `effGap` apart, so effGap ≥ maxW
+  // is the exact non-overlap condition (pure geometry).
+  it('widens the lane gap to the group widest label so on-line labels clear', () => {
+    const rels = [{ source: 'A', target: 'B' }, { source: 'B', target: 'A' }];
+    // Default gap (44) when no label widths given.
+    const plain = assignEdgeLanes(rels, AB(), never);
+    expect(Math.abs(plain.get(0)!.shift)).toBe(EDGE_LANE_GAP_PX / 2); // ±0.5·44=22
+    // Wide labels (90px) + pad 6 ⇒ effGap = max(44, 96) = 96.
+    const wide = assignEdgeLanes(rels, AB(), never, undefined, () => 90, 6);
+    expect(Math.abs(wide.get(0)!.shift)).toBe(96 / 2);               // ±0.5·96=48
+    // Adjacent lane centres are |2·shift| = effGap apart ≥ label width.
+    const sep = Math.abs(wide.get(0)!.waypoint.x - wide.get(1)!.waypoint.x);
+    expect(sep).toBeGreaterThanOrEqual(90);
+    // label rides the (now well-separated) line: offset == waypoint−midpoint.
+    expect(wide.get(0)!.labelOffset).toEqual({ dx: 48, dy: 0 });
+    expect(wide.get(0)!.labelOffset.dx).toBe(wide.get(0)!.waypoint.x);
+  });
+
+  it('keeps the minimum gap when labels are narrower than EDGE_LANE_GAP_PX', () => {
+    const rels = [{ source: 'A', target: 'B' }, { source: 'A', target: 'B' }];
+    // Narrow labels (10px) ⇒ effGap = max(44, 10+0) = 44 (floor wins).
+    const lanes = assignEdgeLanes(rels, AB(), never, undefined, () => 10, 0);
+    expect(Math.abs(lanes.get(0)!.shift)).toBe(EDGE_LANE_GAP_PX / 2);
+  });
+
+  it('per-group gap uses that group widest label (groups independent)', () => {
+    // Group {A,B} has a 100px label; group {X,Y} has a 12px label. Each
+    // group's gap is driven by ITS OWN widest label, not a global max.
+    const rels = [
+      { source: 'A', target: 'B' }, { source: 'B', target: 'A' },
+      { source: 'X', target: 'Y' }, { source: 'Y', target: 'X' },
+    ];
+    const centers = new Map([
+      ['A', bx(0, 0)], ['B', bx(0, 100)], ['X', bx(500, 0)], ['Y', bx(500, 100)],
+    ]);
+    const w = (i: number) => (i < 2 ? 100 : 12);
+    const lanes = assignEdgeLanes(rels, centers, never, undefined, w, 0);
+    expect(Math.abs(lanes.get(0)!.shift)).toBe(100 / 2);          // {A,B} → 50
+    expect(Math.abs(lanes.get(2)!.shift)).toBe(EDGE_LANE_GAP_PX / 2); // {X,Y} → 22 (floor)
   });
 });
