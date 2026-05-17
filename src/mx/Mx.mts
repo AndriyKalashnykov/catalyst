@@ -18,6 +18,7 @@ import { Person } from './c4/Person.mjs';
 import { PersonExt } from './c4/PersonExt.mjs';
 import { Boundary } from './c4/Boundary.mjs';
 import { EnterpriseBoundary } from './c4/EnterpriseBoundary.mjs';
+import { boundaryLegend } from './c4/boundaryLegend.mjs';
 import { DeploymentNode } from './c4/DeploymentNode.mjs';
 import { Relastionship } from './c4/Relationship.mjs';
 import { StyleParser } from '../puml/StyleParser.mjs';
@@ -202,13 +203,16 @@ class Mx {
 
             // --- Boundaries ---
             case 'Enterprise_Boundary':
-                label = await EnterpriseBoundary.label()
+                label = await EnterpriseBoundary.label(boundaryLegend(type, technology))
                 style = EnterpriseBoundary.style()
                 break;
             case 'System_Boundary':
             case 'Container_Boundary':
             case 'Boundary':
-                label = await Boundary.label()
+                // `technology` carries a generic Boundary's explicit
+                // $type (3rd positional arg); ignored for the named
+                // macros, which map by name. See boundaryLegend().
+                label = await Boundary.label(boundaryLegend(type, technology))
                 style = Boundary.style()
                 break;
 

@@ -200,26 +200,24 @@ dagre 3.0.0 was replaced by **elkjs**: its documented option surface (wiki + spi
    cylinder → grey `SystemExt`). The shapes are dedicated now; only
    the per-type fill/stroke colour is shared — that is the residual
    `~`.
-2. Boundary type **subtitle text** (`~`). Fact-checked 2026-05-16
+2. Boundary type subtitle — ✓ **FIXED 2026-05-16**. Fact-checked
    against pinned C4-PlantUML v2.13.0 (`C4.puml`/`C4_Context.puml`/
-   `C4_Container.puml`): `System_Boundary`/`Container_Boundary`/
-   `Enterprise_Boundary` all delegate to `Boundary($a,$l,"",…)` with
-   an empty `$type` and a tag (`system`/`container`/`enterprise`);
-   the default `UpdateBoundaryStyle` gives them **identical colour/
-   border** — PlantUML differentiates them only by the bracketed
-   legend label `[System]`/`[Container]`/`[Enterprise]`. The earlier
-   "Container_Boundary rendered as generic Boundary" claim was
-   inaccurate: catalyst already emits a distinct `c4Type` per kind
-   (`Container_Boundary` ≠ `Boundary`) and `Enterprise_Boundary` has
-   its own bolder template. The real residual gap is cosmetic-but-
-   broad: every boundary's `[%c4Type%]` subtitle shows the raw macro
-   name (`[Container_Boundary]`) instead of PlantUML's legend label
-   (`[Container]`), and a generic `Boundary($a,$l,$type)`'s explicit
-   `$type` arg is not surfaced (shows `[Boundary]`). Fixing it is a
-   label-placeholder change touching every boundary in every
-   downstream diagram (golden/parity re-baseline) for a low-value
-   text delta — deferred as a deliberate product decision, not a
-   correctness bug.
+   `C4_Container.puml`): `System_/Container_/Enterprise_Boundary` all
+   delegate to `Boundary($a,$l,"",<tag>)` with **identical colour/
+   border** — the only difference is the bracketed subtitle. The
+   exact subtitle string was settled by **render-compare, not the
+   doc**: PlantUML renders the **lowercase tag** verbatim
+   (`[container]`, NOT the capitalised `UpdateBoundaryStyle` legend
+   arg `[Container]` — that arg is the LEGEND-BOX text). `Mx.mts`
+   now bakes the fact-checked subtitle via `boundaryLegend()`:
+   `System_Boundary`→`[system]`, `Container_Boundary`→`[container]`,
+   `Enterprise_Boundary`→`[enterprise]`; a generic
+   `Boundary($a,$l,$type)` surfaces its explicit `$type` verbatim
+   (bare `Boundary` keeps the neutral `[Boundary]` — unchanged, no
+   corpus fixture exercises it). The structural `c4Type` attribute is
+   **unchanged** (raw macro name) so golden/parity fingerprints are
+   untouched; byte-scope = the 4 boundary fixtures, subtitle text
+   only. render-compare confirmed all three match PlantUML exactly.
 3. `$sprite` → drawio shape decorator (no drawio sprite registry; parsing never breaks).
 
 ### Tier 3 — nice-to-have
