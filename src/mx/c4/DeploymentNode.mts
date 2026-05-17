@@ -1,4 +1,4 @@
-import { DEPLOYMENT_TITLE_PX, ELEMENT_BODY_PX } from './theme.mjs';
+import { DEPLOYMENT_TITLE_PX, ELEMENT_BODY_PX, PALETTE, MX } from './theme.mjs';
 class DeploymentNode {
     static async label() {
         // Deployment nodes show the $type (e.g. "Linux VM", "K8s cluster") in the
@@ -21,19 +21,19 @@ class DeploymentNode {
         const styles: Record<string, unknown> = {
             rounded: 0,
             whiteSpace: 'wrap',
-            html: 1,
+            html: MX.ON,
             labelBackgroundColor: 'none',
-            fillColor: '#FFFFFF',
-            strokeColor: '#444444',
-            fontColor: '#444444',
+            fillColor: PALETTE.DEPLOYMENT_NODE_FILL,
+            strokeColor: PALETTE.DEPLOYMENT_NODE_STROKE,
+            fontColor: PALETTE.DEPLOYMENT_NODE_FONT,
             align: 'center',
             verticalAlign: 'middle',
-            fontStyle: 0,
+            fontStyle: MX.FONT_NORMAL,
             fontSize: 12,
-            metaEdit: 1,
-            resizable: 1,
-            container: 1,
-            collapsible: 0,
+            metaEdit: MX.ON,
+            resizable: MX.ON,
+            container: MX.ON,
+            collapsible: MX.OFF,
         }
         return Object.entries(styles).map(([key, value]) => `${key}=${value}`).join(';');
     }

@@ -1,4 +1,4 @@
-import { ENTERPRISE_BOUNDARY_TITLE_PX, BOUNDARY_BODY_PX } from './theme.mjs';
+import { ENTERPRISE_BOUNDARY_TITLE_PX, BOUNDARY_BODY_PX, PALETTE, MX, SHAPE } from './theme.mjs';
 import { spaceAdvance } from '../../text/TextMetrics.mjs';
 
 class EnterpriseBoundary {
@@ -21,24 +21,24 @@ class EnterpriseBoundary {
         const styles: Record<string, unknown> = {
             rounded: 0,
             whiteSpace: 'wrap',
-            html: 1,
-            dashed: 1,
+            html: MX.ON,
+            dashed: MX.ON,
             dashPattern: '8 4',
             labelBackgroundColor: 'none',
-            strokeColor: '#444444',
-            strokeWidth: 2,
+            strokeColor: PALETTE.ENTERPRISE_BOUNDARY_STROKE,
+            strokeWidth: SHAPE.STROKE_WIDTH_EMPHASIS,
             fillColor: 'none',
-            fontColor: '#222222',
+            fontColor: PALETTE.ENTERPRISE_BOUNDARY_FONT,
             align: 'center',
             verticalAlign: 'top',
             // Inset the title below the dashed top stroke (font-derived;
             // 13px bold Name) — see Boundary.style().
             spacingTop: Math.ceil(spaceAdvance(ENTERPRISE_BOUNDARY_TITLE_PX, true)),
             fontSize: ENTERPRISE_BOUNDARY_TITLE_PX,
-            metaEdit: 1,
-            resizable: 1,
-            container: 1,
-            collapsible: 0,
+            metaEdit: MX.ON,
+            resizable: MX.ON,
+            container: MX.ON,
+            collapsible: MX.OFF,
         }
         return Object.entries(styles).map(([key, value]) => `${key}=${value}`).join(';');
     }

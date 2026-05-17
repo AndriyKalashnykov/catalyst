@@ -256,7 +256,7 @@ class LayoutEngine {
     // label is never laid on top of a box. Applied to BOTH algorithms —
     // `spacing.edgeLabel`/`spacing.edgeNode` are core options honoured by
     // layered and force/stress alike.
-    const labelGap = String(Math.ceil(spaceAdvance(11, false)))
+    const labelGap = String(Math.ceil(spaceAdvance(MX_DEFAULT_FONTSIZE, false)))
     const lineGap = String(Math.ceil(renderedLineHeight(MX_DEFAULT_FONTSIZE)))
     const edgeLabelOpts: Record<string, string> = {
       'elk.spacing.edgeLabel': labelGap,

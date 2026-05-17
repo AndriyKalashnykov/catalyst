@@ -1,4 +1,4 @@
-import { BOUNDARY_TITLE_PX, BOUNDARY_BODY_PX } from './theme.mjs';
+import { BOUNDARY_TITLE_PX, BOUNDARY_BODY_PX, PALETTE, MX } from './theme.mjs';
 import { spaceAdvance } from '../../text/TextMetrics.mjs';
 
 class Boundary {
@@ -21,12 +21,12 @@ class Boundary {
         const styles: Record<string, unknown> = {
             rounded: 0,
             whiteSpace: 'wrap',
-            html: 1,
-            dashed: 1,
+            html: MX.ON,
+            dashed: MX.ON,
             labelBackgroundColor: 'none',
-            strokeColor: '#666666',
+            strokeColor: PALETTE.BOUNDARY_STROKE,
             fillColor: 'none',
-            fontColor: '#333333',
+            fontColor: PALETTE.BOUNDARY_FONT,
             align: 'center',
             verticalAlign: 'top',
             // Inset the title below the dashed top stroke so it does not
@@ -35,12 +35,12 @@ class Boundary {
             // metric, the same derivation titlePadding uses; not a
             // magic px constant.
             spacingTop: Math.ceil(spaceAdvance(BOUNDARY_TITLE_PX, true)),
-            fontStyle: 0,
+            fontStyle: MX.FONT_NORMAL,
             fontSize: BOUNDARY_TITLE_PX,
-            metaEdit: 1,
-            resizable: 1,
-            container: 1,
-            collapsible: 0,
+            metaEdit: MX.ON,
+            resizable: MX.ON,
+            container: MX.ON,
+            collapsible: MX.OFF,
         }
         return Object.entries(styles).map(([key, value]) => `${key}=${value}`).join(';');
     }

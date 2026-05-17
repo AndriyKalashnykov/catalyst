@@ -1,4 +1,4 @@
-import { ELEMENT_TITLE_PX, ELEMENT_BODY_PX } from './theme.mjs';
+import { ELEMENT_TITLE_PX, ELEMENT_BODY_PX, PALETTE, MX, SHAPE } from './theme.mjs';
 class ComponentExt {
     static async label() {
         const html = `<div style="font-size:${ELEMENT_BODY_PX}px;font-style:italic;color:#cccccc;">«%c4Type%»</div><div style="font-size:${ELEMENT_TITLE_PX}px;font-weight:bold;">%c4Name%</div><div style="font-size:${ELEMENT_BODY_PX}px;color:#cccccc;">%c4Technology%</div><div style="font-size:${ELEMENT_BODY_PX}px;color:#cccccc;">%c4Description%</div>`;
@@ -19,16 +19,16 @@ class ComponentExt {
         const styles: Record<string, unknown> = {
             rounded: 1,
             whiteSpace: 'wrap',
-            html: 1,
+            html: MX.ON,
             labelBackgroundColor: 'none',
-            fillColor: '#B3B3B3',
-            fontColor: '#ffffff',
+            fillColor: PALETTE.COMPONENT_EXT_FILL,
+            fontColor: PALETTE.ELEMENT_FONT,
             align: 'center',
             verticalAlign: 'middle',
-            arcSize: 6,
-            strokeColor: '#8A8A8A',
-            metaEdit: 1,
-            resizable: 1,
+            arcSize: SHAPE.ARC_SIZE_COMPONENT,
+            strokeColor: PALETTE.COMPONENT_EXT_STROKE,
+            metaEdit: MX.ON,
+            resizable: MX.ON,
         }
         return Object.entries(styles).map(([key, value]) => `${key}=${value}`).join(';');
     }

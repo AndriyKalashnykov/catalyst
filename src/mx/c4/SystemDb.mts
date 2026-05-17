@@ -1,4 +1,4 @@
-import { ELEMENT_TITLE_PX, ELEMENT_BODY_PX } from './theme.mjs';
+import { ELEMENT_TITLE_PX, ELEMENT_BODY_PX, PALETTE, MX } from './theme.mjs';
 class SystemDb {
     static async label() {
         const html = `<div style="font-size:${ELEMENT_BODY_PX}px;font-style:italic;color:#cccccc;">«%c4Type%»</div><div style="font-size:${ELEMENT_TITLE_PX}px;font-weight:bold;">%c4Name%</div><div style="font-size:${ELEMENT_BODY_PX}px;color:#cccccc;">%c4Description%</div>`;
@@ -19,16 +19,16 @@ class SystemDb {
         const styles: Record<string, unknown> = {
             shape: 'cylinder3',
             whiteSpace: 'wrap',
-            html: 1,
+            html: MX.ON,
             boundedLbl: 1,
             labelBackgroundColor: 'none',
-            fillColor: '#1061B0',
-            fontColor: '#ffffff',
-            strokeColor: '#0D5091',
+            fillColor: PALETTE.SYSTEM_FILL,
+            fontColor: PALETTE.ELEMENT_FONT,
+            strokeColor: PALETTE.SYSTEM_STROKE,
             align: 'center',
             verticalAlign: 'middle',
-            metaEdit: 1,
-            resizable: 1,
+            metaEdit: MX.ON,
+            resizable: MX.ON,
         }
         return Object.entries(styles).map(([key, value]) => `${key}=${value}`).join(';');
     }
