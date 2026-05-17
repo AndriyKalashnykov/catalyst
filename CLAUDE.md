@@ -86,7 +86,9 @@ Standalone, independently-maintained library (no upstream; never add an
   templates, all import `theme.mjs`).
 - Text: `src/text/TextMetrics.mts`, `src/text/labelLines.mts`
   (`splitLabelLines`, `htmlBreaks`, `wrapEdgeLabelLines`).
-- Decisions: `docs/adr/0001..0006`; running log `docs/UPGRADE-NOTES.md`;
+- Decisions: `docs/adr/0001..0009` (0007 sequence design, 0008
+  Context→layered, 0009 cycleBreaking=DEPTH_FIRST); running log
+  `docs/UPGRADE-NOTES.md`;
   coverage matrix `docs/C4-COVERAGE.md`. Agent memory:
   `~/.claude/projects/-home-andriy-projects-catalyst-fork/memory/`
   (`open-followups` IS the durable tracker — GH Issues are disabled).

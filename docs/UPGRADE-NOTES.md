@@ -79,3 +79,39 @@ release-chain step (the BLOCKING visual acceptance gate).
   PASS — every Context fixture now matches PlantUML's column/3-rank/
   ribbon/ranked-cycle. P4b (box-emptiness from the documented
   `C4_MIN` floor) carved off as a separate deferred PR.
+- P1 (multi-edge lane label-to-lane): MERGED #71. Lane labels rode a
+  separate inflated ±120/±150 fan instead of the lane's own shift →
+  detached/orphaned. Now `labelOffset=(px,py)·shift` (on the lane
+  line) + per-group gap widened to the widest measured label. 3 laned
+  fixtures change, 17 byte-identical. labelHit:0.
+- P6 (nested-boundary title clearance): MERGED #72. `titlePadding()`
+  reserved only the 2-line title; drawio-export pixel probe showed the
+  rendered `[type]` bottom lands exactly there → ~1u clearance, the
+  `topology-deep-nesting` collision. Added one `renderedLineHeight`
+  clearance line → band 33→49u, ~15-17u clearance (≈ PlantUML's
+  measured 16-20u). 4 compound fixtures change, 16 byte-identical. The
+  #25 test gained a NON-tautological empirical-floor gate.
+- P8 (element-tag stereotypes): MERGED #73. `$tags` matching an
+  `AddElementTag` now render `«tag»` before `«type»` (e.g.
+  `«critical»«System»`) via a spliced `%c4Stereotype%` placeholder;
+  `c4Type` attr stays structural (golden-safe). Only
+  `edge-tags-styling` changes, 19 byte-identical. 4 new tests.
+- P9 (cycleBreaking GREEDY→DEPTH_FIRST): MERGED #75; ADR-0009 (peer
+  of ADR-0006). 2-cycle/bidirectional over-ranked into a 3-rank chain
+  vs PlantUML/dot's compact 2 ranks. `rel-bidirectional`/
+  `rel-tech-vs-notech` h 484→324 (hRatio 2.3→1.45), rankOrder
+  false→true vs PlantUML SVG; every other cyclic fixture + all DAGs
+  byte-identical. Surfaced by the numeric harness, not eyeballing.
+- P10 (antiparallel laned edges merged at box centres): MERGED #74.
+  Laned edges had no exit/entry → drawio attached every same-pair
+  edge at the box centre, so two one-way edges looked like one
+  bidirectional + one arrowless. Each lane now carries geometry-
+  derived `exitX/exitY/entryX/entryY`; rel-bidirectional A↔C attaches
+  at x≈82.5/137.5 (55px apart). 3 laned fixtures change.
+- P11 (was an edge-large-graph labelHit flag): MERGED #76. Harness
+  FALSE POSITIVE — the #56 re-seat already clears the label; the
+  comparator ignored the emitted offset. Fixed `labelHit` to use
+  production `polylineMidpoint(route)+offset`. Same PR elevated the
+  comparator to the supported `make factcheck` gate over all 26
+  conversions (corpus + C4-spec); exposed P12 (real spec-fixture
+  defects). 5 harness false-positive classes total, each fact-checked.

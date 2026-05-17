@@ -126,7 +126,7 @@ Handled by `src/puml/StyleParser.mts` (colour kwargs `$bgColor`/`$fontColor`/`$b
 
 | Primitive | State |
 |---|---|
-| `AddElementTag($tagStereo, $bgColor, $fontColor, $borderColor)` | ✓ (applied to elements whose `$tags` matches) |
+| `AddElementTag($tagStereo, $bgColor, $fontColor, $borderColor)` | ✓ colour/style AND the `«tag»` stereotype TEXT — matched tags render as `«tag»` segments before the `«type»` line, e.g. `«critical»«System»` (P8 / PR #73; was colour-only before) |
 | `AddRelTag($tag, $textColor, $lineColor, $lineStyle, $lineThickness)` | ✓ (applied to rels whose `$tags` matches; full faithful line-style map below) |
 | `AddBoundaryTag($tag, $bgColor, $borderColor, $fontColor)` | ✓ (applied to boundaries whose `$tags` matches) |
 | `UpdateElementStyle($elementName, ...)` | ✓ for mapped kinds (person/system/container/component + `_ext`/`_db`/`_queue`); unmapped kinds ignored |
