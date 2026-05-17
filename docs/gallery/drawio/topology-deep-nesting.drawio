@@ -1,32 +1,32 @@
 <mxfile version="20.1.4" type="atlas">
   <diagram id="catalyst-diagram" name="Page-1">
-    <mxGraphModel pageHeight="669" pageWidth="171">
+    <mxGraphModel pageHeight="679" pageWidth="171">
       <root>
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
         <object placeholders="1" c4Name="Acme Corp" c4Type="Enterprise_Boundary" c4Technology="" c4Description="" label="&lt;div style=&quot;font-weight:bold;font-size:13px;&quot;&gt;%c4Name%&lt;/div&gt;&lt;div style=&quot;font-size:11px;&quot;&gt;[enterprise]&lt;/div&gt;" id="ent">
           <mxCell style="rounded=0;whiteSpace=wrap;html=1;dashed=1;dashPattern=8 4;labelBackgroundColor=none;strokeColor=#444444;strokeWidth=2;fillColor=none;fontColor=#222222;align=center;verticalAlign=top;spacingTop=4;fontSize=13;metaEdit=1;resizable=1;container=1;collapsible=0" parent="1" vertex="1">
-            <mxGeometry as="geometry" height="645" width="147" x="12" y="12"/>
+            <mxGeometry as="geometry" height="655" width="147" x="12" y="12"/>
           </mxCell>
         </object>
         <object placeholders="1" c4Name="Platform" c4Type="System_Boundary" c4Technology="" c4Description="" label="&lt;div style=&quot;font-weight:bold;&quot;&gt;%c4Name%&lt;/div&gt;&lt;div style=&quot;font-size:11px;&quot;&gt;[system]&lt;/div&gt;" id="plat">
           <mxCell style="rounded=0;whiteSpace=wrap;html=1;dashed=1;labelBackgroundColor=none;strokeColor=#666666;fillColor=none;fontColor=#333333;align=center;verticalAlign=top;spacingTop=4;fontStyle=0;fontSize=12;metaEdit=1;resizable=1;container=1;collapsible=0" parent="1" vertex="1">
-            <mxGeometry as="geometry" height="470" width="125" x="23" y="183"/>
+            <mxGeometry as="geometry" height="480" width="126" x="22" y="183"/>
           </mxCell>
         </object>
         <object placeholders="1" c4Name="Core Services" c4Type="System_Boundary" c4Technology="" c4Description="" label="&lt;div style=&quot;font-weight:bold;&quot;&gt;%c4Name%&lt;/div&gt;&lt;div style=&quot;font-size:11px;&quot;&gt;[system]&lt;/div&gt;" id="core">
           <mxCell style="rounded=0;whiteSpace=wrap;html=1;dashed=1;labelBackgroundColor=none;strokeColor=#666666;fillColor=none;fontColor=#333333;align=center;verticalAlign=top;spacingTop=4;fontStyle=0;fontSize=12;metaEdit=1;resizable=1;container=1;collapsible=0" parent="1" vertex="1">
-            <mxGeometry as="geometry" height="295" width="91" x="32" y="354"/>
+            <mxGeometry as="geometry" height="305" width="118" x="26" y="354"/>
           </mxCell>
         </object>
         <object placeholders="1" c4Name="Auth" c4Type="System" c4Technology="" c4Description="OIDC provider" label="&lt;div style=&quot;font-size:11px;font-style:italic;color:#cccccc;&quot;&gt;«%c4Type%»&lt;/div&gt;&lt;div style=&quot;font-size:16px;font-weight:bold;&quot;&gt;%c4Name%&lt;/div&gt;&lt;div style=&quot;font-size:11px;color:#cccccc;&quot;&gt;%c4Description%&lt;/div&gt;" id="auth">
           <mxCell style="rounded=1;whiteSpace=wrap;html=1;labelBackgroundColor=none;fillColor=#1061B0;fontColor=#ffffff;align=center;verticalAlign=top;arcSize=10;strokeColor=#0D5091;metaEdit=1;resizable=1" parent="1" vertex="1">
-            <mxGeometry as="geometry" height="92" width="69" x="51" y="403"/>
+            <mxGeometry as="geometry" height="97" width="110" x="30" y="403"/>
           </mxCell>
         </object>
         <object placeholders="1" c4Name="Users" c4Type="System" c4Technology="" c4Description="Profile store" label="&lt;div style=&quot;font-size:11px;font-style:italic;color:#cccccc;&quot;&gt;«%c4Type%»&lt;/div&gt;&lt;div style=&quot;font-size:16px;font-weight:bold;&quot;&gt;%c4Name%&lt;/div&gt;&lt;div style=&quot;font-size:11px;color:#cccccc;&quot;&gt;%c4Description%&lt;/div&gt;" id="usr">
           <mxCell style="rounded=1;whiteSpace=wrap;html=1;labelBackgroundColor=none;fillColor=#1061B0;fontColor=#ffffff;align=center;verticalAlign=top;arcSize=10;strokeColor=#0D5091;metaEdit=1;resizable=1" parent="1" vertex="1">
-            <mxGeometry as="geometry" height="92" width="69" x="51" y="553"/>
+            <mxGeometry as="geometry" height="97" width="95" x="38" y="558"/>
           </mxCell>
         </object>
         <object placeholders="1" c4Name="API Gateway" c4Type="System" c4Technology="" c4Description="" label="&lt;div style=&quot;font-size:11px;font-style:italic;color:#cccccc;&quot;&gt;«%c4Type%»&lt;/div&gt;&lt;div style=&quot;font-size:16px;font-weight:bold;&quot;&gt;%c4Name%&lt;/div&gt;&lt;div style=&quot;font-size:11px;color:#cccccc;&quot;&gt;%c4Description%&lt;/div&gt;" id="gw">
