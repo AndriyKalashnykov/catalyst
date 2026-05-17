@@ -154,8 +154,20 @@ Everything below is researched, not speculative. Sizes are honest.
 >   needs deeper layout spike. Advisory (rankOrder), not a contract.
 > - **P4b** (#11) — box-emptiness: measured PlantUML targets
 >   recorded; cross-cutting all-fixture visual change, ADR-worthy.
-> - **#15** codebase magic-constant audit; **#17** geometry-path↔
->   harness-check coverage matrix.
+> - **#15 — ✅ DONE 2026-05-17.** Audited every numeric literal in
+>   `src/` against the no-magic taxonomy. Codebase already strong
+>   (theme.mts/TextMetrics single-source the type scale). Fixed: (a)
+>   `LayoutEngine` local `EB_TITLE_PX=13` desync-duplicate →
+>   `import ENTERPRISE_BOUNDARY_TITLE_PX` (theme); (b) `DeploymentNode`
+>   bare cell `fontSize:12` → `DEPLOYMENT_NODE_CELL_FONTSIZE`
+>   (category-3 documented convention, both sides checked); (c)
+>   `catalyst.mts` dead `marginx/marginy:|| 20` (never reached ELK)
+>   removed, public fields kept `@deprecated` no-op; nodesep=50
+>   (convention) / edgesep=10 (ELK default) classified inline.
+>   **Proven zero-output-change: all 26 fixtures byte-identical vs
+>   `origin/main`** (git-worktree baseline diff), 341/341, factcheck
+>   CLEAN 26/26, lint+mdlint clean.
+> - **#17** geometry-path↔harness-check coverage matrix.
 > - [ ] **P13 — gallery page column-width uniformity (user-requested
 >   2026-05-17).** On `docs/gallery/` the per-fixture "Source PlantUML"
 >   vs "catalyst → draw.io" image pair currently renders at wildly

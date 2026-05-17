@@ -2,6 +2,7 @@ import ELK from 'elkjs/lib/elk.bundled.js'
 import type { ElkNode, ElkExtendedEdge } from 'elkjs/lib/elk-api.js'
 import { EntityDescriptor } from '../puml/EntityDescriptor.interface.mjs'
 import { spaceAdvance, renderedLineHeight, MX_DEFAULT_FONTSIZE } from '../text/TextMetrics.mjs'
+import { ENTERPRISE_BOUNDARY_TITLE_PX } from '../mx/c4/theme.mjs'
 import { measureNode, measureEdgeLabel } from './measureNode.mjs'
 
 interface LayoutNode {
@@ -89,7 +90,11 @@ class LayoutEngine {
    * factcheck-geometry harness (boundary band vs PlantUML's 77u).
    */
   private titlePadding(): { top: number; side: number } {
-    const EB_TITLE_PX = 13 // EnterpriseBoundary Name font-size (the taller of the two boundary templates' explicit CSS)
+    // Single-sourced from theme (#15): the EnterpriseBoundary Name
+    // font-size IS `ENTERPRISE_BOUNDARY_TITLE_PX` — the value the
+    // template's CSS emits. A local literal here would silently desync
+    // from the template if the scale ever changes.
+    const EB_TITLE_PX = ENTERPRISE_BOUNDARY_TITLE_PX
     return {
       top: Math.ceil(
         renderedLineHeight(EB_TITLE_PX) +              // Name line

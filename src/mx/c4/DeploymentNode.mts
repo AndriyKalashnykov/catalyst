@@ -1,4 +1,4 @@
-import { DEPLOYMENT_TITLE_PX, ELEMENT_BODY_PX, PALETTE, MX } from './theme.mjs';
+import { DEPLOYMENT_TITLE_PX, ELEMENT_BODY_PX, DEPLOYMENT_NODE_CELL_FONTSIZE, PALETTE, MX } from './theme.mjs';
 class DeploymentNode {
     static async label() {
         // Deployment nodes show the $type (e.g. "Linux VM", "K8s cluster") in the
@@ -29,7 +29,7 @@ class DeploymentNode {
             align: 'center',
             verticalAlign: 'middle',
             fontStyle: MX.FONT_NORMAL,
-            fontSize: 12,
+            fontSize: DEPLOYMENT_NODE_CELL_FONTSIZE,
             metaEdit: MX.ON,
             resizable: MX.ON,
             container: MX.ON,

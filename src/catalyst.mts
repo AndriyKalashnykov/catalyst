@@ -313,7 +313,10 @@ export interface CatalystOptions {
   nodesep?: number
   edgesep?: number
   ranksep?: number
+  /** @deprecated #15 — accepted for API compatibility but IGNORED:
+   *  LayoutEngine maps only nodesep/edgesep/ranksep to ELK. */
   marginx?: number
+  /** @deprecated #15 — accepted for API compatibility but IGNORED. */
   marginy?: number
 }
 
@@ -358,7 +361,15 @@ export class Catalyst {
 
     const layoutOptions = {
       rankdir: options.layoutDirection || 'TB',
+      // #15 magic-constant taxonomy: `nodesep` → ELK
+      // `elk.spacing.nodeNode`. 50 is a DOCUMENTED CONVENTION (ELK's
+      // own default is 20; 50 is catalyst's chosen intra-rank gap — a
+      // tunable public-API default, the slot-2 "canonical default"
+      // form, overridable via `options.nodesep`).
       nodesep: options.nodesep || 50,
+      // `edgesep` → ELK `elk.layered.spacing.edgeEdgeBetweenLayers`;
+      // 10 == that option's own ELK default (a CITED renderer default,
+      // not a tuned value), kept as the tunable public-API default.
       edgesep: options.edgesep || 10,
       // Inter-layer gap → ELK `layered.spacing.nodeNodeBetweenLayers`.
       // 36 == Graphviz `dot`'s default ranksep (0.5in = 36pt). dot IS
@@ -370,8 +381,12 @@ export class Catalyst {
       // unaffected, ZERO node- or label-overlap regression at this value.
       // A cited reference, not a tuned constant.
       ranksep: options.ranksep || 36,
-      marginx: options.marginx || 20,
-      marginy: options.marginy || 20
+      // #15: `marginx`/`marginy` were emitted here as `|| 20` but
+      // `LayoutEngine` maps ONLY nodesep/edgesep/ranksep to ELK — the
+      // margin values were dead config (never reached the layout
+      // engine). Removed (byte-identical: ELK never saw them). The
+      // public `CatalystOptions.marginx?/marginy?` fields are retained
+      // as accepted-but-ignored no-ops to keep the API non-breaking.
     }
 
     const layoutData = await LayoutEngine.calculateLayout(elements, relations, layoutOptions, layoutConstraints)
