@@ -58,9 +58,9 @@ order, and every relationship verb with its `[technology]`.
 > gallery with `make gallery`.
 
 <p align="center">
-  <img src="docs/examples/example.puml.png" alt="PlantUML C4 source diagram" width="380">
+  <img src="docs/examples/example.puml.png" alt="PlantUML C4 source diagram" width="220">
   &nbsp;&nbsp;→&nbsp;&nbsp;
-  <img src="docs/examples/example.drawio.png" alt="Converted editable draw.io diagram" width="380">
+  <img src="docs/examples/example.drawio.png" alt="Converted editable draw.io diagram" width="220">
 </p>
 
 ## Tech Stack
