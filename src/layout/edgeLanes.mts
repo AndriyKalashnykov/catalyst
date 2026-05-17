@@ -210,3 +210,39 @@ export function resolveLabelOverlap(
   }
   return null                      // unreachable in practice; fail safe
 }
+
+/**
+ * Point at half the cumulative arc length of a polyline.
+ *
+ * This is drawio's default edge-label anchor for a routed (multi-bend)
+ * edge: drawio-export ignores the geometry.x fraction and seats the label
+ * at the routed path's LENGTH-midpoint — NOT the straight endpoint mean
+ * (which `resolveLabelOverlap` assumes for straight Context edges). Used to
+ * compute the offset that re-seats a multi-bend hierarchical edge's label
+ * onto ELK's reserved non-overlapping rect. Pure geometry, no constant.
+ */
+export function polylineMidpoint(
+  pts: ReadonlyArray<{ x: number; y: number }>,
+): { x: number; y: number } {
+  if (pts.length === 0) return { x: 0, y: 0 }
+  if (pts.length === 1) return { x: pts[0].x, y: pts[0].y }
+  const seg = (i: number) =>
+    Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y)
+  let total = 0
+  for (let i = 1; i < pts.length; i++) total += seg(i)
+  const half = total / 2
+  let acc = 0
+  for (let i = 1; i < pts.length; i++) {
+    const s = seg(i)
+    if (acc + s >= half) {
+      const t = s === 0 ? 0 : (half - acc) / s
+      return {
+        x: pts[i - 1].x + (pts[i].x - pts[i - 1].x) * t,
+        y: pts[i - 1].y + (pts[i].y - pts[i - 1].y) * t,
+      }
+    }
+    acc += s
+  }
+  const last = pts[pts.length - 1]
+  return { x: last.x, y: last.y }
+}

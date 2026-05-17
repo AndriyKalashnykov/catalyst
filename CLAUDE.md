@@ -74,32 +74,21 @@ Standalone, independently-maintained library (no upstream; never add an
 
 Everything below is researched, not speculative. Sizes are honest.
 
-> ▶ **RESUME HERE — session handoff 2026-05-16 (refreshed).** All
-> constant/cleanup steps from the prior handoff are DONE (#53/#54
-> merged; superseded branch + stash already pruned; main clean).
-> **(1) If still open, merge this PR (#55** — corrected
-> edge-large-graph root cause, docs) and **claude-config PR #16**
-> (3 codified session learnings). Then `git switch main && git
-> fetch origin --prune && git reset --hard origin/main`.
+> ▶ **RESUME HERE — session handoff 2026-05-16 (refreshed).** Prior
+> handoff's PRs all merged (#55, claude-config #16); main synced.
+> **`edge-large-graph` #24-hier IMPLEMENTATION — DONE this session**
+> (the CORRECTED hypothesis worked; see the ✅ note below; PR open
+> at cutoff). **(1) If still open, merge that PR**, then `git switch
+> main && git fetch origin --prune && git reset --hard origin/main`.
 > **(2) Live backlog (priority order):**
-> – **item 1 = `edge-large-graph` #24-hier IMPLEMENTATION.** Root
-> cause is now MEASUREMENT-CORRECTED in item 1: the cram is the
-> **non-laned poly>2** branch (`catalyst.mts` ~L166) emitting ELK
-> route bends but NO label offset → drawio auto-anchors the
-> multi-bend label. Two spikes already disproved (v1 #51:
-> waypoint-at-label-centre distorts; v2: mis-targeted the 2-point
-> `calls` chain). Execute the CORRECTED next hypothesis in item 1
-> (emit ELK label offset in the non-laned poly>2 branch, account
-> for drawio's polyline path-midpoint anchor), full #24/#25-class
-> render-compare gating, re-cut from fresh `main`.
-> – item 2 = C4 surface residual gaps (LOW/opportunistic).
-> – item 3 = Sequence-diagram support (large, design-first).
+> – **item 1 = C4 surface residual gaps** (LOW/opportunistic; see
+> `docs/C4-COVERAGE.md` Tier-2/3 + the dropped-`note` gap).
+> – **item 2 = Sequence-diagram support** (large, design-first).
 > **Merged this session:** v1.6.1 chain, #19 gate, #23 (#43/#44/#45),
 > #24 (#47), #25 (#49), C4-COVERAGE (#50), edge-large-graph design
 > (#51), fontZize (#52), consolidated constants (#53), handoffs
-> (#54). Open at cutoff: #55 (this), claude-config #16. `fontZize`
-> audit closed (only typo'd key, no propagation); constant
-> single-sourcing done & byte-proven (#53).
+> (#54), #55, claude-config #16. Open at cutoff: the #24-hier
+> implementation PR (this session).
 
 ---
 
@@ -360,67 +349,48 @@ Everything below is researched, not speculative. Sizes are honest.
 > Deployment-node / BiRel / RelIndex items the original task named are
 > now ✓ (this session shipped them), so they are NOT backlogged.
 
-1. **`edge-large-graph` hierarchical edge-label cram — the #24
-   analogue for `layered` (BIG; root-caused + first spike DISPROVED;
-   design-first, ready for a focused session).** User-flagged
-   2026-05-16. Pre-existing (the `.drawio` is byte-identical since
-   #41; #24/#25 explicitly didn't touch hierarchical), NOT a session
-   regression. **What's actually wrong (fact-checked, not eyeballed):**
-   the 6 `integrates [REST]` edges fanning from services → External
-   1–6 have their labels crammed (≈3 nearly stacked). The boundary
-   title is FINE (exactly 33u clearance — an initial thumbnail glance
-   that it "collided with Service 1" was a #19-style false read,
-   disproven by measurement). The 6 `reads/writes [SQL]` are long but
-   adequately separated. **Root cause (code-traced):** ELK computes a
-   non-overlapping label rect per edge and `LayoutEngine` threads it
-   on `LayoutEdge.label`, but `catalyst.mts`'s emit loop captures only
-   `e.points` into `layoutEdgeByRelIdx` and **discards `e.label`**.
-   For a non-laned edge whose ELK route is a 2-point straight section
-   (`poly.length≤2` → the final `else`), `context===false` so #24's
-   waypoint is skipped and drawio auto-anchors the label on its own
-   orthogonal route → cram. Same fundamental as #24 (non-laned solo-
-   edge label on drawio's unpredictable auto-route) but the
-   hierarchical case #24's scope guard deliberately excluded.
-   **DISPROVED hypothesis (spike, render-compare — do NOT retry):**
-   thread `e.label` and emit a waypoint at ELK's label-rect centre
-   for non-laned edges. Render-compare showed it REGRESSED the
-   `calls` chain — ELK's label rect can sit on a long detour segment,
-   so forcing the edge THROUGH it drags the route + stacks the
-   `calls [gRPC]` labels into a left-margin column. Routing-through-
-   label-centre is the wrong shape.
-   **Spike v2 (`fix/edge-large-graph-hier-v2`, reverted) — also
-   wrong target, but MEASUREMENT-CORRECTED the root cause.** v2
-   lowered the threshold to emit a midpoint waypoint + `e.label`
-   offset for 2-point hierarchical sections. Per-verb emitted-block
-   diff proved it fired on the **`calls` chain** (those ARE the
-   2-point sections — `svc1→svc2…`, adjacent layered nodes — and
-   they were already FINE), while the actual crammed edges
-   (`integrates`/`reads-writes` to External 1–6) were **untouched**:
-   they are **poly>2 (multi-bend) ELK routes**, emitted by the
-   NON-laned `else if (poly && poly.length > 2 …)` branch
-   (`src/catalyst.mts` ~L166) which emits ELK's interior bend points
-   as waypoints **but emits NO label offset** → drawio auto-anchors
-   the multi-bend edge's label → the cram. (Confirmed: per-verb
-   block diff — `calls`/`uses` changed, `integrates`/`reads-writes`
-   identical, i.e. v2 missed them entirely.)
-   **CORRECTED next hypothesis (focused session — spike, don't
-   commit on faith):** in the **non-laned poly>2 branch** (~L166;
-   NOT the 2-point path, NOT the laned poly>2 path which already
-   uses `lane.labelOffset`), capture `e.label` and ALSO emit an
-   `offset` mxPoint = `ELK-label-centre − drawio's default label
-   anchor on the emitted polyline` so the multi-bend edge's label
-   sits at ELK's non-overlapping rect instead of drawio's
-   auto-anchor. The known wrinkle: drawio's default edge-label
-   anchor is the polyline path-midpoint, NOT a simple endpoint
-   mean — derive it from the emitted points (cumulative segment
-   length) or accept/measure the small residual. Scope: non-laned
-   poly>2 only; 2-point (`calls`) + laned + Context(#24) paths
-   byte-identical; gate = corpus route-signature + parity/golden +
-   layout-quality + full gallery render-compare + ibm-wm
-   `c4-container`/deployment. Both spike branches dropped (v1 #51,
-   v2 reverted); analysis preserved here — re-cut from fresh `main`.
+---
 
-2. **C4 surface residual gaps (low — see `docs/C4-COVERAGE.md`
+> ✅ **`edge-large-graph` #24-hier edge-label cram — FIXED
+> 2026-05-16 (was item 1; the CORRECTED hypothesis, executed).**
+> Root cause was MEASUREMENT-CORRECT: the crammed edges
+> (`integrates`/`reads-writes` → External 1–6) are non-laned
+> **poly>2 (multi-bend)** ELK routes emitted by the
+> `else if (poly && poly.length > 2 …)` branch (`src/catalyst.mts`),
+> which emitted ELK's bend waypoints but **NO label offset** →
+> drawio auto-anchored the label at the routed polyline's
+> length-midpoint → cram. **Fix (surgical, that branch only):**
+> thread ELK's reserved label rect (`layoutEdgeLabelByRelIdx`,
+> previously `e.label` was discarded) and emit ONE
+> `<mxPoint as="offset">` = `ELK-label-centre −
+> polylineMidpoint(route)`. New exported helper
+> `polylineMidpoint` (`src/layout/edgeLanes.mts`) computes drawio's
+> ACTUAL anchor — the cumulative-arc-length midpoint of the routed
+> polyline, NOT the endpoint mean (the documented wrinkle; derived
+> from the emitted points, no residual fudge). **Proven (BLOCKING
+> gate, not tests-alone):** Phase-1 plumbing byte-identical
+> (inert); change is purely additive (one offset mxPoint per
+> affected edge, zero waypoint/topology delta); byte-scope —
+> exactly 3 of 20 fixtures changed (edge-large-graph +12 =
+> 6 integrates + 6 reads-writes; level-component +1 `caches`
+> L-route; level-system-landscape +1 `updates profile`), the
+> other 17 byte-identical; the `calls` chain got **0** new offsets
+> (2-point branch untouched) and the #24 `charges` edge
+> (`shop→pay`) is **byte-identical** (#24 preserved, verified per
+> edge). `make render-compare` (java+docker, the real gate):
+> all 6 `integrates [REST]` + all `reads/writes [SQL]`
+> de-crammed and each cleanly seated on its own edge, nothing
+> flung off-canvas; level-component `caches` + level-system
+> `updates profile` re-seated in clear space, no regression.
+> 292/292 (incl. a new 5-case BLOCKING discriminator test for
+> `polylineMidpoint` — length-midpoint ≠ endpoint mean ≠ middle
+> vertex); lint/mdlint/`make ci` clean. The two spike branches
+> (v1 #51, v2) stayed disproved — this is the third, correct
+> approach. #19 ibm-wm `c4-container`/deployment acceptance runs
+> at the next release-chain consumption (standard
+> catalyst→puml2drawio→ibm-wm flow), as with every prior fix.
+
+1. **C4 surface residual gaps (low — see `docs/C4-COVERAGE.md`
    Tier-2/3, validated 2026-05-16).** The genuinely-unimplemented `✗`
    surface, all low-value/no-parity-impact: `$sprite` (no drawio
    sprite registry), `$shadowing`/custom `$lineStyle`/`SET_SKETCH_STYLE`,
@@ -435,7 +405,7 @@ Everything below is researched, not speculative. Sizes are honest.
    C4-COVERAGE when tackled). Pick up individually only when a
    downstream diagram actually needs one; none block parity/golden.
 
-3. **Sequence-diagram support (deferred feature, large, design-first).**
+2. **Sequence-diagram support (deferred feature, large, design-first).**
    catalyst fail-louds on `C4_Sequence`/PlantUML sequence. New
    subsystem (parser + deterministic non-ELK layout + umlLifeline
    emit). Full design context in memory `open-followups` item 4.
