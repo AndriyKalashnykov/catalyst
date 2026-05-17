@@ -9,6 +9,8 @@ RENDER_SRC          ?= tests/fixtures/c4-exhaustive.puml
 RENDER_OUT          ?= build/render-compare
 CORPUS_DIR          ?= tests/fixtures/corpus
 GALLERY_OUT         ?= docs/gallery
+PLANTUML_JAR        ?= $(GALLERY_OUT)/plantuml.jar
+FACTCHECK_SVG_DIR   ?= build/factcheck-svg
 
 .DEFAULT_GOAL := help
 
@@ -54,6 +56,13 @@ gallery: build ## Dual-render the use-case corpus into docs/gallery (needs java+
 	CORPUS_DIR=$(CORPUS_DIR) \
 	GALLERY_OUT=$(GALLERY_OUT) \
 	node scripts/gallery.mjs
+
+.PHONY: factcheck
+factcheck: build ## Numeric PlantUML→drawio fidelity audit of ALL conversions — gallery corpus + C4-spec fixtures (needs java); the no-eyeballing gate
+	@mkdir -p $(FACTCHECK_SVG_DIR)
+	@test -f $(PLANTUML_JAR) || { echo "ERROR: $(PLANTUML_JAR) missing — run 'make gallery' once to fetch it"; exit 1; }
+	java -jar $(PLANTUML_JAR) -tsvg -nometadata $(CORPUS_DIR)/*.puml $(dir $(CORPUS_DIR))*.puml -o $(abspath $(FACTCHECK_SVG_DIR))
+	SVG_DIR=$(FACTCHECK_SVG_DIR) CORPUS_DIR=$(CORPUS_DIR) node scripts/factcheck-geometry.mjs
 
 .PHONY: ci
 ci: build lint test ## Local CI pipeline (build + lint + tests)
