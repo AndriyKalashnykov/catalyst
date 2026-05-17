@@ -150,10 +150,23 @@ Everything below is researched, not speculative. Sizes are honest.
 >
 > - **P12 — ✅ DONE** (see the ✅ block above; `make factcheck`
 >   CLEAN 26/26, 341/341). No longer the entry point.
-> - **P2** (#5) — Rel_L/R: ELK partitioning spiked, insufficient;
->   needs deeper layout spike. Advisory (rankOrder), not a contract.
-> - **P4b** (#11) — box-emptiness: measured PlantUML targets
->   recorded; cross-cutting all-fixture visual change, ADR-worthy.
+> - **P2** (#5) — ✅ research + spike DONE 2026-05-17. Weighted
+>   matrix (`docs/research/p2-directional-constraints.md`, #84) →
+>   winner "invisible co-rank edges" SPIKED + shipped (#85): all 4
+>   compass directions now correct (N↑S↓W←E→, W co-ranked), factcheck
+>   CLEAN 26/26, byte-scoped (only 3 L/R fixtures changed). Residual:
+>   East one rank low (ELK layerer tie-break; P2 stays advisory, not
+>   a contract — PlantUML itself doesn't deterministically co-rank).
+>   Further (deterministic 2-pass) ruled out by the matrix as
+>   high-risk for an advisory metric. Effectively closed.
+> - **P4b** (#11) — ✅ decision base + **ADR 0010 accepted**
+>   2026-05-17. Measured: floor 2.7–7.8× oversized vs PlantUML
+>   ground truth; PlantUML element text-inset = **10 px** (measured,
+>   124 entities). Decision: content-fit minimum = `text + 2×10px`,
+>   delete fixed `C4_MIN`. **NEXT: implementation** — the cross-cutting
+>   gated PR per ADR 0010's BLOCKING plan (factcheck CLEAN 26/26 +
+>   render-compare + byte baseline; re-spec `layout-quality` "≥ C4
+>   min"; verify vertical inset + P6/cylinder3 interaction).
 > - **#15 — ✅ DONE 2026-05-17.** Audited every numeric literal in
 >   `src/` against the no-magic taxonomy. Codebase already strong
 >   (theme.mts/TextMetrics single-source the type scale). Fixed: (a)

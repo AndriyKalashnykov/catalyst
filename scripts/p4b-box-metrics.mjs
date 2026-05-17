@@ -95,3 +95,37 @@ for (const [k, rs] of [...byFam].sort()) {
   const fA = C4_MIN[k][0] * C4_MIN[k][1], pA = minP.pW * minP.pH
   console.log(`  ${k.padEnd(13)} floor ${C4_MIN[k][0]}x${C4_MIN[k][1]} (${fA}px²)  vs smallest PlantUML ${Math.round(minP.pW)}x${Math.round(minP.pH)} (${Math.round(pA)}px², ${minP.stem}/${minP.alias})  →  ${(fA / pA).toFixed(1)}× larger`)
 }
+
+// --- Measured PlantUML element INSET (the category-1 metric the ADR
+// needs). For every entity <g>: hInset = min(text.x)-rect.x and
+// rect.right-max(text.x+textLength); the value PlantUML pads text
+// from the box edge. Parsed straight from the -tsvg ground truth. ---
+function insets(svg) {
+  const out = []
+  const re = /<!--entity ([^>]+?)-->\s*<g[^>]*>(.*?)<\/g>/gs
+  let m
+  while ((m = re.exec(svg)) !== null) {
+    const body = m[2]
+    const rr = /<rect[^>]*?height="([\d.]+)"[^>]*?width="([\d.]+)"[^>]*?x="([-\d.]+)"[^>]*?y="([-\d.]+)"/.exec(body)
+    if (!rr) continue
+    const rx = +rr[3], rw = +rr[2]
+    const ts = [...body.matchAll(/<text[^>]*?textLength="([\d.]+)"[^>]*?x="([-\d.]+)"/g)]
+      .map(t => ({ x: +t[2], len: +t[1] }))
+    if (!ts.length) continue
+    const left = Math.min(...ts.map(t => t.x)) - rx
+    const right = (rx + rw) - Math.max(...ts.map(t => t.x + t.len))
+    out.push({ left: +left.toFixed(2), right: +right.toFixed(2) })
+  }
+  return out
+}
+const allInset = []
+for (const dir of FIX) for (const f of readdirSync(dir)) {
+  if (!f.endsWith('.puml')) continue
+  try { allInset.push(...insets(readFileSync(join(SVG_DIR, f.replace(/\.puml$/, '') + '.svg'), 'utf8'))) } catch { /* no svg */ }
+}
+const lefts = allInset.map(i => i.left), rights = allInset.map(i => i.right)
+const uniq = a => [...new Set(a.map(v => Math.round(v)))].sort((x, y) => x - y)
+console.log(`\nMeasured PlantUML element text-inset (${allInset.length} entities, all fixtures):`)
+console.log(`  left  px: distinct=${JSON.stringify(uniq(lefts))}  median=${med(lefts)}`)
+console.log(`  right px: distinct=${JSON.stringify(uniq(rights))}  median=${med(rights)}`)
+console.log(`  ⇒ the category-1 horizontal inset for a content-fit minimum (NOT a guess).`)

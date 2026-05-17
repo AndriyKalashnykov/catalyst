@@ -85,11 +85,12 @@ measure-driven).
   **`layout-quality` test's "≥ C4 min size" assertion must be
   re-specified** to the new model, and re-gate factcheck CLEAN 26/26 +
   a render-compare visual + a byte baseline.
-- Exact padding constant: must be a *measured* PlantUML element inset
-  (category-1 metric), extracted from the SVG (text bbox vs rect bbox),
-  NOT a new guessed literal. A follow-up measurement (extend
-  `p4b-box-metrics.mjs`) should output PlantUML's text-inset so the new
-  minimum is a real metric.
+- Exact padding constant: **MEASURED — resolved.** `p4b-box-metrics.mjs`
+  now extracts the SVG rect-vs-text bbox inset across 124 entities:
+  PlantUML's element text-inset is **10 px each side** (median;
+  dominant, a few 14 px sprite/icon outliers). This is the category-1
+  metric for the content-fit minimum — single-sourced in `theme.mjs`
+  per ADR 0010, no guessed literal.
 - Interaction with the P6 boundary title band and cylinder3 cap
   reserves (already measured constants) — verify no regression.
 - Decision: pure content-fit vs content-fit-with-small-floor (avoid
@@ -98,6 +99,7 @@ measure-driven).
 ## Next step
 
 This document + `scripts/p4b-box-metrics.mjs` are the decision base.
-The ADR (`docs/adr/00xx-content-fit-box-sizing.md`) should record the
-decision and the gating plan above; implementation is a separate
-factcheck+byte+render-compare-gated PR after the ADR is accepted.
+**ADR 0010 (`docs/adr/0010-content-fit-box-sizing.md`) — accepted** —
+records the decision, the measured 10 px inset, and the BLOCKING
+gating plan. Implementation is the next step: a separate
+factcheck+byte+render-compare-gated PR per ADR 0010's plan.
