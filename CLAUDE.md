@@ -177,6 +177,25 @@ Completed-work root-cause prose lives in git history + ADRs +
 > C4 risk VERIFIED, not assumed. Still deferred (fail-loud, no silent
 > drop): `box`/`Boundary` grouping, `ref`, `create`/`destroy`.
 >
+> **Handoff #19, 2026-05-18 (cont.) — RELEASE CHAIN SHIPPED.**
+> catalyst **v1.7.0** tagged on `main` (`7691aac`, PR #125; annotated
+> tag, no GitHub Release — `github-tags` datasource). Full downstream
+> chain landed + artifact-verified: catalyst v1.7.0 → puml2drawio
+> **v1.5.5** (PR #96; tag `^{}`=`991065e0`; ghcr `:1.5.5`==`:1`
+> digest-matched; floating `v1`/`v1.5` retargeted) → ibm-wm SHA-pin
+> `991065e0…` (PR #13 MERGED `a6eb9a7`; `diagrams-pass` green;
+> `_drawio/*` regenerated with curved connectors — caught + fixed a
+> Make-timestamp stale-render no-op). Downstream test premises
+> changed by v1.7.0 (C4_MIN floor removed, C4_Sequence now supported)
+> — puml2drawio layout-quality + runner tests rewritten accordingly.
+> CHANGELOG `[Unreleased]`→`[1.7.0]` curated (sequence/title/aspect
+> headline entries were missing). Memory `release-chain-topology`
+> updated with the 2026-05-18 chain + the two downstream-adaptation
+> lessons. **NEXT-SESSION priority is now: (1) ADR 0007 phase d2b
+> (`box`/`Boundary`/`ref`/`create`/`destroy`); (2) seq v1.x polish;
+> (3) ELK→Graphviz research bet (deferred); (4) optional
+> housekeeping.** The release (old item 3) is DONE.
+>
 > Prior handoff #17, 2026-05-18 — `main` @ `dd764f1` (post-#122),
 > connector-fidelity arc COMPLETE. That session landed, all MERGED:**
 > #117 path-filtered `render-gate` ci.yml job (`make arrowskew` hard
@@ -222,12 +241,11 @@ Completed-work root-cause prose lives in git history + ADRs +
 >    note↔activation row overlap; empty `====` → thin rule not a full
 >    band. Self-message-loop-width = MEASURED no-op for long labels —
 >    re-spike ONLY with a SHORT-self-label fixture, else leave it.
-> 3. **Downstream release** catalyst→puml2drawio→ibm-wm — arrowhead
->    fix + seq v1 + dividers + **curved connectors** now strongly
->    justify it. Cross-repo; coordinate per memory
->    `release-chain-topology`; release = annotated git tag on `main`,
->    no GitHub Release. (No render regression to fear — render-gate +
->    routefidelity proved curved is faithful.)
+> 3. **Downstream release — ✅ DONE (handoff #19).** catalyst v1.7.0
+>    → puml2drawio v1.5.5 → ibm-wm SHA-pin `991065e0…` (PR #13
+>    MERGED). Artifact-verified end-to-end. See handoff #19 above +
+>    memory `release-chain-topology` (2026-05-18 chain). No further
+>    release action until d2b/v1.x change the surface again.
 > 4. **ELK→Graphviz-`dot` — RESEARCH BET, deferred, likely its own
 >    repo.** `docs/research/elk-vs-graphviz-dot.md` is the weighted
 >    decision base + spike protocol. Do NOT start in-place (it is an
