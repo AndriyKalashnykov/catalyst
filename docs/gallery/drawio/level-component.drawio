@@ -50,6 +50,11 @@
             </mxGeometry>
           </mxCell>
         </object>
+        <object c4Name="C4 Level — Component" c4Type="Title" label="C4 Level — Component" id="__title">
+          <mxCell style="text;html=1;align=left;verticalAlign=middle;whiteSpace=nowrap;fontSize=14;fontStyle=1;fontColor=#000000;" parent="1" vertex="1">
+            <mxGeometry as="geometry" height="17" width="158" x="12" y="-19"/>
+          </mxCell>
+        </object>
       </root>
     </mxGraphModel>
   </diagram>

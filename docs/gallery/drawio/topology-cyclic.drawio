@@ -42,6 +42,11 @@
             </mxGeometry>
           </mxCell>
         </object>
+        <object c4Name="Topology — cyclic (A→B→C→A)" c4Type="Title" label="Topology — cyclic (A→B→C→A)" id="__title">
+          <mxCell style="text;html=1;align=left;verticalAlign=middle;whiteSpace=nowrap;fontSize=14;fontStyle=1;fontColor=#000000;" parent="1" vertex="1">
+            <mxGeometry as="geometry" height="17" width="219" x="24" y="-19"/>
+          </mxCell>
+        </object>
       </root>
     </mxGraphModel>
   </diagram>

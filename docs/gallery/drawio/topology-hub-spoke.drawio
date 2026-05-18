@@ -93,6 +93,11 @@
             </mxGeometry>
           </mxCell>
         </object>
+        <object c4Name="Topology — hub &amp; spoke (fan-out / force-layout case)" c4Type="Title" label="Topology — hub &amp; spoke (fan-out / force-layout case)" id="__title">
+          <mxCell style="text;html=1;align=left;verticalAlign=middle;whiteSpace=nowrap;fontSize=14;fontStyle=1;fontColor=#000000;" parent="1" vertex="1">
+            <mxGeometry as="geometry" height="17" width="356" x="20" y="-19"/>
+          </mxCell>
+        </object>
       </root>
     </mxGraphModel>
   </diagram>

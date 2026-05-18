@@ -58,7 +58,12 @@ async function parseXml(xml: string): Promise<{ nodes: Map<string, EmittedNode>;
   for (const obj of (root.object ?? [])) {
     const o = obj.$ ?? {};
     const cell = obj.mxCell?.[0]?.$ ?? {};
-    if (cell.vertex === '1') {
+    if (cell.vertex === '1' && o.id !== '__title') {
+      // `__title` is the source-`title` trace element (completeness
+      // invariant), NOT a C4 node — gated by factcheck `titleMiss`,
+      // excluded from C4-node counts here exactly as in the factcheck
+      // oracle and golden fingerprint (keeps this gate a pure
+      // C4-topology check; byte-stable across the title change).
       nodes.set(o.id, {
         id: o.id,
         c4Name: o.c4Name ?? '',

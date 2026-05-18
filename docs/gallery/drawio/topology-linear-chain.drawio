@@ -49,6 +49,11 @@
             <mxGeometry as="geometry" relative="1"/>
           </mxCell>
         </object>
+        <object c4Name="Topology — linear chain (rank ordering)" c4Type="Title" label="Topology — linear chain (rank ordering)" id="__title">
+          <mxCell style="text;html=1;align=left;verticalAlign=middle;whiteSpace=nowrap;fontSize=14;fontStyle=1;fontColor=#000000;" parent="1" vertex="1">
+            <mxGeometry as="geometry" height="17" width="265" x="12" y="-19"/>
+          </mxCell>
+        </object>
       </root>
     </mxGraphModel>
   </diagram>

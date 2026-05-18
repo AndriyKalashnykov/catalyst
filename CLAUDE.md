@@ -117,10 +117,21 @@ Everything below is researched, not speculative. Sizes are honest.
 Completed-work root-cause prose lives in git history + ADRs +
 `docs/UPGRADE-NOTES.md` + agent memories — not re-dumped here.
 
-> ▶ **RESUME HERE — session handoff 2026-05-17 (refreshed #9 — ADR
-> 0011 CLOSED: wRatio premise was a comparator artefact, fixed
-> like-for-like; C2/C1 declined on evidence. NEXT = Sequence #12
-> phase (b)).**
+> ▶ **RESUME HERE — session handoff 2026-05-17 (refreshed #10 — ADR
+> 0012: `title` rendered on ALL diagrams + completeness-invariant
+> gate (`titleMiss`) as the FIRST structural check; ADR 0011 CLOSED
+> (wRatio comparator artefact). NEXT = perpendicular-arrowhead WIP
+> (parked branch `feat/perpendicular-arrowhead-routing` @ e7fc46a,
+> 25/26 c4-deployment open), then Sequence #12 phase (b)).**
+>
+> **Methodology (ADR 0012, researched MDE M2M principle — do NOT
+> hand-roll):** this is a model-to-model transformation. Verify in
+> this order: (1) **completeness invariant** — every source construct
+> traces to a target element, no silent drops (`titleMiss` is the
+> first; generalise to notes/legend); (2) structural/geometry
+> contracts; (3) PNG visual LAST, corroborative only. The `title`
+> was dropped on 100% of diagrams for the project's whole life
+> because nothing COUNTED it — coverage gaps hide real defects.
 > `make factcheck` is THE gate (numeric PlantUML→drawio comparator,
 > ALL 26 conversions vs `-tsvg`; NO eyeballing — every visual claim
 > cites a metric). It now has **8 contract metrics** incl. `ratioBad`

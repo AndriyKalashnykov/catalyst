@@ -19,6 +19,11 @@
             <mxGeometry as="geometry" relative="1"/>
           </mxCell>
         </object>
+        <object c4Name="Relationships — very long labels" c4Type="Title" label="Relationships — very long labels" id="__title">
+          <mxCell style="text;html=1;align=left;verticalAlign=middle;whiteSpace=nowrap;fontSize=14;fontStyle=1;fontColor=#000000;" parent="1" vertex="1">
+            <mxGeometry as="geometry" height="17" width="220" x="69" y="-19"/>
+          </mxCell>
+        </object>
       </root>
     </mxGraphModel>
   </diagram>
