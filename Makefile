@@ -50,8 +50,8 @@ deps:
 	@npm ci
 
 #deps-render: @ Verify java + docker (needed by gallery / factcheck / render-compare)
-deps-render:
-	@command -v java >/dev/null 2>&1 || { echo "Error: java required for PlantUML rendering (see setup.sh)."; exit 1; }
+deps-render: deps
+	@command -v java >/dev/null 2>&1 || { echo "Error: java (Temurin) is mise-managed — run 'make deps'."; exit 1; }
 	@command -v docker >/dev/null 2>&1 || { echo "Error: docker required for drawio-export rendering."; exit 1; }
 
 #clean: @ Remove build artifacts (dist/, build/, coverage/) — never sources or the committed gallery
@@ -113,7 +113,7 @@ gallery: deps-render build
 
 #factcheck: @ Numeric PlantUML→drawio fidelity audit of ALL conversions (needs java; the no-eyeballing gate)
 factcheck: build
-	@command -v java >/dev/null 2>&1 || { echo "Error: java required for PlantUML -tsvg rendering (see setup.sh)."; exit 1; }
+	@command -v java >/dev/null 2>&1 || { echo "Error: java (Temurin) is mise-managed — run 'make deps'."; exit 1; }
 	@mkdir -p $(FACTCHECK_SVG_DIR)
 	@test -f $(PLANTUML_JAR) || { echo "ERROR: $(PLANTUML_JAR) missing — run 'make gallery' once to fetch it"; exit 1; }
 	@java -jar $(PLANTUML_JAR) -tsvg -nometadata $(CORPUS_DIR)/*.puml $(dir $(CORPUS_DIR))*.puml -o $(abspath $(FACTCHECK_SVG_DIR))

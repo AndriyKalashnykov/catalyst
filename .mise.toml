@@ -8,10 +8,18 @@
 # directly, so NO `# renovate:` inline comments belong here (those are
 # only for the Makefile custom.regex manager).
 [tools]
-# Node — the only language toolchain catalyst needs (TypeScript build +
+# Node — the language toolchain for the build/test path (TypeScript +
 # vitest). Tracks the latest Node 26.x, mirroring CI's mise-action so
 # local and CI run the same major.
 node = "26"
+
+# Java — runtime for the LOCAL render path only (`make factcheck` /
+# `gallery` / `render-compare` run `java -jar plantuml.jar` for the
+# PlantUML -tsvg ground truth). catalyst has zero .java source; any
+# modern LTS JRE works. mise core `java` plugin (Temurin 21 LTS, tag
+# verified via `mise ls-remote java`). Not needed for build/lint/
+# test/CI — those are Node-only.
+java = "temurin-21.0.11+10.0.LTS"
 
 # act — runs the real ci.yml locally (`make ci-run`). Was previously
 # claimed "mise-managed" by the Makefile but never declared here, so a

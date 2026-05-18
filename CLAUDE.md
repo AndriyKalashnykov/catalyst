@@ -25,9 +25,11 @@ Standalone, independently-maintained library (no upstream; never add an
   gitleaks, trivy fs) — all three mise-managed via `.mise.toml`
   (`aqua:` pins; Renovate native `mise` manager tracks them). `make
   clean` removes `dist/ build/ coverage/` (never sources/gallery).
-- Local render path needs system **graphviz** (PlantUML `-tsvg` = dot);
+- Local render path (`factcheck`/`gallery`/`render-compare`): **Java**
+  is mise-managed (`.mise.toml` Temurin 21; `make deps` installs it),
+  **graphviz** is the only system package (no mise backend) —
   `./setup.sh` installs it cross-platform (apt/dnf/brew/pacman,
-  idempotent). NOT needed for CI lint/test/static-check.
+  idempotent). Neither is needed for CI lint/test/static-check.
 - **`make gallery-verify` — deterministic gallery drift gate** (also a
   `ci.yml` `test` step). Regenerates `docs/gallery/drawio/*.drawio`
   (`GALLERY_DRAWIO_ONLY=1`, pure node, no java/docker) and fails on any
