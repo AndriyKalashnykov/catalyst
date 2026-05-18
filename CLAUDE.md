@@ -133,12 +133,49 @@ Everything below is researched, not speculative. Sizes are honest.
 Completed-work root-cause prose lives in git history + ADRs +
 `docs/UPGRADE-NOTES.md` + agent memories — not re-dumped here.
 
-> ▶ **RESUME HERE — session handoff 2026-05-17 (refreshed #10 — ADR
-> 0012: `title` rendered on ALL diagrams + completeness-invariant
-> gate (`titleMiss`) as the FIRST structural check; ADR 0011 CLOSED
-> (wRatio comparator artefact). NEXT = perpendicular-arrowhead WIP
-> (parked branch `feat/perpendicular-arrowhead-routing` @ e7fc46a,
-> 25/26 c4-deployment open), then Sequence #12 phase (b)).**
+> ▶ **RESUME HERE — session handoff 2026-05-17 (refreshed #11 —
+> ADR 0011 CLOSED [#99 wRatio comparator-artefact fix]; ADR 0012
+> `title` on ALL diagrams + `titleMiss` completeness gate [#101];
+> `/makefile` audit [#102]; `/readme` review [#103]; `/ci-workflow`
+> canonical restructure [#104] — all MERGED, `main` @ `284e44d`,
+> tree clean. NEXT = finish parked perpendicular-arrowhead branch
+> → PR, then Sequence #12 phase (b)).**
+>
+> **Infra now in place (post #102/#104 — next session relies on
+> this):** `make static-check` is COMPOSITE
+> (`lint`+`mdlint`+`vulncheck`+`secrets`+`trivy-fs`, one CI job);
+> `make ci` = `static-check build coverage-check gallery-verify`,
+> mirroring the canonical 5-job `ci.yml`
+> (`changes→static-check→build+test→ci-pass`, single required check
+> `ci-pass`); `.mise.toml` manages node/java/act/gitleaks/trivy
+> (NO `# renovate:` inside — native mise manager); `setup.sh`
+> cross-platform (apt/dnf/brew/pacman). `make ci-run` = the real
+> `ci.yml` via mise-managed `act`.
+>
+> **Parked WIP branches (on `origin`, NO PR — do NOT prune; each
+> needs a rebase onto fresh `origin/main` before resuming, both
+> branched off pre-#102 main):**
+>
+> - `feat/perpendicular-arrowhead-routing` @ `afc5f95` (base
+>   `d2536db`=#101). Multi-bend perpendicular border-anchor DONE;
+>   `arrowSkew` is an HONEST CONTRACT metric at **20/26** (NOT
+>   advisory — do not downgrade it); `arrowSkew` row already in
+>   `docs/FACTCHECK-COVERAGE.md`. REMAINING: the laned same-pair
+>   port-stub so `arrowSkew`=0 corpus-wide + unit tests for
+>   `endpointAttachFraction`/`arrowSkew`/comparator-`endpt`, then
+>   `make gallery`+commit, byte-scope worktree-diff, render-compare,
+>   PR. Do NOT merge until `arrowSkew`=26/26.
+> - `feat/seq-phase-b-layout-emit` @ `c18a403` (base `62acfcd`).
+>   See item 1 below.
+>
+> **Surfaced, NOT absorbed (next-session follow-up):**
+>
+>
+> `vitest.config.ts` `exclude:` omits `src/catalyst.mts` (the core
+> orchestrator, most-changed file this session) from the 85%
+> `thresholds.global` gate — the CI gate is correct, the coverage
+> *scope* is a `/test-coverage-analysis` finding. Pursue given how
+> much `catalyst.mts` changed (title emit + parked arrowhead work).
 >
 > **Methodology (ADR 0012, researched MDE M2M principle — do NOT
 > hand-roll):** this is a model-to-model transformation. Verify in
@@ -184,17 +221,25 @@ Completed-work root-cause prose lives in git history + ADRs +
 >    before AND after via version-exact docs + the tool's own
 >    registry; surface tensions, don't force.
 >
-> Prior session shipped (all MERGED): **#89 P4b · #90/#94 P13
-> (shipped→reverted) · #91 seq phase-a · #92 stale-gallery · #93
-> gallery-drift gate · #95 ADR 0011 base · #96 ratio-ratchet · #97
-> ADR 0011 C3+D · #98 handoff**. THIS session (PR open): **ADR 0011
-> wRatio comparator-artefact fix + honest re-baseline + C2 declined
-> on evidence** (catalyst emit byte-identical; `factcheck` CLEAN
-> 26/26; new `tests/factcheck-geometry.test.mts`).
-> Memories new/updated: `derived-artifact-enforcement-gate`
-> (new), `self-audit-introduced-literals` (escalation),
-> `no-guesses-fact-check-discipline`, `md-image-embedding` (P13
-> revert), `factcheck-harness-gate`.
+> THIS session shipped (all MERGED, in order): **#99 ADR 0011
+> wRatio comparator-artefact fix + honest re-baseline + C2/C1
+> declined on evidence** (catalyst emit byte-identical; `factcheck`
+> CLEAN 26/26; new `tests/factcheck-geometry.test.mts`) · **#100
+> lockfile maint** · **#101 ADR 0012 `title` on ALL diagrams +
+> `titleMiss` completeness-invariant gate** (researched MDE M2M
+> methodology — see Methodology block) · **#102 `/makefile` audit**
+> (composite `static-check`, `.mise.toml` java/act/gitleaks/trivy,
+> cross-platform `setup.sh`, `?=`/Renovate conventions) · **#103
+> `/readme` review** (stale stress/Context→ADR 0008, title↔About,
+> section order, java→mise) · **#104 `/ci-workflow` canonical**
+> (5-job graph + `ci-pass` + path-filter; SHA-verified
+> `dorny/paths-filter`; README/CLAUDE doc-sync). Methodology lessons
+> codified into portfolio rules this session
+> (`claude-config/rules/common/testing.md` + `git-workflow.md`):
+> MDE M2M completeness-invariant-first; never fake-green;
+> not-done = not-merged. Memories carried:
+> `derived-artifact-enforcement-gate`, `self-audit-introduced-literals`,
+> `no-guesses-fact-check-discipline`, `factcheck-harness-gate`.
 >
 > ### ▶▶ NEXT SESSION (priority order)
 >
