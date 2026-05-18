@@ -146,7 +146,20 @@ Completed-work root-cause prose lives in git history + ADRs +
 >
 > **▶▶ NEXT SESSION — pick up here (priority order):**
 >
-> 1. **ADR 0007 phase (d2): v2 sequence fragments** —
+> 1. **INFRA — decide & implement `arrowskew`/`factcheck` CI
+>    enforcement (HIGH; do first).** Both are docker-based, run
+>    locally/manually only — pure-node CI cannot run them, so a
+>    render/arrowhead regression (the exact #107 false-green class
+>    this session spent days recovering from) can still ship green.
+>    It is the safety net for phase d2 AND the downstream release (a
+>    regression would propagate to puml2drawio/ibm-wm), so it
+>    precedes both. DECIDE: a path-filtered docker CI workflow (on
+>    `src/**`, `scripts/**`, `docs/gallery/**`) running
+>    `make arrowskew` + `make factcheck` so fast PRs stay fast, OR
+>    formally accept them as manual-only gates and say so in
+>    CLAUDE.md + ci.yml. Currently NEITHER — the ambiguity is the
+>    gap. A `/ci-workflow`-skill task.
+> 2. **ADR 0007 phase (d2): v2 sequence fragments** —
 >    `alt/opt/loop/par/critical`, `box`/`Boundary` grouping, `ref`,
 >    create/destroy. Currently fail-loud with token+line (the
 >    no-silent-drop guard). The ADR's explicitly "materially harder"
@@ -155,23 +168,31 @@ Completed-work root-cause prose lives in git history + ADRs +
 >    gates: render-compare visual + factcheck 26/26 + arrowskew
 >    20/20 + 26 static byte-identical (separate seq pipeline ⇒ zero
 >    C4 risk by construction, but VERIFY).
-> 2. **Sequence v1.x polish** (small, real, render-measurable; ADR
+> 3. **Sequence v1.x polish** (small, real, render-measurable; ADR
 >    0007 "Known v1 imperfections"): note↔activation row overlap;
 >    empty `====` → thin rule not a full band. NOTE: the
 >    self-message-loop-width tweak was MEASURED a no-op for
 >    long-label fixtures — only re-spike with a SHORT-self-label
 >    fixture proving the shrink, else leave it (don't ship a no-op).
-> 3. **Downstream release** catalyst→puml2drawio→ibm-wm — arrowhead
+> 4. **Downstream release** catalyst→puml2drawio→ibm-wm — arrowhead
 >    fix + sequence v1 + dividers now justify a release; the
 >    downstream `skip-unsupported` sequence fixture now CONVERTS.
 >    Cross-repo — coordinate per memory `release-chain-topology`;
 >    confirm scope before starting (release = annotated git tag on
->    `main`, no GitHub Release; per CLAUDE.md release rule).
-> 4. **layout-readability — DO NOT reopen** without a
+>    `main`, no GitHub Release; per CLAUDE.md release rule). Ideally
+>    AFTER item 1 (don't propagate a render regression downstream).
+> 5. **layout-readability — DO NOT reopen** without a
 >    render-measured defect a user can point to (B1 declined on
 >    evidence; spacing/tall-ribbon are `dot`-faithful per ADR 0011;
 >    `docs/research/layout-readability.md` "Post-spike conclusion").
 >    Optional only: B4 `contentAlignment`, B6 `aspectRatio` (low).
+> 6. **Housekeeping (low; batch into ONE small PR):** (a)
+>    `scripts/bendcount-svg.mjs` has no `make` target — wire
+>    `make bendcount` or accept it as a documented one-off probe
+>    (portfolio rule: promote tooling to a supported gate or don't
+>    leave scratch). (b) `vitest.config.ts` `exclude:` omits
+>    `src/catalyst.mts` from the 85% coverage gate — a
+>    `/test-coverage-analysis` scope finding (CI gate itself correct).
 >
 > **Standing gates (all green at handoff):** `make factcheck` 26/26,
 > `make arrowskew` 20/20 (drawio-SVG render-truth — the anti-#107
