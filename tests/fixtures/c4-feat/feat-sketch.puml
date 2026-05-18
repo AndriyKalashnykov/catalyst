@@ -1,0 +1,12 @@
+@startuml feat-sketch
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Container.puml
+LAYOUT_AS_SKETCH()
+title Feature — LAYOUT_AS_SKETCH (hand-drawn render)
+Person(op, "Operator")
+System_Boundary(cp, "control plane") {
+  Container(ctl, "Controller", "Go", "Reconciles")
+  ContainerQueue(q, "Events", "Kafka")
+}
+Rel(op, ctl, "drives", "CLI")
+Rel(ctl, q, "publishes", "events")
+@enduml

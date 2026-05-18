@@ -44,6 +44,13 @@ export interface ParsedStyles {
     relDefault?: StyleOverride;
     /** Global boundary override (UpdateBoundaryStyle). */
     boundaryDefault?: StyleOverride;
+    /** C4 `HIDE_STEREOTYPE()` → suppress the `«Type»` line on every
+     *  element (PlantUML `hide stereotype`). */
+    hideStereotype?: boolean;
+    /** C4 `LAYOUT_AS_SKETCH()` / `SET_SKETCH_STYLE()` → hand-drawn
+     *  render (PlantUML `skinparam handwritten true`) → draw.io
+     *  `sketch=1` on every cell. */
+    sketch?: boolean;
 }
 
 const kw = (args: string, name: string): string | undefined => {
@@ -142,6 +149,13 @@ export class StyleParser {
         for (const raw of puml.split('\n')) {
             const line = raw.trim();
             if (line.startsWith("'") || line.startsWith('!')) continue;
+
+            // Global display toggles (bare C4 macro calls, no args we
+            // need). Fact-checked vs pinned C4-PlantUML v2.13.0 C4.puml:
+            // HIDE_STEREOTYPE → `hide stereotype`; LAYOUT_AS_SKETCH /
+            // SET_SKETCH_STYLE → `skinparam handwritten true`.
+            if (/^HIDE_STEREOTYPE\s*\(/.test(line)) { styles.hideStereotype = true; continue; }
+            if (/^(LAYOUT_AS_SKETCH|SET_SKETCH_STYLE)\s*\(/.test(line)) { styles.sketch = true; continue; }
 
             const directive = /^(AddElementTag|AddRelTag|AddBoundaryTag|UpdateElementStyle|UpdateRelStyle|UpdateBoundaryStyle)\b/.exec(line);
             if (!directive) continue;

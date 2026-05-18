@@ -43,7 +43,8 @@ function overrideFor(type: string, tags: string | undefined, styles: ParsedStyle
 }
 
 async function layoutData2mx(layoutData: LayoutResult, pumlElements: EntityDescriptor[], pumlRelations: { source: string, target: string, label: string, description: string, bidirectional?: boolean, back?: boolean, tags?: string }[], styles: ParsedStyles, title?: string): Promise<string> {
-  const mx = new Mx(layoutData.height || 600, layoutData.width || 800)
+  const mx = new Mx(layoutData.height || 600, layoutData.width || 800,
+    { sketch: styles.sketch, hideStereotype: styles.hideStereotype })
   const parser = new EntityParser()
 
   // LayoutEngine (elkjs) returns every shape in ONE absolute coordinate

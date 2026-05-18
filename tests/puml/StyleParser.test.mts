@@ -124,3 +124,39 @@ describe('StyleParser — faithful line-style / thickness / shadowing', () => {
         expect(style).toContain('fillColor=#aa0000');
     });
 });
+
+describe('StyleParser — global display/style toggles (C4 residuals)', () => {
+    it('HIDE_STEREOTYPE() sets hideStereotype; absent ⇒ undefined', () => {
+        expect(StyleParser.parse('HIDE_STEREOTYPE()').hideStereotype).toBe(true);
+        expect(StyleParser.parse('System(a,"A")').hideStereotype).toBeUndefined();
+    });
+
+    it('LAYOUT_AS_SKETCH() and SET_SKETCH_STYLE(...) set sketch', () => {
+        expect(StyleParser.parse('LAYOUT_AS_SKETCH()').sketch).toBe(true);
+        expect(StyleParser.parse('SET_SKETCH_STYLE($bgColor="#eee")').sketch).toBe(true);
+        expect(StyleParser.parse('System(a,"A")').sketch).toBeUndefined();
+    });
+
+    it('whole-path: HIDE_STEREOTYPE drops the «Type» line, KEEPS the c4Type attribute', async () => {
+        const xml = await Catalyst.convert(
+            'HIDE_STEREOTYPE()\nSystem(a, "A")\nContainerDb(d, "D", "Pg")\nRel(a, d, "rw")');
+        // no rendered stereotype text + no leftover placeholder
+        expect(xml).not.toMatch(/«(System|ContainerDb)»/);
+        expect(xml).not.toContain('«%c4Type%»');
+        // structural attribute kept (golden/parity fingerprint stable)
+        expect(xml).toContain('c4Type="System"');
+        expect(xml).toContain('%c4Name%');               // other placeholders intact
+    });
+
+    it('whole-path: a normal diagram still renders the stereotype (regression guard)', async () => {
+        const xml = await Catalyst.convert('System(a, "A")\nSystem(b,"B")\nRel(a,b,"x")');
+        expect(xml).toContain('c4Type="System"');         // unchanged path
+    });
+
+    it('whole-path: LAYOUT_AS_SKETCH adds sketch=1 to every cell; off otherwise', async () => {
+        const sk = await Catalyst.convert('LAYOUT_AS_SKETCH()\nSystem(a,"A")\nSystem(b,"B")\nRel(a,b,"x")');
+        expect((sk.match(/sketch=1/g) ?? []).length).toBeGreaterThan(0);
+        const plain = await Catalyst.convert('System(a,"A")\nSystem(b,"B")\nRel(a,b,"x")');
+        expect(plain).not.toContain('sketch=1');
+    });
+});

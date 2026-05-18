@@ -81,7 +81,18 @@ class Mx {
         { MxFile: 'mxfile' },
     ]
 
-    constructor(height: number, width: number) {
+    /** C4 `LAYOUT_AS_SKETCH`/`SET_SKETCH_STYLE` → `sketch=1` on every
+     *  cell. Off by default ⇒ the static C4 corpus is byte-identical. */
+    private readonly sketch: boolean;
+    /** C4 `HIDE_STEREOTYPE` → drop the `«Type»` line from element
+     *  labels (the `c4Type` structural attribute is KEPT, so
+     *  golden/parity fingerprints are unchanged). */
+    private readonly hideStereotype: boolean;
+
+    constructor(height: number, width: number,
+                opts?: { sketch?: boolean; hideStereotype?: boolean }) {
+        this.sketch = opts?.sketch ?? false;
+        this.hideStereotype = opts?.hideStereotype ?? false;
         const diagramHeight = Math.ceil(height);
         const diagramWidth = Math.ceil(width);
 
@@ -267,6 +278,25 @@ class Mx {
             label = label.replace('«%c4Type%»', '«%c4Stereotype%%c4Type%»')
         }
 
+        // HIDE_STEREOTYPE: drop the stereotype line from the rendered
+        // label. The `*.label()` templates return html ALREADY
+        // HTML-entity-ENCODED (`&lt;div style=&quot;…&quot;&gt;…`,
+        // guillemets kept literal), so the match MUST be on the encoded
+        // form — the only `font-style:italic` div the templates emit
+        // (Name is `font-weight:bold`, Description is plain). `[^&]*`
+        // is safe: neither the style string nor the `«…%c4Type%…»`
+        // content contains `&`. The `c4Type` structural attribute above
+        // is intentionally KEPT so golden/parity fingerprints stay
+        // byte-identical; this removes only the VISUAL line. (v1: the
+        // box keeps the reserved stereotype-line height — measureNode
+        // is untouched, so the static-C4 layout path is provably
+        // unchanged — leaving a small top gap. Honest documented
+        // imperfection; zero corpus impact.)
+        if (this.hideStereotype) {
+            label = label.replace(
+                /&lt;div style=&quot;[^&]*font-style:italic[^&]*&quot;&gt;«[^&]*»&lt;\/div&gt;/, '')
+        }
+
         const t: c4 = {
             $: {
                 placeholders: 1,
@@ -438,7 +468,14 @@ class Mx {
         // refs the pre-encoder produced; leave a real `&amp;` intact.
         const xml = new xml2js.Builder({ headless: true }).buildObject(this.doc)
             .replace(/&amp;(lt|gt|quot|amp|#39);/g, '&$1;')
-        return this.replaceKeysWithValue(this.tags, xml)
+        const renamed = this.replaceKeysWithValue(this.tags, xml)
+        // LAYOUT_AS_SKETCH / SET_SKETCH_STYLE → draw.io hand-drawn
+        // render: append `;sketch=1` to every cell style (only mxCell
+        // carries a `style=` attribute in drawio XML). Off by default
+        // ⇒ the static C4 corpus is byte-identical (no fixture sets it).
+        return this.sketch
+            ? renamed.replace(/(<mxCell\b[^>]*\sstyle=")([^"]*)"/g, '$1$2;sketch=1"')
+            : renamed
     }
 }
 
