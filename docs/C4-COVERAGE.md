@@ -160,6 +160,7 @@ Handled by `src/puml/StyleParser.mts` (colour kwargs `$bgColor`/`$fontColor`/`$b
 | `SHOW_LEGEND`, `SHOW_FLOATING_LEGEND`, `SHOW_DYNAMIC_LEGEND` | ✗ (skipped) |
 | `HIDE_STEREOTYPE` | ✓ → drops the `«Type»` line from element labels (PlantUML `hide stereotype`); the `c4Type` structural attribute is KEPT so golden/parity stay byte-identical. v1: box keeps the reserved stereotype-line height (measureNode untouched ⇒ static-C4 layout provably unchanged). Off by default |
 | `SHOW_PERSON_OUTLINE` / `_PORTRAIT` / `_SPRITE` | ✗ |
+| PlantUML `note left\|right\|top\|bottom of X` / `note over X[,Y]` (single + `… end note` block) | ✓ → `shape=note` placed POST-LAYOUT from the target's laid-out box (`NoteParser` separate pass; ELK/EntityParser untouched ⇒ static-C4 byte-identical). v1: ELK is note-unaware (no reflow); clamped ≥0 so never off-canvas. Floating `note as <id>` not v1 |
 
 ## Properties
 

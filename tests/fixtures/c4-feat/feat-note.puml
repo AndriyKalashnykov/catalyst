@@ -1,0 +1,17 @@
+@startuml feat-note
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Container.puml
+title Feature — note callouts (left/right/top/bottom of X)
+Person(op, "Operator")
+System_Boundary(cp, "platform") {
+  Container(api, "API", "Go", "Edge entry")
+  ContainerDb(db, "Store", "Postgres")
+}
+Rel(op, api, "uses", "HTTPS")
+Rel(api, db, "reads/writes", "SQL")
+note right of api : stateless; horizontally scaled
+note right of db
+  durable state
+  daily backups
+end note
+note bottom of db : single source of truth
+@enduml
