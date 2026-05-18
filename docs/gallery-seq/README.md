@@ -57,6 +57,36 @@ deactivate ctl
 
 </details>
 
+## `seq-d2b-create-destroy.puml`
+
+| Source PlantUML | catalyst → draw.io |
+|---|---|
+| <img src="svg/seq-d2b-create-destroy.puml.svg" alt="seq-d2b-create-destroy puml" height="360"> | <img src="svg/seq-d2b-create-destroy.drawio.svg" alt="seq-d2b-create-destroy drawio" height="360"> |
+
+<details><summary>PlantUML source</summary>
+
+```plantuml
+@startuml seq-d2b-create-destroy
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Sequence.puml
+
+title Certificate issuance — create / destroy lifespan (phase d2b)
+
+participant "Operator" as op
+participant "Controller" as ctl
+
+op -> ctl : reconcile CertificateRequest
+create participant "CSR Job" as job
+ctl -> job : spawn signing job
+activate job
+job -> ctl : signed cert + key
+deactivate job
+destroy job
+ctl -> op : status = Ready
+@enduml
+```
+
+</details>
+
 ## `seq-d2b-ref.puml`
 
 | Source PlantUML | catalyst → draw.io |

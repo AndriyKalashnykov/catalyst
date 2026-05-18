@@ -234,3 +234,44 @@ a -> b : last`))
     await expect(xml2js.parseStringPromise(xml)).resolves.toBeDefined()
   })
 })
+
+describe('SeqConverter — phase d2b create/destroy whole-path', () => {
+  const doc = (b: string) =>
+    '@startuml d\n!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Sequence.puml\n'
+    + `${b}\n@enduml`
+
+  it('a created lifeline head drops below a normal one; destroy emits an X + truncates', async () => {
+    const xml = await Catalyst.convert(doc(`participant "A" as a
+a -> a : warm up
+create participant "Job" as j
+a -> j : spawn
+j --> a : done
+destroy j
+a -> a : after`))
+    const g = (llId: string) =>
+      new RegExp(`id="ll-${llId}"[\\s\\S]*?<mxGeometry x="\\d+" y="(\\d+)" width="\\d+" height="(\\d+)"`)
+        .exec(xml)!
+    const [, aY, aH] = g('a').map(Number)
+    const [, jY, jH] = g('j').map(Number)
+    // created lifeline head starts strictly BELOW the normal one
+    expect(jY).toBeGreaterThan(aY)
+    // and ends earlier (destroyed) → shorter overall span than `a`
+    expect(jY + jH).toBeLessThan(aY + aH)
+    // destroy X glyph: two crossed no-arrow edges were emitted
+    expect((xml.match(/id="seq-destroy-/g) ?? []).length).toBe(2)
+    await expect(xml2js.parseStringPromise(xml)).resolves.toBeDefined()
+  })
+
+  it('messages keep source order across create/destroy markers', async () => {
+    const xml = await Catalyst.convert(doc(`participant "A" as a
+a -> a : one
+create x
+a -> x : two
+destroy x
+a -> a : three`))
+    const ys = [...xml.matchAll(/id="seq-msg-\d+"[\s\S]*?y="(\d+)"[^>]*as="sourcePoint"/g)]
+      .map((m) => +m[1])
+    expect(ys.length).toBe(3)
+    expect(ys.every((v, i) => i === 0 || v >= ys[i - 1])).toBe(true)
+  })
+})

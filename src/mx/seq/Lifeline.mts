@@ -99,6 +99,29 @@ export function buildSeqDoc(L: SeqLayout): unknown {
     })
   }
 
+  // `destroy X` cross glyph (phase d2b): PlantUML's bold ✕ at the
+  // truncated lifeline foot — two diagonal line edges, half-extent =
+  // the cited arrow size (a real metric, not a guessed pad).
+  const xR = SHAPE.REL_ARROW_SIZE
+  for (const d of L.destroyMarks) {
+    for (const [dx1, dx2] of [[-xR, xR], [xR, -xR]] as const) {
+      cells.push({
+        $: {
+          id: id('destroy'),
+          style: `html=1;endArrow=none;startArrow=none;strokeColor=${PALETTE.BOUNDARY_STROKE}`,
+          edge: 1, parent: '1',
+        },
+        MxGeometry: {
+          $: { relative: 1, as: 'geometry' },
+          mxPoint: [
+            { $: { x: Math.round(d.cx + dx1), y: Math.round(d.y - xR), as: 'sourcePoint' } },
+            { $: { x: Math.round(d.cx + dx2), y: Math.round(d.y + xR), as: 'targetPoint' } },
+          ],
+        },
+      })
+    }
+  }
+
   // Fragments (phase d2): emitted BEFORE the event cells so the frame
   // border sits BEHIND the messages it groups (draw.io z-order =
   // document order). Ascending `order` ⇒ an enclosing frame is emitted
