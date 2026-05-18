@@ -1,0 +1,9 @@
+@startuml rel-self-loop
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Container.puml
+title Relationships — self-loop + return edge
+System(a, "Orchestrator")
+System(b, "Worker")
+Rel(a, a, "retries on failure", "internal")
+Rel(a, b, "dispatches", "gRPC")
+Rel(b, a, "reports status", "callback")
+@enduml
