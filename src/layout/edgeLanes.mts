@@ -219,6 +219,69 @@ export function assignEdgeLanes(
 /** Axis-aligned rectangle (top-left + size) — a node's box in absolute px. */
 export interface NodeRect { x: number; y: number; w: number; h: number }
 
+/**
+ * Make the edge's final approach into the target (and first departure
+ * from the source) a PERPENDICULAR run long enough that draw.io's
+ * arrowhead is not occluded by the orthogonal feeder segment.
+ *
+ * PROVEN root cause (spike vs the real drawio-export SVG, ADR/research
+ * `arrowhead-orthogonal-routing.md`): every catalyst edge is
+ * `edgeStyle=orthogonalEdgeStyle`, so draw.io re-routes through the
+ * emitted `<Array as="points">`; `jettySize`/`exitX`/`entryX` are
+ * IGNORED. When the last emitted waypoint sits closer to the target
+ * border than the arrowhead is long (`REL_ARROW_SIZE`), draw.io runs
+ * the orthogonal feeder *through* the arrowhead triangle — the shaft
+ * reads as entering the head's SIDE (the `requeues`→`Scheduler` skew).
+ * The spike measured: clearance ≥ ~2·`REL_ARROW_SIZE` removes the
+ * occlusion AND leaves a clean perpendicular shaft on the REAL render.
+ *
+ * Transform (mirrored at both ends): push the endpoint-adjacent
+ * waypoint — and the bend before it — out to `clearance` px from the
+ * entered border along that border's outward normal, keeping the
+ * tangential coordinate (clamped within the border extent) so the
+ * segment into the border is perpendicular and ≥ `clearance` long, and
+ * the feeder turn happens `clearance` px away from the box (not at
+ * border level). `clearance` is `2·REL_ARROW_SIZE` (a cited renderer
+ * constant) + the integer-quantisation half-step — a measured metric,
+ * not a tuned pad. Endpoints (draw.io re-attaches them) are never
+ * emitted; only interior waypoints, so this cannot move the attach.
+ */
+export function enforceApproachClearance(
+  interior: { x: number; y: number }[],
+  src: NodeCenter,
+  tgt: NodeCenter,
+  clearance: number,
+): { x: number; y: number }[] {
+  if (interior.length === 0) return interior
+  const out = interior.map((p) => ({ x: p.x, y: p.y }))
+  // Push the waypoint nearest `box` (and the bend before it) to a
+  // perpendicular `clearance` standoff from the border it enters.
+  const anchor = (idx: number, prevIdx: number, box: NodeCenter) => {
+    const p = out[idx]
+    const nx = (p.x - box.cx) / (box.hw || 1)
+    const ny = (p.y - box.cy) / (box.hh || 1)
+    const clampX = (x: number) => Math.max(box.cx - box.hw, Math.min(box.cx + box.hw, x))
+    const clampY = (y: number) => Math.max(box.cy - box.hh, Math.min(box.cy + box.hh, y))
+    if (Math.abs(nx) >= Math.abs(ny)) {
+      // enters the left/right border ⇒ perpendicular run is horizontal
+      const border = box.cx + Math.sign(nx || 1) * box.hw
+      const standoff = border + Math.sign(nx || 1) * clearance
+      out[idx] = { x: Math.round(standoff), y: Math.round(clampY(p.y)) }
+      if (prevIdx >= 0) out[prevIdx] = { x: Math.round(standoff), y: out[prevIdx].y }
+    } else {
+      // enters the top/bottom border ⇒ perpendicular run is vertical
+      const border = box.cy + Math.sign(ny || 1) * box.hh
+      const standoff = border + Math.sign(ny || 1) * clearance
+      out[idx] = { x: Math.round(clampX(p.x)), y: Math.round(standoff) }
+      if (prevIdx >= 0) out[prevIdx] = { x: out[prevIdx].x, y: Math.round(standoff) }
+    }
+  }
+  const n = out.length
+  anchor(0, n > 1 ? 1 : -1, src)              // first departure from source
+  anchor(n - 1, n > 1 ? n - 2 : -1, tgt)      // final approach into target
+  return out
+}
+
 /** Epsilon for the "fully contains" test — MUST equal the factcheck
  *  `labelHit` gate's `contains(...,eps)` inset so this de-collision
  *  triggers on EXACTLY the cases the gate flags (and stays inert,

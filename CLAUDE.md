@@ -133,30 +133,32 @@ Everything below is researched, not speculative. Sizes are honest.
 Completed-work root-cause prose lives in git history + ADRs +
 `docs/UPGRADE-NOTES.md` + agent memories — not re-dumped here.
 
-> ▶ **RESUME HERE — session handoff 2026-05-18 (refreshed #13 —
-> ⚠️ #107 REVERTED as a FALSE-GREEN. The perpendicular port-stub
-> changed emitted waypoints, but EVERY catalyst edge uses
-> `edgeStyle=orthogonalEdgeStyle`, so draw.io DISCARDS those
-> waypoints and routes with its own router. `arrowSkew` reconstructed
-> `[exit,…emitted-wps,entry]` and checked axis-alignment of a
-> polyline **draw.io never draws** ⇒ `arrowSkew=0` was a structural
-> false-green corpus-wide; the `requeues` arrowhead into Scheduler
-> (topology-cyclic) is still skewed. PROOF: pre-#107, post-#107, and
-> committed `topology-cyclic.drawio.png` are byte-identical
-> (`md5 1e061af…`) — #107's `.drawio` change is a render no-op. #108
-> docs (handoff/layout-readability) kept but corrected. `main` after
-> the revert PR. NEXT = **redo properly** (see ▶▶ item 0): rebuild
-> `arrowSkew` against the drawio-export SVG (the REAL routed path,
-> like `factcheck` does for PlantUML `-tsvg`), actually fix the
-> orthogonalEdgeStyle arrowhead, add a PNG-freshness gate. THEN
-> Sequence #12 phase (b)).**
+> ▶ **RESUME HERE — session handoff 2026-05-18 (refreshed #14 —
+> #107 was a FALSE-GREEN, REVERTED (#109), then **REDONE PROPERLY**
+> this PR. Root cause (proven vs the real drawio-export SVG, not a
+> reconstruction): every catalyst edge is `edgeStyle=orthogonalEdge
+> Style` so draw.io re-routes; the skew is the orthogonal feeder
+> occluding the arrowhead when the endpoint-adjacent waypoint is
+> closer to the border than the arrowhead is long. Fix:
+> `enforceApproachClearance` (`2·REL_ARROW_SIZE+½-ULP` perpendicular
+> standoff) on the non-laned multi-bend AND laned multi-point emit
+> paths. NEW gate `make arrowskew` (`scripts/arrowskew-svg.mjs`)
+> renders every `.drawio` via drawio-export → SVG and measures
+> draw.io's REAL path: **CLEAN 20/20**; its own 2 false-positive
+> classes were fact-checked vs the SVG and fixed first. factcheck
+> CLEAN 26/26 (7 legit contracts un-regressed); 26 vitest
+> `enforceApproachClearance`; topology-cyclic + rel-tech-vs-notech
+> visually head-on. NEXT = **Sequence #12 phase (b)**, then the
+> `docs/research/layout-readability.md` B1–B6 backlog.)**
 >
 > **Process lesson (codified — `factcheck-harness-gate`):** a "visual"
-> contract MUST be measured from the renderer's ACTUAL output, never
-> a reconstruction the renderer ignores; and a committed gallery PNG
-> must be gated as a fresh render of its `.drawio` so a render no-op
-> cannot be claimed as a visual fix. `gallery-verify` only diffs the
-> deterministic `.drawio` — it does NOT prove the PNG/visual changed.
+> contract MUST be measured from the renderer's ACTUAL output
+> (`make arrowskew` parses the drawio-export SVG — the render-truth
+> gate that would have caught #107), never a reconstruction the
+> renderer ignores. `gallery-verify` only diffs the deterministic
+> `.drawio`; `make arrowskew` is the standing render-truth gate
+> (docker, like `make factcheck`). Distrust a new gate's own flags —
+> fact-check each against the real render before trusting OR acting.
 >
 > **Infra now in place (post #102/#104 — next session relies on
 > this):** `make static-check` is COMPOSITE
@@ -175,17 +177,27 @@ Completed-work root-cause prose lives in git history + ADRs +
 >
 > - `feat/seq-phase-b-layout-emit` @ `c18a403` (base `62acfcd`).
 >   See item 1 below. (The old `feat/perpendicular-arrowhead-routing`
->   branch's content was merged as #107 then REVERTED — do NOT
->   resurrect it; the port-stub-on-emitted-waypoints approach is
->   provably a no-op for `orthogonalEdgeStyle`. Redo per ▶▶ item 0.)
+>   branch's port-stub-on-EMITTED-waypoints approach was a no-op for
+>   `orthogonalEdgeStyle` — do NOT resurrect it. The correct fix
+>   landed this PR: `enforceApproachClearance` + the `make arrowskew`
+>   render-truth gate.)
 >
-> **`arrowSkew` does NOT exist on `main` (reverted with #107).** When
-> rebuilt it MUST parse the drawio-export SVG (draw.io's real routed
-> path), NOT a reconstruction of emitted waypoints. The `factcheck`
-> "CLEAN 26/26" now reflects only the legitimate 7 contracts. Lesson:
-> the #11 handoff's "laned same-pair port-stub" label was too narrow
-> — the real fix is universal across pinned-attach edges (memory
-> `factcheck-harness-gate`).
+> **arrowhead skew — REDONE PROPERLY this PR (supersedes reverted
+> #107).** `enforceApproachClearance` (`src/layout/edgeLanes.mts`)
+> pushes the endpoint-adjacent emitted waypoint + its feeder to a
+> `2·REL_ARROW_SIZE+½-ULP` perpendicular standoff so draw.io's
+> orthogonal feeder can't occlude the arrowhead; wired into the
+> non-laned multi-bend AND laned multi-point branches (the
+> single-midpoint fan is left untouched — different geometry). The
+> render-truth gate is **`make arrowskew`** (`scripts/arrowskew-svg.mjs`,
+> docker; renders each `.drawio` via drawio-export → SVG, asserts
+> shaft⇔head-axis collinearity + no feeder occlusion). CLEAN 20/20.
+> `factcheck` "CLEAN 26/26" = the legitimate 7 contracts
+> (un-regressed; `arrowSkew` is NOT a factcheck metric — it lives in
+> the SVG gate, which is the only thing that can measure draw.io's
+> real route). Lesson: the #11 handoff's "laned same-pair port-stub"
+> label was too narrow — the fix is universal across multi-bend
+> pinned edges (memory `factcheck-harness-gate`).
 >
 > **Surfaced, NOT absorbed (next-session follow-ups):**
 >
@@ -268,31 +280,21 @@ Completed-work root-cause prose lives in git history + ADRs +
 >
 > ### ▶▶ NEXT SESSION (priority order)
 >
-> 0. **REDO the arrowhead fix properly (PR B) — TOP PRIORITY,
->    supersedes the reverted #107.** The defect is REAL (the
->    `requeues` arrowhead into Scheduler enters skew — shaft into the
->    triangle's side, not its base — in `topology-cyclic`, and the
->    class recurs wherever draw.io's `orthogonalEdgeStyle` router
->    approaches a fixed `entryX/entryY` from a non-perpendicular
->    direction). Constraints learned the hard way:
->    (i) **EVERY catalyst edge uses `edgeStyle=orthogonalEdgeStyle`**
->    — draw.io re-routes; emitted `<Array as="points">` + `exit/entry`
->    are HINTS its router may override. A port-stub in emitted
->    waypoints is a proven NO-OP (pre/post-#107 render byte-identical).
->    (ii) The real fix likely lies in **entry/exit BORDER-SIDE
->    selection** (pick the side facing the incoming route so draw.io's
->    own orthogonal approach is perpendicular) and/or a routing-style
->    change — to be established by spikes against drawio-export, not
->    derived from the emitted-polyline model.
->    (iii) **`arrowSkew` must be rebuilt to parse the drawio-export
->    SVG** (draw.io's actual rendered path — exactly how `factcheck`
->    already parses PlantUML `-tsvg`), NEVER a reconstruction of
->    emitted points. (iv) Add a **PNG-freshness gate**: re-render each
->    committed `.drawio` via drawio-export, fail if the committed
->    `<stem>.drawio.png` differs (so a render no-op / stale PNG cannot
->    pass as a visual fix). No fake-green: the rebuilt `arrowSkew`
->    stays RED until the render is genuinely perpendicular; not-done
->    = not-merged. See task list + `factcheck-harness-gate` memory.
+> 0. **arrowhead skew — DONE this PR (supersedes reverted #107).**
+>    Root cause proven vs the real drawio-export SVG: every catalyst
+>    edge is `orthogonalEdgeStyle` ⇒ draw.io re-routes; the skew is
+>    the orthogonal feeder OCCLUDING the arrowhead when the
+>    endpoint-adjacent waypoint is closer to the border than the
+>    arrowhead is long (`exitX/entryX`/`jettySize` are ignored —
+>    spiked, ruled out). Fix: `enforceApproachClearance`
+>    (`2·REL_ARROW_SIZE+½-ULP` standoff) on the non-laned multi-bend
+>    and laned multi-point paths. Gate: `make arrowskew`
+>    (`scripts/arrowskew-svg.mjs`, drawio-export SVG, render-truth)
+>    CLEAN 20/20; 26 vitest; factcheck 26/26 un-regressed; visual
+>    corroboration done. The single-midpoint laned fan was left
+>    untouched (different geometry — re-spike if a future fixture
+>    flags it on the gate). No further arrowhead work unless
+>    `make arrowskew` reports a regression.
 > 1. **Layout readability ("not crammed / professional") — DECISION
 >    BASE COMMITTED, NOT yet implemented.** See
 >    `docs/research/layout-readability.md` (research-grounded, 2

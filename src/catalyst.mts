@@ -3,10 +3,19 @@ import { Mx, MxGeometry } from './mx/Mx.mjs'
 import { MxPoint } from './mx/MxPoint.mjs'
 import { RelParser } from './puml/RelParser.mjs'
 import { LayoutEngine, LayoutResult } from './layout/LayoutEngine.mjs'
-import { assignEdgeLanes, resolveLabelOverlap, slideLabelAlongLane, polylineMidpoint, type NodeCenter, type NodeRect } from './layout/edgeLanes.mjs'
+import { assignEdgeLanes, resolveLabelOverlap, slideLabelAlongLane, polylineMidpoint, enforceApproachClearance, type NodeCenter, type NodeRect } from './layout/edgeLanes.mjs'
 import { measureEdgeLabel } from './layout/measureNode.mjs'
 import { spaceAdvance, textWidth, renderedLineHeight, MX_DEFAULT_FONTSIZE } from './text/TextMetrics.mjs'
-import { RELATIONSHIP_LABEL_PX, DIAGRAM_TITLE_PX } from './mx/c4/theme.mjs'
+import { RELATIONSHIP_LABEL_PX, DIAGRAM_TITLE_PX, SHAPE } from './mx/c4/theme.mjs'
+
+/** Final-approach / first-departure perpendicular standoff for emitted
+ *  edge waypoints. `2·REL_ARROW_SIZE` clears draw.io's arrowhead reach
+ *  (the spike vs the real render: occlusion stops past ~1·arrow, a
+ *  clean shaft needs ~2·) + the integer-quantisation half-step (emitted
+ *  mxPoints are `Math.round`-ed). Cited renderer constant ×2 + ½-ULP —
+ *  a measured metric, NOT a tuned pad. See
+ *  `docs/research/arrowhead-orthogonal-routing.md`. */
+const APPROACH_CLEARANCE_PX = 2 * SHAPE.REL_ARROW_SIZE + 0.5
 import { StyleParser } from './puml/StyleParser.mjs'
 import { DECIMAL_RADIX } from "./constants.mjs"
 import type { ParsedStyles, StyleOverride } from './puml/StyleParser.mjs'
@@ -187,7 +196,20 @@ async function layoutData2mx(layoutData: LayoutResult, pumlElements: EntityDescr
         // adjacent same-pair edges) — synthesize the lane midpoint waypoint.
         laneInterior.push({ x: lane.waypoint.x, y: lane.waypoint.y })
       }
-      for (const p of laneInterior) g.addArrayPoint(new MxPoint(p.x, p.y))
+      // Perpendicular-approach clearance for the LANED multi-bend
+      // sub-case (ELK routed a real polyline around — e.g. the laned
+      // ANTIPARALLEL back-edge in rel-tech-vs-notech, whose feeder turn
+      // otherwise cuts through its own arrowhead, same occlusion class
+      // as topology-cyclic — confirmed by the SVG `arrowskew` gate).
+      // The single-midpoint synthesized fan case (length 1) is the
+      // load-bearing perpendicular lane spread — NOT an approach run —
+      // so it is left untouched (a different geometry, not spiked here).
+      const Alane = nodeCenter.get(rel.source)
+      const Blane = nodeCenter.get(rel.target)
+      const laneEmit = (Alane && Blane && laneInterior.length >= 2)
+        ? enforceApproachClearance(laneInterior, Alane, Blane, APPROACH_CLEARANCE_PX)
+        : laneInterior
+      for (const p of laneEmit) g.addArrayPoint(new MxPoint(p.x, p.y))
       // Fan the label off the shared midpoint via an absolute offset mxPoint
       // (drawio-export honors this; it ignores the geometry.x fraction).
       // P12: the lane offset alone (perpendicular spread) places the label
@@ -200,10 +222,12 @@ async function layoutData2mx(layoutData: LayoutResult, pumlElements: EntityDescr
       // the slide fires on precisely the gate's defect set and is inert
       // (byte-identical) everywhere it already passes.
       let labelDx = lane.labelOffset.dx, labelDy = lane.labelOffset.dy
-      const A = nodeCenter.get(rel.source)
-      const B = nodeCenter.get(rel.target)
+      const A = Alane
+      const B = Blane
       if (A && B) {
-        const route = [{ x: A.cx, y: A.cy }, ...laneInterior, { x: B.cx, y: B.cy }]
+        // P12: anchor on the route drawio actually draws (the
+        // clearance-adjusted `laneEmit`, not the pre-adjust array).
+        const route = [{ x: A.cx, y: A.cy }, ...laneEmit, { x: B.cx, y: B.cy }]
         const m = polylineMidpoint(route)
         const centre = { x: m.x + labelDx, y: m.y + labelDy }
         const vx = B.cx - A.cx, vy = B.cy - A.cy
@@ -223,7 +247,19 @@ async function layoutData2mx(layoutData: LayoutResult, pumlElements: EntityDescr
       }
       g.addPoint(new MxPoint(labelDx, labelDy, 'offset'))
     } else if (poly && poly.length > 2 && !clusterIds.has(rel.source) && !clusterIds.has(rel.target)) {
-      const interior = poly.slice(1, -1).map((p) => ({ x: Math.round(p.x), y: Math.round(p.y) }))
+      const rawInterior = poly.slice(1, -1).map((p) => ({ x: Math.round(p.x), y: Math.round(p.y) }))
+      // Perpendicular-approach clearance (the REAL fix for the
+      // orthogonalEdgeStyle arrowhead skew — proven vs the drawio
+      // render, `docs/research/arrowhead-orthogonal-routing.md`). Push
+      // the endpoint-adjacent bends out so draw.io's feeder cannot
+      // occlude the arrowhead. The SAME adjusted array is used for the
+      // emit AND the label base-point (P12: anchor on the route drawio
+      // actually draws).
+      const Ac = nodeCenter.get(rel.source)
+      const Bc = nodeCenter.get(rel.target)
+      const interior = (Ac && Bc)
+        ? enforceApproachClearance(rawInterior, Ac, Bc, APPROACH_CLEARANCE_PX)
+        : rawInterior
       for (const p of interior) {
         g.addArrayPoint(new MxPoint(p.x, p.y))
       }
@@ -251,8 +287,8 @@ async function layoutData2mx(layoutData: LayoutResult, pumlElements: EntityDescr
       // use so `renderedMidpoint + offset === ELK-label-centre` by
       // construction (provable against the factcheck oracle, not eyeballed).
       const lbl = layoutEdgeLabelByRelIdx.get(i)
-      const A = nodeCenter.get(rel.source)
-      const B = nodeCenter.get(rel.target)
+      const A = Ac
+      const B = Bc
       if (lbl && A && B) {
         const route = [{ x: A.cx, y: A.cy }, ...interior, { x: B.cx, y: B.cy }]
         const mid = polylineMidpoint(route)
