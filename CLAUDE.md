@@ -139,10 +139,16 @@ Standalone, independently-maintained library (no upstream; never add an
   templates, all import `theme.mjs`).
 - Text: `src/text/TextMetrics.mts`, `src/text/labelLines.mts`
   (`splitLabelLines`, `htmlBreaks`, `wrapEdgeLabelLines`).
-- Decisions: `docs/adr/0001..0010` (0007 sequence design, 0008
+- Decisions: `docs/adr/0001..0013` (0007 sequence design, 0008
   Context→layered, 0009 cycleBreaking=DEPTH_FIRST, 0010 content-fit
-  box sizing); running log `docs/UPGRADE-NOTES.md`;
-  coverage matrix `docs/C4-COVERAGE.md`. Agent memory:
+  box sizing, 0011 layout-aspect, 0012 completeness invariant,
+  **0013 curved edge routing — ACCEPTED, live**); research bases
+  `docs/research/*` (incl. `elk-vs-graphviz-dot.md` — deferred
+  engine bet); running log `docs/UPGRADE-NOTES.md`; coverage matrix
+  `docs/C4-COVERAGE.md`. Render-truth/decision gates: `make
+  arrowskew` (CI), `make factcheck` (manual), `make routefidelity`
+  (`scripts/route-fidelity*.mjs`, ADR 0013 decision gate). Agent
+  memory:
   `~/.claude/projects/-home-andriy-projects-catalyst-fork/memory/`
   (`open-followups` IS the durable tracker — GH Issues are disabled).
 
@@ -152,92 +158,80 @@ Everything below is researched, not speculative. Sizes are honest.
 Completed-work root-cause prose lives in git history + ADRs +
 `docs/UPGRADE-NOTES.md` + agent memories — not re-dumped here.
 
-> ▶ **RESUME HERE — session handoff 2026-05-18 (refreshed #16 —
-> `main` @ post-#114, clean, 0 warnings/0 errors, no parked
-> branches). This session landed, all MERGED: #109 revert #107
-> false-green · #110 arrowhead decision-base · #111 arrowhead
-> REDONE PROPERLY (`enforceApproachClearance` + `make arrowskew`
-> drawio-SVG render-truth gate, CLEAN 20/20) · #112 Sequence #12 v1
-> (phases b+c: dispatch flip + v1 pipeline) · #113 B1 DECLINED on
-> evidence (render no-op not shipped) + `scripts/bendcount-svg.mjs`
-> instrument + layout-readability backlog dissolved · #114 ADR 0007
-> **phase d1 `== divider ==`** + SeqParser oxlint fix.
+> ▶ **RESUME HERE — session handoff #17, 2026-05-18 (cont.) —
+> `main` @ `dd764f1` (post-#122), clean, 0 warnings, no stray
+> branches, all gates green. This session landed, all MERGED:**
+> #117 path-filtered `render-gate` ci.yml job (`make arrowskew` hard
+> `ci-pass` contract; new `render` paths-filter group) + the
+> bind-mount-EACCES fix its own first CI run flushed out · #118
+> portfolio-standard `cleanup-runs.yml` + `.claude/` gitignored
+> (untracked `scheduled_tasks.lock`) · #119 `factcheck-geometry.mjs`
+> now `process.exitCode=1` on non-clean (latent fake-gate fixed) +
+> **factcheck Docker-pin attempted & EMPIRICALLY CLOSED (negative
+> result, reverted)** — the only portable PlantUML image is a
+> noisier multi-modal oracle than the ADR-0010 host; factcheck
+> stays host-JVM **manual** (NOT CI). `deps-plantuml`/
+> `GALLERY_FETCH_JAR_ONLY` removed as orphaned · #120 **route-fidelity
+> comparator** (`scripts/route-fidelity.mjs`, scale/layout-invariant
+> detour+turn distributions — immune to the factcheck node-pos FP
+> class) + **44 exhaustive tests** + `docs/research/elk-vs-graphviz-
+> dot.md` + ADR 0013 (pending) · #121 committed self-verifying
+> **`make routefidelity`** harness (`scripts/route-fidelity-matrix
+> .mjs`+`-convert.mjs`; R1–R5, aborts on non-differentiation) →
+> **ADR 0013 ACCEPTED** (route-shape L1 to PlantUML: orthogonal
+> 1.017 → curved 0.294, ~3.5× closer, robust on both metrics) ·
+> #122 **`curved: 1` edge routing LIVE** (was `orthogonalEdgeStyle`;
+> the user-reported `rel-bidirectional` connector tangle is fixed) +
+> full `docs/gallery/` re-render + gate re-derivation. Also: GH
+> workflow-run history purged to last 5 (`cleanup-runs.yml` keeps
+> it). **The connector-fidelity arc is COMPLETE; curved is on main.**
 >
 > **▶▶ NEXT SESSION — pick up here (priority order):**
 >
-> 1. **INFRA — render-truth CI enforcement: DONE (arrowskew). factcheck
->    CI-portability: EMPIRICALLY CLOSED (negative result) — do NOT
->    reopen without new evidence.** #117 shipped the path-filtered
->    `render-gate` ci.yml job (new `render` `dorny/paths-filter`
->    group: `src/** scripts/** tests/fixtures/** docs/gallery/**
->    Makefile ci.yml`) running `make arrowskew` as a hard `ci-pass`
->    contract — deterministic (draw.io in the pinned
->    `rlespinasse/drawio-export` image, byte-portable) — plus a
->    bind-mount-EACCES fix the gate's own first CI run flushed out.
->    That is the real anti-#107 net and it is enforced. The
->    factcheck-Docker-pin follow-up was attempted 2026-05-18 and
->    **empirically disproved**: PlantUML text geometry is irreducibly
->    host-font-dependent and the whole oracle (ADR 0010
->    `PUML_LEAF_BOX`, embedded contract-lock fixtures, golden, ratio
->    baseline) was calibrated to one unreproducible host JVM. The only
->    freely-portable image (`plantuml/plantuml`, DejaVu-only) renders
->    a *noisier, multi-modal* oracle (measured via
->    `scripts/p4b-box-metrics.mjs` on its render: inset 10/11/14, 20/124
->    outliers vs a clean exact-10; pitch 12→16 bimodal `[18,69]` vs a
->    clean 20.62) — `p4b-svg-geom.test.mts`'s live-oracle gate
->    correctly flags the divergence. Adopting it as THE oracle would
->    degrade a clean category-1 metric to noise + force an ADR-0010
->    re-derivation bottoming out in that noise. Per BLOCKING
->    no-fake-green / surface-don't-force, the Docker-pin was REVERTED;
->    `make factcheck` stays the host-JVM **manual** gate (run for any
->    emit/geometry change). **Two real wins kept from the attempt:**
->    (a) `factcheck-geometry.mjs` now `process.exitCode = 1` on any
->    non-clean fixture (it previously only printed `CLEAN N/26` +
->    exited 0 — a latent fake-gate even for the manual flow; proven
->    both directions); (b) `deps-plantuml`/`GALLERY_FETCH_JAR_ONLY`
->    (#117 interim) removed as orphaned, `ensureJar()` kept (gallery
->    PNG). Reopen ONLY with a portable image that reproduces the
->    ADR-0010 host metrics cleanly (a font-identification spike that
->    may not converge — not worth it for a secondary manual gate while
->    arrowskew already covers the #107 class in CI).
-> 2. **ADR 0007 phase (d2): v2 sequence fragments** —
->    `alt/opt/loop/par/critical`, `box`/`Boundary` grouping, `ref`,
->    create/destroy. Currently fail-loud with token+line (the
+> 1. **ADR 0007 phase (d2): v2 sequence fragments — NOW THE TOP
+>    ITEM.** `alt/opt/loop/par/critical`, `box`/`Boundary` grouping,
+>    `ref`, create/destroy. Currently fail-loud with token+line (the
 >    no-silent-drop guard). The ADR's explicitly "materially harder"
->    nested-Y-range layout; do it as its own phased PR(s) (maybe
->    d2a single-level alt/opt/loop, d2b nested+box) with the SAME
->    gates: render-compare visual + factcheck 26/26 + arrowskew
->    20/20 + 26 static byte-identical (separate seq pipeline ⇒ zero
->    C4 risk by construction, but VERIFY).
-> 3. **Sequence v1.x polish** (small, real, render-measurable; ADR
->    0007 "Known v1 imperfections"): note↔activation row overlap;
->    empty `====` → thin rule not a full band. NOTE: the
->    self-message-loop-width tweak was MEASURED a no-op for
->    long-label fixtures — only re-spike with a SHORT-self-label
->    fixture proving the shrink, else leave it (don't ship a no-op).
-> 4. **Downstream release** catalyst→puml2drawio→ibm-wm — arrowhead
->    fix + sequence v1 + dividers now justify a release; the
->    downstream `skip-unsupported` sequence fixture now CONVERTS.
->    Cross-repo — coordinate per memory `release-chain-topology`;
->    confirm scope before starting (release = annotated git tag on
->    `main`, no GitHub Release; per CLAUDE.md release rule). Ideally
->    AFTER item 1 (don't propagate a render regression downstream).
-> 5. **layout-readability — DO NOT reopen** without a
->    render-measured defect a user can point to (B1 declined on
->    evidence; spacing/tall-ribbon are `dot`-faithful per ADR 0011;
->    `docs/research/layout-readability.md` "Post-spike conclusion").
->    Optional only: B4 `contentAlignment`, B6 `aspectRatio` (low).
-> 6. **Housekeeping (low; batch into ONE small PR):** (a)
->    `scripts/bendcount-svg.mjs` has no `make` target — wire
->    `make bendcount` or accept it as a documented one-off probe
->    (portfolio rule: promote tooling to a supported gate or don't
->    leave scratch). (b) `vitest.config.ts` `exclude:` omits
->    `src/catalyst.mts` from the 85% coverage gate — a
->    `/test-coverage-analysis` scope finding (CI gate itself correct).
+>    nested-Y-range layout; own phased PR(s) (maybe d2a single-level
+>    alt/opt/loop, d2b nested+box) with the SAME gates: render-compare
+>    visual + factcheck 26/26 + arrowskew 20/20 + 26 static
+>    byte-identical (separate seq pipeline ⇒ zero C4 risk by
+>    construction, but VERIFY).
+> 2. **Sequence v1.x polish** (ADR 0007 "Known v1 imperfections"):
+>    note↔activation row overlap; empty `====` → thin rule not a full
+>    band. Self-message-loop-width = MEASURED no-op for long labels —
+>    re-spike ONLY with a SHORT-self-label fixture, else leave it.
+> 3. **Downstream release** catalyst→puml2drawio→ibm-wm — arrowhead
+>    fix + seq v1 + dividers + **curved connectors** now strongly
+>    justify it. Cross-repo; coordinate per memory
+>    `release-chain-topology`; release = annotated git tag on `main`,
+>    no GitHub Release. (No render regression to fear — render-gate +
+>    routefidelity proved curved is faithful.)
+> 4. **ELK→Graphviz-`dot` — RESEARCH BET, deferred, likely its own
+>    repo.** `docs/research/elk-vs-graphviz-dot.md` is the weighted
+>    decision base + spike protocol. Do NOT start in-place (it is an
+>    ADR-0008/0011-superseding rewrite of the layout+gate stack).
+>    Only revisit if *layout* fidelity (node placement/crossings/
+>    aspect — NOT connectors; those are now solved by curved) remains
+>    the dominant residual after a release.
+> 5. **Optional / low:** (a) promote `tests/fixtures/route-stress/{rel
+>    -self-loop,rel-fan-stress}.puml` into `corpus/` (adds gallery +
+>    factcheck-baseline entries — deferred per ADR 0013; they feed
+>    `make routefidelity` from route-stress/ already). (b) Housekeeping
+>    PR: `scripts/bendcount-svg.mjs` has no `make` target;
+>    `vitest.config.ts` `exclude:` omits `src/catalyst.mts` from the
+>    coverage gate (`/test-coverage-analysis` scope finding, CI gate
+>    correct). (c) **layout-readability — DO NOT reopen** without a
+>    render-measured user-pointable defect (B1 declined on evidence;
+>    tall-ribbon is `dot`-faithful per ADR 0011).
 >
-> **Standing gates (all green at handoff):** `make factcheck` 26/26,
-> `make arrowskew` 20/20 (drawio-SVG render-truth — the anti-#107
-> instrument), 419 vitest, `make ci` green, repo 0 warnings.**
+> **Standing gates (all green at handoff):** `make ci` green (463
+> vitest, lint/sec clean, gallery-verify, coverage 85%); `make
+> arrowskew` CLEAN 20/20 (CI render-truth contract via `render-gate`,
+> docker, on the curved gallery); `make factcheck` 26/26 (host-JVM
+> **MANUAL** — NOT CI, host-font-dependent; see #119 / memory
+> `factcheck-harness-gate`); `make routefidelity` self-verifying
+> (curved L1=0.294 = winner); repo 0 warnings; ADR 0013 ACCEPTED.
 >
 > **Process lesson (codified — `factcheck-harness-gate`):** a "visual"
 > contract MUST be measured from the renderer's ACTUAL output
