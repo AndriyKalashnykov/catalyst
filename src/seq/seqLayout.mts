@@ -206,7 +206,6 @@ export function layoutSeq(model: SeqModel): SeqLayout {
   const createY = new Map<string, number>()
   const destroyY = new Map<string, number>()
   const idxOf = new Map(model.lifelines.map((l, i) => [l.alias, i]))
-  const loopW = Math.ceil(colGap / 2 + ARROW)           // self-message loop
 
   // Open-fragment frames (LIFO). `min`/`max` accumulate the lifeline
   // span of EVERY event seen while the frame is open (including events
@@ -383,6 +382,14 @@ export function layoutSeq(model: SeqModel): SeqLayout {
     const selfLoop = ev.from === ev.to
     const labelH = blockH(ev.label, BODY_PX)
     if (selfLoop) {
+      // Self-loop width is driven by THIS message's own measured label
+      // (compact for a short label — PlantUML's hook — wide enough for
+      // a long one; the prior "no-op for long labels" finding holds:
+      // a long label needs width anyway, now from ITS label not the
+      // unrelated neighbour-column gap). Floor = 2·ARROW so the hook
+      // always clears the arrowhead (cited-metric floor, no magic).
+      const loopW = Math.ceil(Math.max(
+        blockW(ev.label, BODY_PX, false) + 2 * INSET, 2 * ARROW))
       const loopH = Math.ceil(Math.max(labelH, renderedLineHeight(BODY_PX)) + 2 * INSET)
       laidEvents.push({
         type: 'message', fromX: cxs[fi], toX: cxs[ti], y,
