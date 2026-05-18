@@ -18,14 +18,17 @@
  * Phase d1 adds `== divider ==`; phase d2 adds the combined/grouped
  * fragments `alt/else/opt/loop/par/critical/group/break` (nested),
  * parsed into paired `fragment-start|else|end` events; phase d2b adds
- * `ref over` reference frames and `create`/`destroy` lifeline lifespan.
+ * `ref over` reference frames, `create`/`destroy` lifeline lifespan,
+ * and `box`/`*_Boundary` lifeline grouping (non-nesting).
  *
- * DEFERRED to a later phase — the parser FAILS LOUD (never silently
- * drops, per the contract-lock rule) naming the exact token + line:
- * `box`/`Boundary*` lifeline grouping.
+ * As of phase d2b EVERY ADR-0007 construct is supported; nothing is
+ * deferred. The parser still FAILS LOUD (contract-lock — never a
+ * silent drop) on a genuinely-unrecognised line, and on malformed
+ * input (nested/unterminated/empty box, orphan close, …), naming the
+ * exact token + line.
  */
 import type {
-  SeqModel, SeqEvent, Lifeline, ArrowKind,
+  SeqModel, SeqEvent, Lifeline, ArrowKind, SeqBox,
 } from './SeqModel.interface.mjs'
 
 export class SeqParseError extends Error {
@@ -53,16 +56,13 @@ const C4_LIFELINE_KINDS = new Set([...C4_TECHN_KINDS, ...C4_PLAIN_KINDS])
 /** v2-deferred constructs. Each maps a detector to the precise,
  *  token-naming fail-loud message (so downstream sees a clear error,
  *  not a wrong diagram). Order matters: most specific first. */
-const DEFERRED: { re: RegExp; what: string }[] = [
-  // NB: `== divider ==` (d1), `alt/opt/loop/par/critical/group/break`
-  // + `else` (d2), `ref` (d2b) and `create`/`destroy` (d2b) are parsed
-  // below, NOT in this fail-loud list. `box`/`Boundary` remain
-  // deferred to a later phase.
-  { re: /^\s*box\b/i, what: '`box` lifeline grouping' },
-  { re: /^\s*end\s+box\b/i, what: '`end box`' },
-  { re: /^\s*(Enterprise_Boundary|System_Boundary|Container_Boundary|Boundary)\s*\(/, what: 'C4 sequence `Boundary(...)` grouping' },
-  { re: /^\s*Boundary_End\s*\(/, what: '`Boundary_End()`' },
-]
+// Per-construct fail-loud seam (the contract-lock rule: never silently
+// drop). As of phase d2b EVERY ADR-0007 construct is supported — d1
+// dividers, d2 fragments, d2b `ref`/`create`/`destroy`/`box`/`Boundary`
+// are all parsed below — so this list is intentionally EMPTY: the seam
+// is kept for future grammar additions, and a genuinely-unknown line
+// still fails loud at the terminal "unrecognised construct" guard.
+const DEFERRED: { re: RegExp; what: string }[] = []
 
 /** Arrow token → (kind, reversed). Longest tokens first so `-->>`
  *  is not mis-split as `-->`. `bi` ignores direction. */
@@ -109,6 +109,10 @@ export class SeqParser {
     const fragStack: { fragId: number; kind: string; lineNo: number }[] = []
     let fragSeq = 0
     const FRAGMENT_KW = /^(alt|opt|loop|par|critical|group|break)\b\s*(.*)$/i
+    // phase d2b: `box`/`*_Boundary` lifeline grouping (declaration-range,
+    // NON-nesting per PlantUML). `openBox` is the single in-flight group.
+    const boxes: SeqBox[] = []
+    let openBox: { label: string; startIdx: number; lineNo: number } | null = null
 
     const addLifeline = (alias: string, label: string, kind: string, technology?: string): void => {
       if (byAlias.has(alias)) return
@@ -187,6 +191,51 @@ export class SeqParser {
       const div = /^==+(.*?)==+$/.exec(t)
       if (div) {
         events.push({ type: 'divider', label: div[1].trim(), order: events.length })
+        continue
+      }
+
+      // `box "T"`/`box` … `end box` and the C4 `*_Boundary(a,"L")` …
+      // `Boundary_End()` lifeline grouping (phase d2b). Groups the
+      // CONTIGUOUS declaration range opened here. PlantUML boxes do
+      // NOT nest → fail loud on a nested open (no silent drop).
+      // Parsed BEFORE the deferred guard AND before the bare-`end`
+      // handler so `end box`/`Boundary_End()` are consumed here.
+      const mBoxOpen = /^box\b\s*(.*)$/i.exec(t)
+      const mBndOpen = /^(Enterprise_Boundary|System_Boundary|Container_Boundary|Boundary)\s*\((.*)\)\s*\{?\s*$/.exec(t)
+      const isBoxClose = /^end\s+box\b/i.test(t)
+      const isBndClose = /^Boundary_End\s*\(\s*\)\s*$/.test(t)
+        || (openBox !== null && /^\}\s*$/.test(t))
+      if (mBoxOpen || mBndOpen) {
+        if (openBox) {
+          throw new SeqParseError(
+            `sequence: nested \`box\`/\`Boundary\` is not supported `
+            + `(PlantUML boxes do not nest). Line ${lineNo}: "${t}". `
+            + `This is a fail-loud guard, not a silent drop.`, lineNo)
+        }
+        const label = mBoxOpen
+          ? unquote(mBoxOpen[1].trim())
+          : unquote((splitArgs(mBndOpen![2])[1] ?? splitArgs(mBndOpen![2])[0] ?? '').trim())
+        openBox = { label, startIdx: lifelines.length, lineNo }
+        continue
+      }
+      if (isBoxClose || isBndClose) {
+        if (!openBox) {
+          throw new SeqParseError(
+            `sequence: \`${isBoxClose ? 'end box' : 'Boundary_End()'}\` `
+            + `with no open box (line ${lineNo}: "${t}"). This is a `
+            + `fail-loud guard, not a silent drop.`, lineNo)
+        }
+        if (lifelines.length === openBox.startIdx) {
+          throw new SeqParseError(
+            `sequence: empty \`box\`/\`Boundary\` opened on line `
+            + `${openBox.lineNo} declares no lifelines.`, openBox.lineNo)
+        }
+        boxes.push({
+          label: openBox.label,
+          firstIdx: openBox.startIdx,
+          lastIdx: lifelines.length - 1,
+        })
+        openBox = null
         continue
       }
 
@@ -280,9 +329,9 @@ export class SeqParser {
         })
         continue
       }
-      // `end` closing the most-recently-opened fragment (note blocks are
-      // consumed above; `end box` stays deferred and is unreachable
-      // because `box` itself fails loud at its opener).
+      // `end` closing the most-recently-opened fragment (note blocks
+      // are consumed above; `end box` is consumed by the d2b box
+      // handler above — the `!end box` guard here is belt-and-braces).
       if (/^end\b/i.test(t) && !/^end\s*note\b/i.test(t)
           && !/^end\s+box\b/i.test(t) && fragStack.length) {
         const top = fragStack.pop()!
@@ -476,6 +525,12 @@ export class SeqParser {
         + `${f.lineNo} — missing \`end\`. This is a fail-loud guard, `
         + `not a silent drop.`, f.lineNo)
     }
+    if (openBox) {
+      throw new SeqParseError(
+        `sequence: unterminated \`box\`/\`Boundary\` opened on line `
+        + `${openBox.lineNo} — missing \`end box\`/\`Boundary_End()\`. `
+        + `This is a fail-loud guard, not a silent drop.`, openBox.lineNo)
+    }
     if (lifelines.length === 0) {
       throw new SeqParseError(
         'sequence: no participants/lifelines found.', 0)
@@ -485,6 +540,7 @@ export class SeqParser {
       autonumber,
       lifelines,
       events,
+      boxes,
     }
   }
 

@@ -275,3 +275,56 @@ a -> a : three`))
     expect(ys.every((v, i) => i === 0 || v >= ys[i - 1])).toBe(true)
   })
 })
+
+describe('SeqConverter — phase d2b box/Boundary whole-path', () => {
+  const doc = (b: string) =>
+    '@startuml d\n!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Sequence.puml\n'
+    + `${b}\n@enduml`
+
+  it('a box emits a no-fill border + a title band spanning the grouped range', async () => {
+    const xml = await Catalyst.convert(doc(`participant "Op" as op
+box "Control Plane"
+participant "Ctl" as ctl
+participant "Iss" as iss
+end box
+participant "V" as v
+op -> ctl : go
+ctl -> iss : resolve
+iss -> v : sign`))
+    const box = /<mxCell id="seq-box-\d+"([^>]*)>([\s\S]*?)<\/mxCell>/.exec(xml)!
+    expect(box[1]).toContain('fillColor=none')              // behind, no occlusion
+    const title = /<mxCell id="seq-box-title-\d+"([^>]*)>/.exec(xml)!
+    expect(title[1]).toContain('value="Control Plane"')
+
+    const g = (id: string) =>
+      new RegExp(`id="${id}"[\\s\\S]*?<mxGeometry x="(-?\\d+)" y="(\\d+)" width="(\\d+)" height="(\\d+)"`).exec(xml)!
+    const [, bx, by, bw, bh] = g('seq-box-0').map(Number)
+    const [, ctlX,, ctlW] = g('ll-ctl').map(Number)
+    const [, issX,, issW] = g('ll-iss').map(Number)
+    const [, opX] = g('ll-op').map(Number)
+    const [, vX] = g('ll-v').map(Number)
+    // box brackets the grouped pair…
+    expect(bx).toBeLessThan(ctlX)
+    expect(bx + bw).toBeGreaterThan(issX + issW)
+    // …and excludes op (before) and v (after)
+    expect(opX).toBeLessThan(bx)
+    expect(vX).toBeGreaterThan(bx + bw)
+    expect(bh).toBeGreaterThan(0)
+    await expect(xml2js.parseStringPromise(xml)).resolves.toBeDefined()
+  })
+
+  it('the box title band shifts ALL heads down uniformly (boxed + non-boxed aligned)', async () => {
+    const xml = await Catalyst.convert(doc(`participant "Op" as op
+box "B"
+participant "Ctl" as ctl
+end box
+op -> ctl : go`))
+    const headY = (id: string) =>
+      +new RegExp(`id="${id}"[\\s\\S]*?<mxGeometry x="-?\\d+" y="(\\d+)"`).exec(xml)![1]
+    // non-boxed `op` head is at the SAME Y as boxed `ctl` head
+    expect(headY('ll-op')).toBe(headY('ll-ctl'))
+    // and the box top is strictly above that head row
+    const boxTop = +/id="seq-box-0"[\s\S]*?<mxGeometry x="-?\d+" y="(\d+)"/.exec(xml)![1]
+    expect(boxTop).toBeLessThan(headY('ll-ctl'))
+  })
+})

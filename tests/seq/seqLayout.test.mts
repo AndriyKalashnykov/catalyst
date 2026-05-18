@@ -127,3 +127,41 @@ describe('layoutSeq — phase d2b create/destroy lifespan', () => {
     expect(j.bottomY).toBeGreaterThanOrEqual(j.headY + j.headH)
   })
 })
+
+describe('layoutSeq — phase d2b box/Boundary grouping', () => {
+  it('a box spans the contiguous range, full height, title band above heads', () => {
+    const L = lay('participant op\nbox "CP"\nparticipant ctl\nparticipant iss\n'
+      + 'end box\nparticipant v\nop -> ctl : go\niss -> v : x')
+    expect(L.boxes).toHaveLength(1)
+    const b = L.boxes[0]
+    const ctl = L.lifelines.find((l) => l.alias === 'ctl')!
+    const iss = L.lifelines.find((l) => l.alias === 'iss')!
+    const op = L.lifelines.find((l) => l.alias === 'op')!
+    expect(b.x).toBeLessThan(ctl.headX)
+    expect(b.x + b.w).toBeGreaterThan(iss.headX + iss.headW)
+    expect(op.headX).toBeLessThan(b.x)                       // op outside
+    expect(b.y).toBeLessThan(ctl.headY)                      // title band above
+    expect(b.y + b.h).toBeGreaterThanOrEqual(ctl.bottomY)    // full height
+    expect(b.bandH).toBeGreaterThan(0)
+    expect(b.label).toBe('CP')
+  })
+
+  it('the box header band shifts every head down equally (alignment invariant)', () => {
+    const noBox = lay('participant a\nparticipant b\na -> b : m')
+    const withBox = lay('participant a\nbox "X"\nparticipant b\nend box\na -> b : m')
+    const aNo = noBox.lifelines.find((l) => l.alias === 'a')!.headY
+    const wA = withBox.lifelines.find((l) => l.alias === 'a')!.headY
+    const wB = withBox.lifelines.find((l) => l.alias === 'b')!.headY
+    expect(wA).toBe(wB)                                       // aligned
+    expect(wA).toBeGreaterThan(aNo)                           // shifted down by the band
+  })
+
+  it('a C4 *_Boundary(...) … Boundary_End() lays out the same as raw box', () => {
+    const L = lay('Person(op,"Op")\nSystem_Boundary(cp,"Plane")\n'
+      + 'Container(ctl,"Ctl","Go")\nBoundary_End()\nRel(op, ctl, "go")')
+    expect(L.boxes).toHaveLength(1)
+    expect(L.boxes[0].label).toBe('Plane')
+    const ctl = L.lifelines.find((l) => l.alias === 'ctl')!
+    expect(L.boxes[0].x).toBeLessThan(ctl.headX)
+  })
+})

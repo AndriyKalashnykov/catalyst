@@ -239,20 +239,18 @@ Completed-work root-cause prose lives in git history + ADRs +
 >
 > **▶▶ NEXT SESSION — pick up here (priority order):**
 >
-> 1. **ADR 0007 phase (d2b): remaining deferred seq constructs.**
->    `ref` **✅ DONE** (#131) and `create`/`destroy` **✅ DONE**
->    (this session — `SeqLifecycle` event; created lifeline head
->    drops to first-use Y, destroyed foot truncates at destroy Y
->    with a crossed `X` glyph; 8 tests, 510 vitest, render-compare
->    structurally faithful, gallery-verify + seq-gallery-verify
->    CLEAN ⇒ zero C4 risk verified). **ONLY remaining fail-loud:**
->    `box`/`Boundary*` lifeline grouping = a grouping rect over a
->    contiguous lifeline range (header band shifts lifelines down —
->    the materially harder one). Same gate bar: render-compare
->    visual + vitest + gallery-verify + seq-gallery-verify CLEAN +
->    arrowskew 20/20 (separate seq pipeline ⇒ zero C4 risk, but
->    VERIFY; factcheck `ratioBad` is host-noise here — see #18 — do
->    NOT regenerate the baseline for a seq-only change).
+> 1. **ADR 0007 — ✅ FULLY IMPLEMENTED (phases a–d2b complete,
+>    NOTHING deferred).** `ref` (#131), `create`/`destroy` (#133)
+>    and `box`/`Boundary` lifeline grouping (this session — `SeqBox`
+>    contiguous declaration-range, non-nesting; one `topShift =
+>    titleH + boxBandH` keeps boxed+non-boxed heads aligned; box
+>    derived from final lifeline positions, full height; emitted
+>    behind lifelines; 14 tests, 519 vitest; the stale "box still
+>    fail-louds" output-correctness contract UPDATED not deleted;
+>    render-compare structurally faithful; gallery-verify +
+>    seq-gallery-verify CLEAN ⇒ zero C4 risk verified). The
+>    fail-loud seam now guards only malformed input + future grammar
+>    (contract-lock). **No remaining d2b work.**
 > 2. **Sequence v1.x polish** (ADR 0007 "Known v1 imperfections") —
 >    empty `====` → thin rule **✅ DONE** (this session: line-edge
 >    rule not a filled band; render-compare verified; emit-contract
