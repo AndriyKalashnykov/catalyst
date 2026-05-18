@@ -133,14 +133,30 @@ Everything below is researched, not speculative. Sizes are honest.
 Completed-work root-cause prose lives in git history + ADRs +
 `docs/UPGRADE-NOTES.md` + agent memories — not re-dumped here.
 
-> ▶ **RESUME HERE — session handoff 2026-05-17 (refreshed #12 —
-> **#107 perpendicular port-stub → `arrowSkew` 26/26 MERGED**
-> (parked `feat/perpendicular-arrowhead-routing` finished, rebased,
-> PR'd, squash-merged, branch deleted); layout-readability research
-> decision base committed (`docs/research/layout-readability.md`).
-> `main` @ `4b24b56`, tree clean. NEXT = **Sequence #12 phase (b)**
-> (parked branch `feat/seq-phase-b-layout-emit`), then the
-> `docs/research/layout-readability.md` B1–B6 backlog).**
+> ▶ **RESUME HERE — session handoff 2026-05-18 (refreshed #13 —
+> ⚠️ #107 REVERTED as a FALSE-GREEN. The perpendicular port-stub
+> changed emitted waypoints, but EVERY catalyst edge uses
+> `edgeStyle=orthogonalEdgeStyle`, so draw.io DISCARDS those
+> waypoints and routes with its own router. `arrowSkew` reconstructed
+> `[exit,…emitted-wps,entry]` and checked axis-alignment of a
+> polyline **draw.io never draws** ⇒ `arrowSkew=0` was a structural
+> false-green corpus-wide; the `requeues` arrowhead into Scheduler
+> (topology-cyclic) is still skewed. PROOF: pre-#107, post-#107, and
+> committed `topology-cyclic.drawio.png` are byte-identical
+> (`md5 1e061af…`) — #107's `.drawio` change is a render no-op. #108
+> docs (handoff/layout-readability) kept but corrected. `main` after
+> the revert PR. NEXT = **redo properly** (see ▶▶ item 0): rebuild
+> `arrowSkew` against the drawio-export SVG (the REAL routed path,
+> like `factcheck` does for PlantUML `-tsvg`), actually fix the
+> orthogonalEdgeStyle arrowhead, add a PNG-freshness gate. THEN
+> Sequence #12 phase (b)).**
+>
+> **Process lesson (codified — `factcheck-harness-gate`):** a "visual"
+> contract MUST be measured from the renderer's ACTUAL output, never
+> a reconstruction the renderer ignores; and a committed gallery PNG
+> must be gated as a fresh render of its `.drawio` so a render no-op
+> cannot be claimed as a visual fix. `gallery-verify` only diffs the
+> deterministic `.drawio` — it does NOT prove the PNG/visual changed.
 >
 > **Infra now in place (post #102/#104 — next session relies on
 > this):** `make static-check` is COMPOSITE
@@ -158,15 +174,15 @@ Completed-work root-cause prose lives in git history + ADRs +
 > pre-#102 main):**
 >
 > - `feat/seq-phase-b-layout-emit` @ `c18a403` (base `62acfcd`).
->   See item 1 below. (The perpendicular-arrowhead branch is GONE —
->   finished + merged as #107; do not look for it.)
+>   See item 1 below. (The old `feat/perpendicular-arrowhead-routing`
+>   branch's content was merged as #107 then REVERTED — do NOT
+>   resurrect it; the port-stub-on-emitted-waypoints approach is
+>   provably a no-op for `orthogonalEdgeStyle`. Redo per ▶▶ item 0.)
 >
-> **arrowSkew is now the 8th contract, 26/26 (do NOT downgrade).**
-> `incidentAxis`+`endpointStub` (`src/layout/edgeLanes.mts`) unify
-> the laned + non-laned multi-bend perpendicular port-stub;
-> unit-tested in `tests/edge-lanes.test.mts`; whole-corpus wiring
-> proven by `make factcheck` CLEAN 26/26 (NOT in `npm test` — java
-> dep — so `make factcheck` is its contract instrument). Lesson:
+> **`arrowSkew` does NOT exist on `main` (reverted with #107).** When
+> rebuilt it MUST parse the drawio-export SVG (draw.io's real routed
+> path), NOT a reconstruction of emitted waypoints. The `factcheck`
+> "CLEAN 26/26" now reflects only the legitimate 7 contracts. Lesson:
 > the #11 handoff's "laned same-pair port-stub" label was too narrow
 > — the real fix is universal across pinned-attach edges (memory
 > `factcheck-harness-gate`).
@@ -227,32 +243,57 @@ Completed-work root-cause prose lives in git history + ADRs +
 >    before AND after via version-exact docs + the tool's own
 >    registry; surface tensions, don't force.
 >
-> THIS session (#12) shipped: **#107 perpendicular port-stub →
-> `arrowSkew` 26/26 (laned + non-laned), MERGED** — rebased the
-> parked branch onto fresh `origin/main`, derived the
-> construction-correct unified fix (`incidentAxis`+`endpointStub`)
-> from the renderer invariant after fact-checking the c4-exhaustive
-> skews against emitted geometry (real defect, not a comparator
-> artefact — `endpt` reconstruction was correct), unit-tested,
-> byte-scoped (node geometry byte-identical; only edge routing +
-> P12-consistent label re-anchor on 14 multi-bend fixtures; 12
-> straight/cluster byte-identical), gallery refreshed in-PR,
-> `make ci` green. Plus **`docs/research/layout-readability.md`** —
-> a research-grounded decision base (2 parallel primary-sourced
-> sweeps + gallery visual review; the ELK sweep's "spacing on bare
-> defaults" premise was **fact-checked FALSE** — catalyst already
-> sets `nodesep:50`/`ranksep:36`; the "tall ribbon" is
-> PlantUML-faithful per ADR 0011). Memory `factcheck-harness-gate`
-> updated (arrowSkew = 8th contract; "a flag that looks artefactual
-> can still be a real defect — fact-check BOTH directions"; "a
-> handoff's named fix can be too narrow — derive from the system
-> invariant"). Memories carried: `derived-artifact-enforcement-gate`,
+> THIS session: **#107 was merged then REVERTED — a false-green.**
+> The construction looked correct (`incidentAxis`+`endpointStub`
+> port-stub) and `make factcheck` reported `arrowSkew` 26/26, but the
+> metric reconstructed `[exit,…emitted-wps,entry]` while EVERY
+> catalyst edge carries `edgeStyle=orthogonalEdgeStyle` ⇒ draw.io
+> discards the emitted waypoints and routes itself. The user caught
+> the still-skewed `requeues` arrowhead by eyeballing the merged
+> `topology-cyclic.drawio.png`; an independent drawio-export render
+> proved pre-#107 == post-#107 == committed PNG (`md5 1e061af…`) —
+> the change is a render no-op. Reverted via PR (this work). #108
+> (handoff #12 + `docs/research/layout-readability.md`) was a
+> separate docs PR — kept, but its #107 references corrected.
+> `docs/research/layout-readability.md`'s findings (ELK "bare
+> defaults" premise FALSE — catalyst sets `nodesep:50`/`ranksep:36`;
+> "tall ribbon" PlantUML-faithful per ADR 0011) remain valid (they
+> are independent of #107). Memory `factcheck-harness-gate` updated
+> with the false-green post-mortem: a "visual" contract MUST be
+> measured from the renderer's REAL output (parse drawio-export SVG),
+> never a reconstruction; gate the gallery PNG as a fresh render.
+> Memories carried: `derived-artifact-enforcement-gate`,
 > `self-audit-introduced-literals`, `no-guesses-fact-check-discipline`,
 > `factcheck-harness-gate`.
 >
 > ### ▶▶ NEXT SESSION (priority order)
 >
-> 0. **Layout readability ("not crammed / professional") — DECISION
+> 0. **REDO the arrowhead fix properly (PR B) — TOP PRIORITY,
+>    supersedes the reverted #107.** The defect is REAL (the
+>    `requeues` arrowhead into Scheduler enters skew — shaft into the
+>    triangle's side, not its base — in `topology-cyclic`, and the
+>    class recurs wherever draw.io's `orthogonalEdgeStyle` router
+>    approaches a fixed `entryX/entryY` from a non-perpendicular
+>    direction). Constraints learned the hard way:
+>    (i) **EVERY catalyst edge uses `edgeStyle=orthogonalEdgeStyle`**
+>    — draw.io re-routes; emitted `<Array as="points">` + `exit/entry`
+>    are HINTS its router may override. A port-stub in emitted
+>    waypoints is a proven NO-OP (pre/post-#107 render byte-identical).
+>    (ii) The real fix likely lies in **entry/exit BORDER-SIDE
+>    selection** (pick the side facing the incoming route so draw.io's
+>    own orthogonal approach is perpendicular) and/or a routing-style
+>    change — to be established by spikes against drawio-export, not
+>    derived from the emitted-polyline model.
+>    (iii) **`arrowSkew` must be rebuilt to parse the drawio-export
+>    SVG** (draw.io's actual rendered path — exactly how `factcheck`
+>    already parses PlantUML `-tsvg`), NEVER a reconstruction of
+>    emitted points. (iv) Add a **PNG-freshness gate**: re-render each
+>    committed `.drawio` via drawio-export, fail if the committed
+>    `<stem>.drawio.png` differs (so a render no-op / stale PNG cannot
+>    pass as a visual fix). No fake-green: the rebuilt `arrowSkew`
+>    stays RED until the render is genuinely perpendicular; not-done
+>    = not-merged. See task list + `factcheck-harness-gate` memory.
+> 1. **Layout readability ("not crammed / professional") — DECISION
 >    BASE COMMITTED, NOT yet implemented.** See
 >    `docs/research/layout-readability.md` (research-grounded, 2
 >    primary-sourced sweeps + gallery review, weighted matrix, spike
@@ -263,7 +304,7 @@ Completed-work root-cause prose lives in git history + ADRs +
 >    **PlantUML-faithful** (the `.puml.png` is equally tall — ADR
 >    0011/0008 fidelity target is `dot`, met). Ranked backlog:
 >    **B1 edge-straightening/bend-reduction post-pass** (Ware 2002
->    continuity; top — also smooths #107's laned stub hook) ·
+>    continuity; top) ·
 >    B2 whitespace-trim · B3 new factcheck metrics (path-continuity
 >    ratchet + edge-length-uniformity advisory) · B4 `contentAlignment`
 >    nesting · B5 verify `measureNode` text padding ≥15px · B6
@@ -273,7 +314,7 @@ Completed-work root-cause prose lives in git history + ADRs +
 >    (factcheck CLEAN 26/26 + byte-scope + unit test + gallery-in-PR).
 >    (ADR 0011 layout-**aspect** remains CLOSED — that was the gate,
 >    not the product; this is the distinct readability/aesthetic axis.)
-> 1. **Sequence diagrams** (#12, ADR 0007) — phased. **Phase (a)
+> 2. **Sequence diagrams** (#12, ADR 0007) — phased. **Phase (a)
 >    `SeqParser` ✅ DONE 2026-05-17** (`src/seq/`, 29-test matrix,
 >    net-new). Phase (b) WIP parked on branch
 >    `feat/seq-phase-b-layout-emit` (`c18a403`: seqLayout +
@@ -293,7 +334,7 @@ Completed-work root-cause prose lives in git history + ADRs +
 >    deferred constructs (the ibm-wm fixture uses `==dividers==` ⇒ it
 >    is a phase-(d)/(c) fixture, NOT a v1 success fixture — phase (c)
 >    needs a divider-free v1 sequence fixture).
-> 2. C4 surface TRUE residuals (`$sprite`, sketch, legend, dropped
+> 3. C4 surface TRUE residuals (`$sprite`, sketch, legend, dropped
 >    `note`) — low/opportunistic.
 > (P13 SHIPPED then REVERTED 2026-05-17 — uniform `width=420`
 > magnified the item-0 layout-aspect mismatch into "humongous fonts";
