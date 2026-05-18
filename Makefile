@@ -111,15 +111,18 @@ gallery: deps-render build
 		GALLERY_OUT=$(GALLERY_OUT) \
 		node scripts/gallery.mjs
 
-#deps-plantuml: @ Fetch the Renovate-pinned PlantUML jar (idempotent; no java/docker — used by factcheck + CI render-gate)
-deps-plantuml: build
-	@GALLERY_FETCH_JAR_ONLY=1 PLANTUML_VERSION=$(PLANTUML_VERSION) \
-		PLANTUML_JAR=$(PLANTUML_JAR) GALLERY_OUT=$(GALLERY_OUT) \
-		node scripts/gallery.mjs
-
-#factcheck: @ Numeric PlantUML→drawio fidelity audit of ALL conversions (needs java; the no-eyeballing gate)
-factcheck: build deps-plantuml
+#factcheck: @ Numeric PlantUML→drawio fidelity audit of ALL conversions (host-JVM PlantUML; the no-eyeballing MANUAL gate — NOT CI-portable, see ADR 0010 / open-followups)
+factcheck: build
 	@command -v java >/dev/null 2>&1 || { echo "Error: java (Temurin) is mise-managed — run 'make deps'."; exit 1; }
+	@# Host-JVM render. PlantUML text geometry is host-font-dependent, so
+	@# the ratioBad ratchet (and ADR 0010's PUML_LEAF_BOX) is reproducible
+	@# only against the calibration host — this is a MANUAL gate, not CI.
+	@# Docker-pinning it was attempted 2026-05-18 and empirically closed:
+	@# the only portable image (plantuml/plantuml, DejaVu-only) renders a
+	@# noisier, multi-modal oracle than the ADR-0010 host, so it cannot be
+	@# the canonical oracle without degrading a clean category-1 metric.
+	@# The deterministic render-truth CI contract is `make arrowskew`.
+	@test -f $(PLANTUML_JAR) || { echo "ERROR: $(PLANTUML_JAR) missing — run 'make gallery' once to fetch it"; exit 1; }
 	@mkdir -p $(FACTCHECK_SVG_DIR)
 	@java -jar $(PLANTUML_JAR) -tsvg -nometadata $(CORPUS_DIR)/*.puml $(dir $(CORPUS_DIR))*.puml -o $(abspath $(FACTCHECK_SVG_DIR))
 	@SVG_DIR=$(FACTCHECK_SVG_DIR) CORPUS_DIR=$(CORPUS_DIR) node scripts/factcheck-geometry.mjs
@@ -167,6 +170,6 @@ ci-run: deps
 		--artifact-server-port "$$ACT_PORT" \
 		--artifact-server-path "$$ARTIFACT_PATH"
 
-.PHONY: help deps deps-render deps-plantuml clean build lint test coverage-check \
-	vulncheck secrets trivy-fs static-check golden-update render-compare gallery \
+.PHONY: help deps deps-render clean build lint test coverage-check vulncheck \
+	secrets trivy-fs static-check golden-update render-compare gallery \
 	factcheck arrowskew gallery-verify ci ci-run

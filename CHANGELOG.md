@@ -16,22 +16,13 @@ This project adheres to [Keep a CHANGELOG](http://keepachangelog.com/).
   native `gh` CLI (no third-party actions). catalyst previously had
   only `ci.yml`.
 - **CI render-truth gate (`render-gate` job).** `.github/workflows/ci.yml`
-  gains a path-filtered Docker job (new `render` `dorny/paths-filter`
+  has a path-filtered Docker job (new `render` `dorny/paths-filter`
   group over `src/** scripts/** tests/fixtures/** docs/gallery/**
   Makefile ci.yml`) that runs `make arrowskew` as a hard `ci-pass`
-  contract. It regenerates the gallery `.drawio` (pure node) then
-  renders each via the Renovate-pinned `rlespinasse/drawio-export`
-  image and asserts no arrowhead skew / feeder occlusion — the
-  deterministic safety net for the #107 false-green class, which
-  pure-node CI could not catch. Doc-only PRs skip it.
-- **`make deps-plantuml`** — idempotent fetch of the Renovate-pinned
-  PlantUML jar (no Java/Docker), single-sourced through `gallery.mjs`
-  (`GALLERY_FETCH_JAR_ONLY`). `make factcheck` now depends on it and
-  auto-fetches the jar, removing the prior "run `make gallery` once"
-  footgun. `make factcheck` remains a **manual** gate (its host-JVM
-  PlantUML ground-truth is host-font-dependent, so `ratioBad` is not
-  CI-portable; a Docker-pinned-render follow-up is tracked in
-  `CLAUDE.md`).
+  contract — the deterministic safety net for the #107 false-green
+  class, which pure-node CI could not catch (it renders every gallery
+  `.drawio` via the pinned `rlespinasse/drawio-export` image,
+  byte-portable). Doc-only PRs skip it.
 
 - **Element-tag stereotypes are now rendered.** An element whose
   `$tags` match an `AddElementTag` declaration shows those tags as
@@ -46,6 +37,18 @@ This project adheres to [Keep a CHANGELOG](http://keepachangelog.com/).
   was already applied; this adds the missing stereotype text.
 
 ### Changed
+
+- **`scripts/factcheck-geometry.mjs` now exits non-zero on any
+  non-clean fixture.** It previously only printed `CLEAN N/26` and
+  exited 0 — a latent fake-gate (enforcement was a human reading the
+  number). `make factcheck` now fails properly on a contract
+  regression. `make factcheck` remains a host-JVM **manual** gate:
+  PlantUML text geometry is host-font-dependent so `ratioBad` is not
+  CI-portable. Docker-pinning it was attempted and empirically closed
+  — the only portable PlantUML image renders a noisier oracle than
+  the calibration host (see `CLAUDE.md`). The interim
+  `make deps-plantuml` / `GALLERY_FETCH_JAR_ONLY` were removed as
+  orphaned; the gallery PNG path keeps its own `ensureJar()`.
 
 - **Context diagrams now use the same `layered` (Graphviz-`dot`-style)
   hierarchical ranking as every other C4 diagram type** — the

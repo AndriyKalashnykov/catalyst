@@ -130,11 +130,12 @@ jobs:
   # safety net for the #107 false-green class (an orthogonalEdgeStyle
   # re-route the EMITTED waypoints can't reveal — only draw.io's REAL
   # render can). `make factcheck` is NOT in CI: its PlantUML ground-truth
-  # is rendered on the host JVM and its text-width geometry is host-font-
-  # dependent, so `ratioBad` is not portable across runners — it stays a
-  # manual gate until the PlantUML render is Docker-pinned (see CLAUDE.md
-  # backlog / docs/FACTCHECK-COVERAGE.md). arrowskew has no such issue:
-  # draw.io renders inside a pinned image, byte-portable everywhere.
+  # is host-JVM-rendered and host-font-dependent, so `ratioBad` is not
+  # runner-portable — it is a host-JVM MANUAL gate. Docker-pinning it
+  # was attempted 2026-05-18 and empirically closed (the only portable
+  # image renders a noisier oracle than the ADR-0010 calibration host;
+  # see CLAUDE.md backlog item 1 / open-followups). arrowskew has no
+  # such issue: draw.io renders inside a pinned image, byte-portable.
   render-gate:
     needs: [changes, static-check]
     if: ${{ !failure() && !cancelled() && (needs.changes.outputs.render == 'true' || startsWith(github.ref, 'refs/tags/')) }}
