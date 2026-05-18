@@ -1,9 +1,11 @@
 // B1 measurement instrument — bends & continuity on draw.io's REAL
 // rendered path (the lesson of #107: never measure emitted points;
-// catalyst edges are orthogonalEdgeStyle so draw.io re-routes).
+// draw.io re-routes — pre-ADR-0013 as orthogonal Manhattan, now as
+// `curved:1` quadratic-bezier splines — so the emitted polyline is
+// never what is drawn; this parses the rendered SVG path).
 //
-// Per edge in the drawio-export SVG: count interior vertices and the
-// REDUNDANT ones — a vertex within `EPS` px of the straight segment
+// Per edge in the drawio-export SVG: count interior on-curve waypoints
+// and the REDUNDANT ones — a waypoint within `EPS` px of the segment
 // between its two neighbours (a near-collinear bend that adds no
 // routing information; collapsing it straightens the edge → Ware 2002
 // continuity / Purchase 1997 bend-count, the B1 targets). This is the
@@ -26,16 +28,45 @@ const EPS = 1.5
 
 const argStems = process.argv.slice(2)
 
+// Extract the ON-CURVE waypoint polyline from an SVG path `d`.
+// ADR 0013 made every catalyst edge `curved:1` ⇒ draw.io emits the
+// shaft as `M a Q c1 p1 Q c2 p2 …` (quadratic bezier); the pre-0013
+// orthogonal era was `M a L p1 L p2 …`. Control points (the `c*` in Q/C)
+// are OFF-curve and are NOT bends — only the segment endpoints are the
+// waypoints the route passes through. Parsing every number in pairs
+// (the old impl) both miscounted curved routes as control-point "bends"
+// AND, via the `L`-only filter, excluded curved shafts entirely
+// (edges=0 on the whole corpus — a silent no-op instrument). This
+// tokenises M/L/Q/C and keeps only on-curve points, so the redundant-
+// bend metric is correct for orthogonal, straight AND curved routes.
+function onCurvePoints(d) {
+  const toks = d.match(/[MLQCmlqc]|-?\d+\.?\d*/g) || []
+  const pts = []
+  let i = 0
+  while (i < toks.length) {
+    const c = toks[i++]
+    if (c === 'M' || c === 'L' || c === 'm' || c === 'l') {
+      pts.push([+toks[i++], +toks[i++]])
+    } else if (c === 'Q' || c === 'q') {
+      i += 2                                   // skip 1 control point
+      pts.push([+toks[i++], +toks[i++]])       // keep the endpoint
+    } else if (c === 'C' || c === 'c') {
+      i += 4                                   // skip 2 control points
+      pts.push([+toks[i++], +toks[i++]])       // keep the endpoint
+    } else {
+      i++                                      // unknown token — skip
+    }
+  }
+  return pts
+}
+
 function edges(svg) {
   const paths = [...svg.matchAll(/<path\b[^>]*\sd="([^"]+)"/g)].map((m) => m[1])
+  // Edge shaft = an open path (no `Z`; node rects/arrowheads are closed)
+  // with ≥1 draw command after the initial M.
   return paths
-    .filter((d) => !/Z/.test(d) && (d.match(/L/g) || []).length >= 1)
-    .map((d) => {
-      const n = [...d.matchAll(/(-?\d+\.?\d*)/g)].map((x) => +x[1])
-      const p = []
-      for (let i = 0; i + 1 < n.length; i += 2) p.push([n[i], n[i + 1]])
-      return p
-    })
+    .filter((d) => !/[Zz]/.test(d) && /[LQC]/.test(d))
+    .map(onCurvePoints)
 }
 
 // distance of point b from the infinite line through a..c
@@ -75,16 +106,26 @@ function render(stem) {
   return f ? readFileSync(join(exp, f), 'utf8') : null
 }
 
-const stems = (argStems.length ? argStems
-  : readdirSync(DRAWIO_DIR).filter((x) => x.endsWith('.drawio')).map((x) => basename(x, '.drawio'))
-).sort()
+// Pure path-geometry core is exported for unit testing (the convention
+// of route-fidelity.mjs / factcheck-geometry.mjs); the docker render
+// loop only runs when invoked as a script.
+export { onCurvePoints, offChord, measure, edges }
 
-let tRed = 0, tInt = 0
-for (const stem of stems) {
-  const svg = render(stem)
-  if (!svg) { console.log(`${stem.padEnd(28)} NO SVG`); continue }
-  const m = measure(svg)
-  tRed += m.redundant; tInt += m.interior
-  console.log(`${stem.padEnd(28)} edges=${m.edgeN} interiorBends=${m.interior} redundant=${m.redundant}`)
+const { pathToFileURL } = await import('node:url')
+const isMain = import.meta.url === pathToFileURL(process.argv[1] ?? '').href
+
+if (isMain) {
+  const stems = (argStems.length ? argStems
+    : readdirSync(DRAWIO_DIR).filter((x) => x.endsWith('.drawio')).map((x) => basename(x, '.drawio'))
+  ).sort()
+
+  let tRed = 0, tInt = 0
+  for (const stem of stems) {
+    const svg = render(stem)
+    if (!svg) { console.log(`${stem.padEnd(28)} NO SVG`); continue }
+    const m = measure(svg)
+    tRed += m.redundant; tInt += m.interior
+    console.log(`${stem.padEnd(28)} edges=${m.edgeN} interiorBends=${m.interior} redundant=${m.redundant}`)
+  }
+  console.log(`\nTOTAL redundant=${tRed} / interiorBends=${tInt} (B1 target: redundant → ~0, arrowskew unchanged)`)
 }
-console.log(`\nTOTAL redundant=${tRed} / interiorBends=${tInt} (B1 target: redundant → ~0, arrowskew unchanged)`)
