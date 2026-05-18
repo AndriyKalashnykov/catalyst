@@ -50,7 +50,8 @@ const C4_LIFELINE_KINDS = new Set([...C4_TECHN_KINDS, ...C4_PLAIN_KINDS])
  *  token-naming fail-loud message (so downstream sees a clear error,
  *  not a wrong diagram). Order matters: most specific first. */
 const DEFERRED: { re: RegExp; what: string }[] = [
-  { re: /^\s*==.*==\s*$/, what: '`== divider ==`' },
+  // NB: `== divider ==` is v1.x-supported (phase d1) — parsed below,
+  // NOT in this fail-loud list. Fragments/box/ref remain deferred.
   { re: /^\s*(alt|opt|loop|par|critical|group|break)\b/i, what: 'fragment (`alt/opt/loop/par/critical/group/break`)' },
   { re: /^\s*else\b/i, what: 'fragment `else`' },
   { re: /^\s*box\b/i, what: '`box` lifeline grouping' },
@@ -151,10 +152,20 @@ export class SeqParser {
       if (t === '') continue
       if (t.startsWith("'")) continue                       // line comment
       if (/^@(start|end)uml\b/i.test(t)) continue
-      if (/^!/.test(t)) continue                            // !include / !define / preprocessor
+      if (t.startsWith('!')) continue                       // !include / !define / preprocessor
       if (/^(skinparam|hide|show|!theme|!pragma|mainframe|footer|header|left header|legend|end legend)\b/i.test(t)) continue
       // C4 display toggles — valid v1, no ordering effect.
       if (/^(SHOW_ELEMENT_DESCRIPTIONS|SHOW_FOOT_BOXES|SHOW_INDEX|LAYOUT_[A-Z_]+|SET_[A-Z_]+|AddElementTag|AddRelTag|UpdateElementStyle|skinparamSequence)\s*\(/.test(t)) continue
+
+      // `== label ==` divider (phase d1) — a full-width band at this
+      // source-order Y. Parsed BEFORE the deferred guard so it is
+      // consumed, not failed-loud. `==` fences with the label between;
+      // an empty label (`====`) is legal (a plain separator line).
+      const div = /^==+(.*?)==+$/.exec(t)
+      if (div) {
+        events.push({ type: 'divider', label: div[1].trim(), order: events.length })
+        continue
+      }
 
       // v2-deferred → fail loud, naming the token + line.
       for (const d of DEFERRED) {

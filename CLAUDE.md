@@ -315,20 +315,23 @@ Completed-work root-cause prose lives in git history + ADRs +
 >    in isolation.
 >    (ADR 0011 layout-**aspect** remains CLOSED — that was the gate,
 >    not the product; this is the distinct readability/aesthetic axis.)
-> 2. **Sequence diagrams** (#12, ADR 0007) — **phases (a)+(b)+(c)
->    DONE** (a: SeqParser #91; b+c: this PR — dispatch flip + v1
->    pipeline + render-compare visual gate + emit-contract tests;
->    factcheck 26/26 + arrowskew 20/20 + 26 static byte-identical
->    prove zero existing-path risk). **Only phase (d) remains: v2
->    fragments/dividers** (`alt/opt/loop/par/critical`, `==divider==`,
->    `box`/`Boundary` grouping, `ref`, create/destroy) — currently
->    fail-loud with token+line (the no-silent-drop guard; ibm-wm's
->    `==dividers==` fixture is a phase-(d) target). Plus the recorded
->    v1.x polish (ADR 0007 "Known v1 imperfections": tighten the
->    self-message loop; reserve note row vs activation extent).
->    Coordinate the catalyst→puml2drawio→ibm-wm release when v1 ships
->    (memory `release-chain-topology` — downstream `skip-unsupported`
->    sequence fixture now converts).
+> 2. **Sequence diagrams** (#12, ADR 0007) — **phases (a)+(b)+(c)+(d1)
+>    DONE** (a: SeqParser #91; b+c #112; **d1 `== divider ==` this
+>    PR** — `SeqDivider` event + full-width band emit + render-compare
+>    gate; SeqParser:154 oxlint advisory also fixed in-scope ⇒ repo
+>    now 0 warnings; factcheck 26/26 + arrowskew 20/20 + 26 static
+>    byte-identical prove zero C4 risk; **unblocks ibm-wm
+>    `==dividers==`**). **Remaining: phase (d2) v2 fragments**
+>    (`alt/opt/loop/par/critical`, `box`/`Boundary` grouping, `ref`,
+>    create/destroy) — still fail-loud with token+line (no-silent-drop
+>    guard; the materially-harder nested-Y-range layout). Plus the
+>    recorded v1.x polish (ADR 0007 "Known v1 imperfections":
+>    self-message loop = MEASURED no-op for the long-label fixture,
+>    only helps short labels — re-spike only with a short-self-label
+>    fixture; note↔activation overlap; empty `====` → thin rule not a
+>    full band). Coordinate the catalyst→puml2drawio→ibm-wm release
+>    now that v1+dividers ship (memory `release-chain-topology` —
+>    downstream `skip-unsupported` sequence fixture now converts).
 > 3. C4 surface TRUE residuals (`$sprite`, sketch, legend, dropped
 >    `note`) — low/opportunistic.
 > (P13 SHIPPED then REVERTED 2026-05-17 — uniform `width=420`

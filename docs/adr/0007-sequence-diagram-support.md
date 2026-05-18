@@ -15,8 +15,16 @@
   (`tests/fixtures/seq/seq-v1-cert-lifecycle.puml`;
   `tests/seq/SeqConverter.test.mts` whole-path emit contract;
   visual gate run — structurally faithful, see Consequences for
-  honest v1 imperfections). Next: **(d) v2 fragments/dividers**
-  (currently fail-loud, the no-silent-drop guard).
+  honest v1 imperfections). **(d1) `== divider ==` — ✅ DONE
+  2026-05-18** (parsed to a `SeqDivider` event, laid out as a
+  full-width band at its source-order Y, emitted as a band cell;
+  removed from the fail-loud `DEFERRED` list; `SeqParser` +
+  `SeqConverter` + `output-correctness` divider tests; static C4
+  byte-identical 26/26 + factcheck + arrowskew unaffected — separate
+  pipeline; **unblocks the ibm-wm `==dividers==` downstream fixture**).
+  Next: **(d2) v2 fragments** (`alt/opt/loop/par/critical`,
+  `box`/`Boundary` grouping, `ref`, create/destroy) — still fail-loud
+  with token+line, the no-silent-drop guard.
 
 ## Context
 
@@ -165,6 +173,11 @@ intact:
   against the activation extent).
 - Lifeline spacing is generous (measured `colGap`) — sparse, not
   crammed; acceptable, tunable later if a wide fixture needs it.
+- **(phase d1)** an EMPTY `====` divider renders as a blank
+  full-width band; PlantUML draws a thin hairline rule. A labelled
+  `== X ==` is faithful (centred bold band ≈ PlantUML's pill); only
+  the label-less separator differs. v1.x candidate: emit an empty
+  divider as a thin rule, not a full band. No data loss / mis-order.
 
 These are tracked for v1.x/v2 polish; they do NOT gate v1 (the
 structural emit contract + fail-loud-on-deferred are the v1 bar).

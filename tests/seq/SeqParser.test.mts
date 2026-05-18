@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { SeqParser, SeqParseError } from '../../src/seq/SeqParser.mjs'
-import type { SeqMessage, SeqNote } from '../../src/seq/SeqModel.interface.mjs'
+import type { SeqMessage, SeqNote, SeqDivider } from '../../src/seq/SeqModel.interface.mjs'
 
 // ADR 0007 phase-a BLOCKING gate: the parser's ORDERING INVARIANTS
 // (declaration order → X index; source order → event order; arrowKind
@@ -110,7 +110,9 @@ describe('SeqParser — title, autonumber, activate, notes', () => {
 
 describe('SeqParser — v2 deferred constructs FAIL LOUD (never silent drop)', () => {
   const cases: [string, RegExp][] = [
-    ['== Stage 1 ==', /divider/],
+    // `== Stage 1 ==` is NOT here — phase d1 supports dividers (see the
+    // "phase d1 — == divider ==" describe below). Fragments/box/ref
+    // remain deferred.
     ['alt success', /fragment/],
     ['opt maybe', /fragment/],
     ['loop 3 times', /fragment/],
@@ -134,12 +136,6 @@ describe('SeqParser — v2 deferred constructs FAIL LOUD (never silent drop)', (
       expect((err as SeqParseError).line).toBeGreaterThan(0)
     })
   }
-
-  it('the real ibm-wm divider-using fixture fails loud on the first `==` (v1 contract)', () => {
-    const fixture = '@startuml\ntitle X\nactor "Op" as op\nparticipant c\n'
-      + 'op -> c : apply\n== Stage 1 — Born ==\nc --> op : ok\n@enduml'
-    expect(() => SeqParser.parse(fixture)).toThrowError(/divider.*v1|v1.*divider/)
-  })
 
   it('an unrecognised construct fails loud, not a silent drop', () => {
     // No arrow, no macro, no keyword, not a preprocessor `!` line —
@@ -167,5 +163,34 @@ describe('SeqParser — preprocessor / comments / toggles are ignored (valid v1)
       + 'Person(a,"A")\nPerson(b,"B")\na -> b : ok\n@enduml')
     expect(m.lifelines.map(l => l.alias)).toEqual(['a', 'b'])
     expect(msgs(m)).toHaveLength(1)
+  })
+})
+
+describe('SeqParser — phase d1: `== divider ==`', () => {
+  it('parses dividers in source order; trims label; empty ==== ⇒ ""', () => {
+    const m = SeqParser.parse(wrap(
+      'participant a\nparticipant b\n== Phase 1 ==\na -> b : x\n==  spaced  ==\nb --> a : y\n===='))
+    const ev = m.events
+    expect(ev.map(e => e.type)).toEqual(['divider', 'message', 'divider', 'message', 'divider'])
+    const labels = ev.filter((e): e is SeqDivider => e.type === 'divider').map(d => d.label)
+    expect(labels).toEqual(['Phase 1', 'spaced', ''])
+    expect(ev.every((e, i) => e.order === i)).toBe(true)   // order = stream index
+  })
+
+  it('a divider is NOT a message/note (no from/to leakage)', () => {
+    const m = SeqParser.parse(wrap('participant a\nparticipant b\n== X ==\na -> b : m'))
+    const d = m.events.find((e): e is SeqDivider => e.type === 'divider')!
+    expect(d).toBeDefined()
+    expect(Object.keys(d).sort()).toEqual(['label', 'order', 'type'])
+  })
+
+  it('the real ibm-wm divider fixture now CONVERTS (phase d1 unblocks downstream)', () => {
+    const fixture = '@startuml\ntitle X\nactor "Op" as op\nparticipant c\n'
+      + 'op -> c : apply\n== Stage 1 — Born ==\nc --> op : ok\n@enduml'
+    const m = SeqParser.parse(fixture)
+    const divs = m.events.filter((e): e is SeqDivider => e.type === 'divider')
+    expect(divs).toHaveLength(1)
+    expect(divs[0].label).toBe('Stage 1 — Born')
+    expect(m.events.map(e => e.type)).toEqual(['message', 'divider', 'message'])
   })
 })

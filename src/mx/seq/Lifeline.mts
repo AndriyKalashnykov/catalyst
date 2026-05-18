@@ -98,8 +98,24 @@ export function buildSeqDoc(L: SeqLayout): unknown {
     })
   }
 
-  // Events: messages (edges) + notes (note shapes), in source order.
+  // Events: messages (edges) + notes + dividers, in source order.
   for (const ev of L.events) {
+    if (ev.type === 'divider') {
+      // Full-width labelled band (phase d1). PlantUML draws the divider
+      // as a centred label on a banded separator spanning every
+      // lifeline — a neutral filled rect, bold centred text.
+      cells.push({
+        $: {
+          id: id('divider'), value: seqText(ev.label),
+          style: `text;html=1;align=center;verticalAlign=middle;fontStyle=1;`
+            + `fillColor=${PALETTE.DEPLOYMENT_NODE_FILL};strokeColor=${PALETTE.BOUNDARY_STROKE};`
+            + `fontColor=${PALETTE.BOUNDARY_FONT};whiteSpace=wrap`,
+          vertex: 1, parent: '1',
+        },
+        MxGeometry: geom(0, ev.y, L.width, ev.h),
+      })
+      continue
+    }
     if (ev.type === 'note') {
       cells.push({
         $: {
