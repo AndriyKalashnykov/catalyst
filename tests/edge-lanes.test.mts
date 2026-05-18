@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { assignEdgeLanes, slideLabelAlongLane, EDGE_LANE_GAP_PX, type NodeCenter, type NodeRect } from '../src/layout/edgeLanes.mjs';
+import { assignEdgeLanes, slideLabelAlongLane, enforceApproachClearance, EDGE_LANE_GAP_PX, type NodeCenter, type NodeRect } from '../src/layout/edgeLanes.mjs';
 
 /**
  * Unit contract for the multi-edge lane separator (finding #9 + review
@@ -309,5 +309,60 @@ describe('assignEdgeLanes', () => {
     const lanes = assignEdgeLanes(rels, centers, never, undefined, w, 0);
     expect(Math.abs(lanes.get(0)!.shift)).toBe(100 / 2);          // {A,B} → 50
     expect(Math.abs(lanes.get(2)!.shift)).toBe(EDGE_LANE_GAP_PX / 2); // {X,Y} → 22 (floor)
+  });
+});
+
+/**
+ * Perpendicular-approach clearance — the construction proof for the
+ * orthogonal-edge arrowhead fix (redo of reverted #107). Pure geometry;
+ * the corpus-wide truth is the SVG `arrowskew` gate (real drawio
+ * render), this locks the emitted-waypoint invariant the gate relies on.
+ *
+ * Box convention: centre (cx,cy) + half-extents hw,hh ⇒ borders
+ * [cx−hw,cx+hw]×[cy−hh,cy+hh].
+ */
+describe('enforceApproachClearance', () => {
+  const C = 28.5; // 2·REL_ARROW_SIZE(14) + ½-ULP, as catalyst uses
+  // src well above, tgt well below; the route runs top→bottom.
+  const src: NodeCenter = { cx: 100, cy: 0, hw: 50, hh: 20 };   // bottom border y=20
+  const tgt: NodeCenter = { cx: 100, cy: 400, hw: 50, hh: 20 }; // top border y=380
+
+  it('returns empty interior unchanged (nothing to anchor)', () => {
+    expect(enforceApproachClearance([], src, tgt, C)).toEqual([]);
+  });
+
+  it('pushes endpoint bend + its feeder to ≥C perpendicular standoff', () => {
+    // 4-bend ELK-ish route (the real spike shape): the bends adjacent
+    // to each box sit only ~6px out — the occlusion bug. Distinct
+    // src-side (idx0,1) and tgt-side (idx2,3) feeder bends.
+    const inp = [
+      { x: 90, y: 26 },    // src-adjacent — 6px below src bottom (y=20)
+      { x: 250, y: 26 },   // src feeder
+      { x: 250, y: 374 },  // tgt feeder
+      { x: 110, y: 374 },  // tgt-adjacent — 6px above tgt top (y=380)
+    ];
+    const out = enforceApproachClearance(inp.map(p => ({ ...p })), src, tgt, C);
+    expect(out).toHaveLength(4);
+    // src enters its BOTTOM border (y=20); standoff = 20 + C below it.
+    expect(out[0].y).toBe(Math.round(20 + C));
+    // tgt entered on its TOP border (y=380); standoff = 380 − C above it.
+    expect(out[3].y).toBe(Math.round(380 - C));
+    // the bend feeding each endpoint shares the standoff coordinate ⇒
+    // endpoint→border is a pure perpendicular run of length ≥ C.
+    expect(out[1].y).toBe(out[0].y);                       // src feeder at standoff
+    expect(out[2].y).toBe(out[3].y);                       // tgt feeder at standoff
+    expect(out[0].y - 20).toBeGreaterThanOrEqual(C - 0.5);
+    expect(380 - out[3].y).toBeGreaterThanOrEqual(C - 0.5);
+  });
+
+  it('left/right-border entry ⇒ horizontal standoff (perpendicular axis = x)', () => {
+    // tgt to the RIGHT of the last bend ⇒ enters its LEFT border.
+    const L: NodeCenter = { cx: 500, cy: 100, hw: 40, hh: 30 }; // left border x=460
+    const R: NodeCenter = { cx: 0, cy: 100, hw: 40, hh: 30 };
+    const inp = [{ x: 30, y: 100 }, { x: 455, y: 100 }];
+    const out = enforceApproachClearance(inp.map(p => ({ ...p })), R, L, C);
+    // last bend pushed to left-border − C on x; y clamped within box.
+    expect(out[1].x).toBe(Math.round(460 - C));
+    expect(460 - out[1].x).toBeGreaterThanOrEqual(C - 0.5);
   });
 });

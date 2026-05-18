@@ -1,8 +1,16 @@
 # Research / decision base — orthogonal-edge arrowhead skew (redo of reverted #107)
 
-- Status: **decision base** — diagnosis proven against the real
-  `drawio-export` render; implementation NOT started (no fake-green;
-  the prior attempt #107 was reverted #109 for exactly this reason).
+- Status: **IMPLEMENTED & GATED** — `enforceApproachClearance`
+  (`src/layout/edgeLanes.mts`, `2·REL_ARROW_SIZE+½-ULP` standoff)
+  wired into the non-laned multi-bend AND laned multi-point emit
+  paths; `make arrowskew` (`scripts/arrowskew-svg.mjs`) renders every
+  committed `.drawio` via drawio-export to SVG and measures draw.io's
+  REAL path → **CLEAN 20/20**. Visual corroboration: `topology-cyclic`
+  `requeues` and `rel-tech-vs-notech` arrowheads now enter head-on.
+  factcheck CLEAN 26/26 (the 7 legit contracts un-regressed). The
+  gate's OWN two false-positive classes (bidirectional/laned head↔edge
+  mis-pairing; orientation-agnostic collinearity) were fact-checked
+  against the real SVG and fixed before trusting it.
 - Date: 2026-05-18
 - Supersedes: the reverted #107 perpendicular-port-stub approach
   (proven a render no-op — see memory `factcheck-harness-gate`

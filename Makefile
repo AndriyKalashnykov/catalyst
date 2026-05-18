@@ -119,6 +119,20 @@ factcheck: build
 	@java -jar $(PLANTUML_JAR) -tsvg -nometadata $(CORPUS_DIR)/*.puml $(dir $(CORPUS_DIR))*.puml -o $(abspath $(FACTCHECK_SVG_DIR))
 	@SVG_DIR=$(FACTCHECK_SVG_DIR) CORPUS_DIR=$(CORPUS_DIR) node scripts/factcheck-geometry.mjs
 
+#arrowskew: @ Arrowhead-skew gate on draw.io's REAL render (needs docker; the redo of reverted #107)
+arrowskew: build
+	@command -v docker >/dev/null 2>&1 || { echo "Error: docker required for drawio-export rendering."; exit 1; }
+	@# Every catalyst edge is orthogonalEdgeStyle ⇒ draw.io re-routes;
+	@# the EMITTED polyline is NOT what is drawn. #107 scored a
+	@# reconstruction of emitted points and shipped a render no-op
+	@# false-green. This gate regenerates the .drawio (pure node) then
+	@# renders each via drawio-export to SVG and measures draw.io's
+	@# ACTUAL path: every arrowhead's shaft must be collinear with the
+	@# head axis and no feeder may occlude the head. See
+	@# docs/research/arrowhead-orthogonal-routing.md.
+	@GALLERY_DRAWIO_ONLY=1 CORPUS_DIR=$(CORPUS_DIR) GALLERY_OUT=$(GALLERY_OUT) node scripts/gallery.mjs >/dev/null
+	@DRAWIO_EXPORT_IMAGE=$(DRAWIO_EXPORT_IMAGE) node scripts/arrowskew-svg.mjs
+
 #gallery-verify: @ Fail if the committed gallery .drawio drifted from the current emit (deterministic; no java/docker)
 gallery-verify: build
 	@# The .drawio XML IS catalyst's emit output; regenerating it is pure
@@ -150,4 +164,4 @@ ci-run: deps
 
 .PHONY: help deps deps-render clean build lint test coverage-check vulncheck \
 	secrets trivy-fs static-check golden-update render-compare gallery \
-	factcheck gallery-verify ci ci-run
+	factcheck arrowskew gallery-verify ci ci-run
