@@ -133,25 +133,49 @@ Everything below is researched, not speculative. Sizes are honest.
 Completed-work root-cause prose lives in git history + ADRs +
 `docs/UPGRADE-NOTES.md` + agent memories — not re-dumped here.
 
-> ▶ **RESUME HERE — session handoff 2026-05-18 (refreshed #15 —
-> two things landed: (1) arrowhead skew #107 false-green REVERTED
-> (#109) then REDONE PROPERLY (#111, MERGED): `enforceApproach
-> Clearance` + the `make arrowskew` drawio-export-SVG render-truth
-> gate, CLEAN 20/20. (2) **Sequence #12 phase (b)+(c) — this PR**:
-> the parked `feat/seq-phase-b-layout-emit` rebased + finished;
-> `catalyst.mts` detector `throw`→`SeqConverter.convert` (only
-> existing-path change, proven zero-risk: factcheck CLEAN 26/26 +
-> arrowskew 20/20 + 26 static byte-identical); v1 sequence pipeline
-> (`src/seq/`+`src/mx/seq/`) converts participants/messages/
-> activations/notes/title; v2-deferred (`==divider==`/fragments/
-> `box`) fail-loud with token+line. 417 vitest (new SeqConverter
-> emit-contract + rewritten output-correctness to the ADR-0007
-> contract); render-compare visual gate run
-> (`seq-v1-cert-lifecycle`) — structurally faithful, honest v1
-> imperfections recorded in ADR 0007 (self-loop clunk, note overlap
-> — non-blocking). NEXT = the `docs/research/layout-readability.md`
-> B1–B6 backlog (use `make arrowskew` to validate vs the real
-> render), then ADR 0007 phase (d) v2 fragments/dividers.)**
+> ▶ **RESUME HERE — session handoff 2026-05-18 (refreshed #16 —
+> `main` @ post-#114, clean, 0 warnings/0 errors, no parked
+> branches). This session landed, all MERGED: #109 revert #107
+> false-green · #110 arrowhead decision-base · #111 arrowhead
+> REDONE PROPERLY (`enforceApproachClearance` + `make arrowskew`
+> drawio-SVG render-truth gate, CLEAN 20/20) · #112 Sequence #12 v1
+> (phases b+c: dispatch flip + v1 pipeline) · #113 B1 DECLINED on
+> evidence (render no-op not shipped) + `scripts/bendcount-svg.mjs`
+> instrument + layout-readability backlog dissolved · #114 ADR 0007
+> **phase d1 `== divider ==`** + SeqParser oxlint fix.
+>
+> **▶▶ NEXT SESSION — pick up here (priority order):**
+>
+> 1. **ADR 0007 phase (d2): v2 sequence fragments** —
+>    `alt/opt/loop/par/critical`, `box`/`Boundary` grouping, `ref`,
+>    create/destroy. Currently fail-loud with token+line (the
+>    no-silent-drop guard). The ADR's explicitly "materially harder"
+>    nested-Y-range layout; do it as its own phased PR(s) (maybe
+>    d2a single-level alt/opt/loop, d2b nested+box) with the SAME
+>    gates: render-compare visual + factcheck 26/26 + arrowskew
+>    20/20 + 26 static byte-identical (separate seq pipeline ⇒ zero
+>    C4 risk by construction, but VERIFY).
+> 2. **Sequence v1.x polish** (small, real, render-measurable; ADR
+>    0007 "Known v1 imperfections"): note↔activation row overlap;
+>    empty `====` → thin rule not a full band. NOTE: the
+>    self-message-loop-width tweak was MEASURED a no-op for
+>    long-label fixtures — only re-spike with a SHORT-self-label
+>    fixture proving the shrink, else leave it (don't ship a no-op).
+> 3. **Downstream release** catalyst→puml2drawio→ibm-wm — arrowhead
+>    fix + sequence v1 + dividers now justify a release; the
+>    downstream `skip-unsupported` sequence fixture now CONVERTS.
+>    Cross-repo — coordinate per memory `release-chain-topology`;
+>    confirm scope before starting (release = annotated git tag on
+>    `main`, no GitHub Release; per CLAUDE.md release rule).
+> 4. **layout-readability — DO NOT reopen** without a
+>    render-measured defect a user can point to (B1 declined on
+>    evidence; spacing/tall-ribbon are `dot`-faithful per ADR 0011;
+>    `docs/research/layout-readability.md` "Post-spike conclusion").
+>    Optional only: B4 `contentAlignment`, B6 `aspectRatio` (low).
+>
+> **Standing gates (all green at handoff):** `make factcheck` 26/26,
+> `make arrowskew` 20/20 (drawio-SVG render-truth — the anti-#107
+> instrument), 419 vitest, `make ci` green, repo 0 warnings.**
 >
 > **Process lesson (codified — `factcheck-harness-gate`):** a "visual"
 > contract MUST be measured from the renderer's ACTUAL output
