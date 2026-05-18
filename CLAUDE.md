@@ -68,8 +68,17 @@ Standalone, independently-maintained library (no upstream; never add an
   factcheck number, never a PNG eyeball** (the harness was built by
   fact-checking and fixing each of its own false-positives — offset-
   aware label anchor, mxGraph last-key style, `<br/>`/`\n`/XML-escape
-  normalisation). Needs java + a one-time `make gallery` to fetch
-  `plantuml.jar`.
+  normalisation). Needs java; `make factcheck` now auto-fetches the
+  Renovate-pinned jar via `make deps-plantuml` (no prior `make gallery`
+  required). **NOT a CI job** — its PlantUML ground-truth renders on the
+  host JVM and text-width geometry is host-font-dependent, so the
+  `ratioBad` ratchet is non-portable across machines/runners (a clean
+  fetch on a fresh machine shows 24/26 vs the #99-captured baseline's
+  26/26 — same pinned jar, different host fonts). Stays a **mandatory
+  manual gate** for any emit/geometry change until the PlantUML render
+  is Docker-pinned (BACKLOG item below). The deterministic half —
+  `make arrowskew` — IS the CI render-truth contract (draw.io renders
+  inside a pinned image, byte-portable).
 - Visual proof (corroborative only): `PLANTUML_VERSION=1.2026.2
   RENDER_SRC=<puml> RENDER_OUT=<dir> make render-compare` (java+docker;
   PlantUML PNG + catalyst→drawio PNG side by side). `make gallery`
@@ -146,19 +155,36 @@ Completed-work root-cause prose lives in git history + ADRs +
 >
 > **▶▶ NEXT SESSION — pick up here (priority order):**
 >
-> 1. **INFRA — decide & implement `arrowskew`/`factcheck` CI
->    enforcement (HIGH; do first).** Both are docker-based, run
->    locally/manually only — pure-node CI cannot run them, so a
->    render/arrowhead regression (the exact #107 false-green class
->    this session spent days recovering from) can still ship green.
->    It is the safety net for phase d2 AND the downstream release (a
->    regression would propagate to puml2drawio/ibm-wm), so it
->    precedes both. DECIDE: a path-filtered docker CI workflow (on
->    `src/**`, `scripts/**`, `docs/gallery/**`) running
->    `make arrowskew` + `make factcheck` so fast PRs stay fast, OR
->    formally accept them as manual-only gates and say so in
->    CLAUDE.md + ci.yml. Currently NEITHER — the ambiguity is the
->    gap. A `/ci-workflow`-skill task.
+> 1. **INFRA — arrowskew CI enforcement: DONE (this PR). factcheck
+>    Docker-pinned portability: the carried-forward follow-up.**
+>    A path-filtered `render-gate` ci.yml job (new `render`
+>    `dorny/paths-filter` group: `src/** scripts/** tests/fixtures/**
+>    docs/gallery/** Makefile ci.yml`) now runs `make arrowskew` as a
+>    hard `ci-pass` contract — deterministic (draw.io renders inside
+>    the pinned `rlespinasse/drawio-export` image, byte-portable), so
+>    it closes the exact #107 false-green class on every code PR.
+>    `make factcheck` is **deliberately NOT** in CI: its PlantUML
+>    ground-truth renders on the host JVM and text-width geometry is
+>    host-font-dependent, so the `ratioBad` ratchet is non-portable
+>    (clean-fetch on a fresh machine = 24/26 vs the #99-captured
+>    baseline's 26/26 with the *same pinned jar* — host fonts differ;
+>    a GH runner = a third set). Per the BLOCKING no-fake-green rule
+>    this was NOT masked (no baseline regen, no advisory demotion);
+>    factcheck stays a documented mandatory MANUAL gate.
+>    **▶ FOLLOW-UP (HIGH, do before relying on factcheck in CI or the
+>    downstream release): Docker-pin the factcheck PlantUML render.**
+>    Add a Renovate-pinned PlantUML Docker image (datasource already
+>    declared: `maven net.sourceforge.plantuml:plantuml`; pick the
+>    matching `plantuml/plantuml:<ver>` image, Renovate `docker`
+>    datasource), rework the `factcheck` target's
+>    `java -jar … -tsvg` step to render ground-truth in-container
+>    (mirrors how `arrowskew` already pins draw.io), regenerate
+>    `tests/factcheck-ratio-baseline.json` ONCE against that pinned
+>    environment (legitimate — it re-anchors to a portable renderer,
+>    NOT a mask; commit with the rationale), then add `make factcheck`
+>    to the `render-gate` job. Until then the ratchet is correct but
+>    only reproducible on the baseline-author's host. A
+>    `/ci-workflow` + `/makefile`-skill task.
 > 2. **ADR 0007 phase (d2): v2 sequence fragments** —
 >    `alt/opt/loop/par/critical`, `box`/`Boundary` grouping, `ref`,
 >    create/destroy. Currently fail-loud with token+line (the

@@ -138,13 +138,22 @@ const stems = (argStems.length ? argStems
   : readdirSync(DRAWIO_DIR).filter((x) => x.endsWith('.drawio')).map((x) => basename(x, '.drawio'))
 ).sort()
 
+// Pre-create the bind-mount source dir as the CURRENT user. Docker
+// creates a missing `-v` host source as ROOT; the cleanup run below
+// mounts `build/`, so on a fresh checkout (CI: `build/` doesn't pre-
+// exist — `npm run build` only makes `dist/`) that root-owned `build/`
+// then makes the runner-user mkdir of WORK fail with EACCES. Creating
+// it here first keeps it user-owned (root inside the container can
+// still rm-rf within a user-owned dir, so the cleanup is unaffected).
+const WORK_TOP = WORK.split('/')[0]
+mkdirSync(WORK_TOP, { recursive: true })
 // drawio-export runs as root in docker and owns the `export/` dirs it
 // writes — a plain rmSync can't clear them. Clean via the image (root)
 // before rendering, the same pattern gallery.mjs uses. Skipped in
 // REUSE mode (measuring already-rendered SVGs).
 if (process.env.ARROWSKEW_REUSE !== '1') {
   try {
-    execFileSync('docker', ['run', '--rm', '-v', `${process.cwd()}/${WORK.split('/')[0]}:/b`,
+    execFileSync('docker', ['run', '--rm', '-v', `${process.cwd()}/${WORK_TOP}:/b`,
       '--entrypoint', '/bin/sh', IMAGE, '-c', `rm -rf /b/${WORK.split('/').slice(1).join('/')}`],
       { stdio: 'ignore', timeout: 60000 })
   } catch { /* nothing to clean */ }
