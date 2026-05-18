@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { SeqParser, SeqParseError } from '../../src/seq/SeqParser.mjs'
-import type { SeqMessage, SeqNote, SeqDivider } from '../../src/seq/SeqModel.interface.mjs'
+import type { SeqMessage, SeqNote, SeqDivider, SeqRef } from '../../src/seq/SeqModel.interface.mjs'
 
 // ADR 0007 phase-a BLOCKING gate: the parser's ORDERING INVARIANTS
 // (declaration order → X index; source order → event order; arrowKind
@@ -110,14 +110,13 @@ describe('SeqParser — title, autonumber, activate, notes', () => {
 
 describe('SeqParser — v2 deferred constructs FAIL LOUD (never silent drop)', () => {
   const cases: [string, RegExp][] = [
-    // `== Stage 1 ==` (phase d1) and `alt/opt/loop/par/critical/group/
-    // break`+`else` (phase d2) are NOT here — they are supported (see
-    // the "phase d2 — fragments" describe below). box/Boundary/ref/
-    // create/destroy remain deferred.
+    // `== Stage 1 ==` (phase d1), `alt/opt/loop/par/critical/group/
+    // break`+`else` (phase d2) and `ref` (phase d2b) are NOT here —
+    // they are supported (see the phase describes below).
+    // box/Boundary/create/destroy remain deferred.
     ['box "Team"', /box/],
     ['System_Boundary(b, "B")', /Boundary/],
     ['Boundary_End()', /Boundary_End/],
-    ['ref over a : see X', /ref/],
     ['create participant z', /create|destroy/],
     ['destroy z', /create|destroy/],
   ]
@@ -263,5 +262,43 @@ describe('SeqParser — phase d1: `== divider ==`', () => {
     expect(divs).toHaveLength(1)
     expect(divs[0].label).toBe('Stage 1 — Born')
     expect(m.events.map(e => e.type)).toEqual(['message', 'divider', 'message'])
+  })
+})
+
+describe('SeqParser — phase d2b `ref` reference frames', () => {
+  it('inline `ref over A,B : text` → a ref event with the over-list + text', () => {
+    const m = SeqParser.parse(wrap(
+      'participant a\nparticipant b\nparticipant c\n'
+      + 'a -> b : go\nref over b, c : see Issuance ADR\nb -> c : next'))
+    expect(m.events.map((e) => e.type)).toEqual(['message', 'ref', 'message'])
+    const r = m.events.find((e): e is SeqRef => e.type === 'ref')!
+    expect(r.lifelines).toEqual(['b', 'c'])
+    expect(r.text).toBe('see Issuance ADR')
+    expect(r.order).toBe(1)                                  // source-order Y
+  })
+
+  it('block `ref over A` … `end ref` accumulates multi-line text', () => {
+    const m = SeqParser.parse(wrap(
+      'participant a\nparticipant b\n'
+      + 'ref over a, b\n  reconcile loop\n  until Ready\nend ref\na -> b : done'))
+    const r = m.events.find((e): e is SeqRef => e.type === 'ref')!
+    expect(r.lifelines).toEqual(['a', 'b'])
+    expect(r.text).toBe('reconcile loop\nuntil Ready')
+    expect(m.events.map((e) => e.type)).toEqual(['ref', 'message'])
+  })
+
+  it('`ref over` referencing an undeclared lifeline auto-registers it (decl order)', () => {
+    const m = SeqParser.parse(wrap('participant a\nref over a, z : x'))
+    expect(m.lifelines.map((l) => l.alias)).toEqual(['a', 'z'])
+  })
+
+  it('`ref over` with no lifeline fails loud (never a silent drop)', () => {
+    expect(() => SeqParser.parse(wrap('participant a\nref over  : x')))
+      .toThrowError(/`ref over` needs at least one lifeline/)
+  })
+
+  it('an unterminated block `ref over … (no end ref)` fails loud', () => {
+    expect(() => SeqParser.parse(wrap('participant a\nref over a\ndangling')))
+      .toThrowError(/unterminated `ref over/)
   })
 })

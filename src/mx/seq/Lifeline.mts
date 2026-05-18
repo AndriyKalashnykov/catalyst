@@ -17,6 +17,7 @@ import xml2js from 'xml2js'
 import { htmlBreaks } from '../../text/labelLines.mjs'
 import { PALETTE, SHAPE } from '../c4/theme.mjs'
 import type { SeqLayout, LaidMessage } from '../../seq/seqLayout.mjs'
+import { REF_KIND } from '../../seq/seqLayout.mjs'
 
 // Same pre-encode as Mx's private `c4Text` (escGt + escLt + htmlBreaks)
 // so the shared un-double serialiser below renders `<`/`>`/`\n`
@@ -195,6 +196,34 @@ export function buildSeqDoc(L: SeqLayout): unknown {
           vertex: 1, parent: '1',
         },
         MxGeometry: geom(0, ev.y, L.width, ev.h),
+      })
+      continue
+    }
+    if (ev.type === 'ref') {
+      // phase d2b: a self-contained reference frame. A no-fill bordered
+      // box (so anything behind stays visible, like a fragment frame)
+      // with centred body text + a filled top-left `ref` kind tab —
+      // the same frame+tab shape the d2 fragments use, deterministic
+      // stand-in for PlantUML's folded-corner pentagon.
+      cells.push({
+        $: {
+          id: id('ref'), value: seqText(ev.text),
+          style: `rounded=0;html=1;fillColor=none;strokeColor=${PALETTE.BOUNDARY_STROKE};`
+            + `fontColor=${PALETTE.BOUNDARY_FONT};whiteSpace=wrap;`
+            + `align=center;verticalAlign=middle`,
+          vertex: 1, parent: '1',
+        },
+        MxGeometry: geom(ev.x, ev.y, ev.w, ev.h),
+      })
+      cells.push({
+        $: {
+          id: id('ref-tab'), value: seqText(REF_KIND),
+          style: `rounded=0;html=1;fillColor=${PALETTE.DEPLOYMENT_NODE_FILL};`
+            + `strokeColor=${PALETTE.BOUNDARY_STROKE};fontColor=${PALETTE.BOUNDARY_FONT};`
+            + `fontStyle=1;align=center;verticalAlign=middle`,
+          vertex: 1, parent: '1',
+        },
+        MxGeometry: geom(ev.x, ev.y, ev.tabW, ev.tabH),
       })
       continue
     }

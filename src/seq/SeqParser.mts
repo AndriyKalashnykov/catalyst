@@ -54,15 +54,14 @@ const C4_LIFELINE_KINDS = new Set([...C4_TECHN_KINDS, ...C4_PLAIN_KINDS])
  *  token-naming fail-loud message (so downstream sees a clear error,
  *  not a wrong diagram). Order matters: most specific first. */
 const DEFERRED: { re: RegExp; what: string }[] = [
-  // NB: `== divider ==` (phase d1) and the `alt/opt/loop/par/critical/
-  // group/break` + `else` fragments (phase d2) are parsed below, NOT in
-  // this fail-loud list. `box`/`Boundary`/`ref`/create/destroy remain
-  // deferred to a later phase.
+  // NB: `== divider ==` (phase d1), the `alt/opt/loop/par/critical/
+  // group/break` + `else` fragments (phase d2) and `ref` (phase d2b)
+  // are parsed below, NOT in this fail-loud list. `box`/`Boundary`/
+  // `create`/`destroy` remain deferred to a later phase.
   { re: /^\s*box\b/i, what: '`box` lifeline grouping' },
   { re: /^\s*end\s+box\b/i, what: '`end box`' },
   { re: /^\s*(Enterprise_Boundary|System_Boundary|Container_Boundary|Boundary)\s*\(/, what: 'C4 sequence `Boundary(...)` grouping' },
   { re: /^\s*Boundary_End\s*\(/, what: '`Boundary_End()`' },
-  { re: /^\s*ref\b/i, what: '`ref` fragment' },
   { re: /^\s*(create|destroy)\b/i, what: '`create`/`destroy` lifeline' },
 ]
 
@@ -128,6 +127,9 @@ export class SeqParser {
     const rawLines = src.split(/\r?\n/)
     let inBlockComment = false
     let noteBuf: { ev: Extract<SeqEvent, { type: 'note' }>; lines: string[] } | null = null
+    // Block-form `ref over A,B` … `end ref` accumulator (phase d2b),
+    // mirroring noteBuf — text accrues until the terminating `end ref`.
+    let refBuf: { ev: Extract<SeqEvent, { type: 'ref' }>; lines: string[] } | null = null
 
     for (let i = 0; i < rawLines.length; i++) {
       const lineNo = i + 1
@@ -159,6 +161,18 @@ export class SeqParser {
         continue
       }
 
+      // Inside a block `ref over …`: accumulate until `end ref`.
+      if (refBuf) {
+        if (/^end\s+ref\b/i.test(t)) {
+          refBuf.ev.text = refBuf.lines.join('\n')
+          events.push(refBuf.ev)
+          refBuf = null
+        } else {
+          refBuf.lines.push(rawLines[i].trim())
+        }
+        continue
+      }
+
       if (t === '') continue
       if (t.startsWith("'")) continue                       // line comment
       if (/^@(start|end)uml\b/i.test(t)) continue
@@ -174,6 +188,32 @@ export class SeqParser {
       const div = /^==+(.*?)==+$/.exec(t)
       if (div) {
         events.push({ type: 'divider', label: div[1].trim(), order: events.length })
+        continue
+      }
+
+      // `ref over A[,B…] [: text]` (phase d2b) — a self-contained
+      // labelled box spanning the named lifelines at this source-order
+      // Y. Inline (`: text`) or block (`ref over A` … `end ref`).
+      // Parsed BEFORE the deferred guard so it is consumed, not failed.
+      const mRef = /^ref\s+over\b\s*(.*)$/i.exec(t)
+      if (mRef) {
+        const rest = mRef[1].trim()
+        const colon = rest.indexOf(':')
+        const head = (colon === -1 ? rest : rest.slice(0, colon)).trim()
+        const lls = head ? head.split(',').map((s) => unquote(s.trim())).filter(Boolean) : []
+        if (!lls.length) {
+          throw new SeqParseError(
+            `sequence: \`ref over\` needs at least one lifeline (line `
+            + `${lineNo}: "${t}").`, lineNo)
+        }
+        lls.forEach(ensure)
+        const ev = {
+          type: 'ref' as const, lifelines: lls,
+          text: colon === -1 ? '' : rest.slice(colon + 1).trim(),
+          order: events.length,
+        }
+        if (colon === -1) refBuf = { ev, lines: [] }       // block form
+        else events.push(ev)                                // single-line
         continue
       }
 
@@ -390,6 +430,10 @@ export class SeqParser {
     if (noteBuf) {
       throw new SeqParseError(
         'sequence: unterminated `note … end note` block.', rawLines.length)
+    }
+    if (refBuf) {
+      throw new SeqParseError(
+        'sequence: unterminated `ref over … end ref` block.', rawLines.length)
     }
     if (fragStack.length) {
       const f = fragStack[fragStack.length - 1]

@@ -225,18 +225,21 @@ Completed-work root-cause prose lives in git history + ADRs +
 >
 > **▶▶ NEXT SESSION — pick up here (priority order):**
 >
-> 1. **ADR 0007 phase (d2b): remaining deferred seq constructs —
->    `box`/`Boundary*` lifeline grouping, `ref`, `create`/`destroy`.**
->    Now the only fail-loud sequence constructs (d2 fragments DONE,
->    handoff #18). `box`/`Boundary` = a grouping rect over a
->    contiguous lifeline range (header band shifts lifelines down);
->    `ref` = a labelled box like a fragment but no compartments;
+> 1. **ADR 0007 phase (d2b): remaining deferred seq constructs.**
+>    `ref` **✅ DONE** (this session, PR pending: `ref over A[,B…]`
+>    inline + `ref over A` … `end ref` block — `SeqRef` event,
+>    `LaidRef` self-contained box spanning the named lifelines at
+>    source-order Y, frame+`ref`-tab emit; 10 new tests, 495 vitest,
+>    render-compare clean, gallery-verify CLEAN ⇒ zero C4 risk
+>    verified). **Remaining fail-loud:** `box`/`Boundary*` lifeline
+>    grouping = a grouping rect over a contiguous lifeline range
+>    (header band shifts lifelines down — the materially harder one);
 >    `create`/`destroy` = a lifeline that starts/ends mid-timeline
->    (head at first-use Y; an `X` foot). Same gate bar as d2:
->    render-compare visual + 475+ vitest + gallery-verify CLEAN +
->    arrowskew 20/20 (separate seq pipeline ⇒ zero C4 risk, but
->    VERIFY; factcheck `ratioBad` is host-noise here — see #18 — do
->    NOT regenerate the baseline for a seq-only change).
+>    (head at first-use Y; an `X` foot). Same gate bar: render-compare
+>    visual + vitest + gallery-verify CLEAN + arrowskew 20/20
+>    (separate seq pipeline ⇒ zero C4 risk, but VERIFY; factcheck
+>    `ratioBad` is host-noise here — see #18 — do NOT regenerate the
+>    baseline for a seq-only change).
 > 2. **Sequence v1.x polish** (ADR 0007 "Known v1 imperfections") —
 >    empty `====` → thin rule **✅ DONE** (this session: line-edge
 >    rule not a filled band; render-compare verified; emit-contract

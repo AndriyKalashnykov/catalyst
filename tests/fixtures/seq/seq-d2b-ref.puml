@@ -1,0 +1,19 @@
+@startuml seq-d2b-ref
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Sequence.puml
+
+title Certificate issuance — ref frames (phase d2b)
+
+participant "Operator" as op
+participant "Controller" as ctl
+participant "Vault PKI" as v
+
+op -> ctl : create CertificateRequest
+ref over ctl, v : standard PKI handshake\n(see Issuance ADR)
+ctl ->> v : issue leaf cert
+v --> ctl : signed cert + key
+ref over op, ctl
+  reconcile loop until
+  status == Ready
+end ref
+ctl -> op : status = Ready
+@enduml

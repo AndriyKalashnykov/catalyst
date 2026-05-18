@@ -113,9 +113,22 @@ export interface SeqFragmentEnd {
   order: number
 }
 
+/** ADR 0007 phase d2b — a `ref over A[,B…] : text` reference frame.
+ *  Unlike a fragment it is NOT a paired Y-range over events: it is a
+ *  single self-contained labelled box at its source-order Y spanning
+ *  the named lifelines (like a framed, multi-lifeline note). Inline
+ *  (`: text`) or block (`ref over A` … `end ref`). */
+export interface SeqRef {
+  type: 'ref'
+  /** The `over` lifeline list (≥1, declaration aliases). */
+  lifelines: string[]
+  text: string
+  order: number
+}
+
 export type SeqEvent =
   | SeqMessage | SeqNote | SeqActivation | SeqDivider
-  | SeqFragmentStart | SeqFragmentElse | SeqFragmentEnd
+  | SeqFragmentStart | SeqFragmentElse | SeqFragmentEnd | SeqRef
 
 export interface SeqModel {
   title?: string
