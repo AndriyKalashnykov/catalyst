@@ -42,8 +42,15 @@ const DRAWIO_SCALE = process.env.DRAWIO_EXPORT_SCALE ?? '2';
 //   `make gallery-verify` / CI drift gate: the .drawio IS the emit
 //   output, so an emit change that didn't refresh the gallery shows
 //   as a `git diff` here (the P4b-class stale-artifact defect).
+// GALLERY_FETCH_JAR_ONLY=1 — download the Renovate-pinned PlantUML jar
+//   (if absent) and exit BEFORE any corpus read / conversion. Used by
+//   `make deps-plantuml` so `make factcheck` (and CI's render-gate job)
+//   has the jar without a prior full `make gallery`. Exits before the
+//   .drawio conversion loop, so the gallery-verify drift gate is
+//   provably unaffected by this path.
 const MD_ONLY = process.env.GALLERY_MD_ONLY === '1';
 const DRAWIO_ONLY = process.env.GALLERY_DRAWIO_ONLY === '1';
+const FETCH_JAR_ONLY = process.env.GALLERY_FETCH_JAR_ONLY === '1';
 // step 1 (PlantUML render) + step 3 (drawio-export) need java/docker;
 // run them only for a full `make gallery`.
 const RENDER = !MD_ONLY && !DRAWIO_ONLY;
@@ -63,8 +70,25 @@ function sh(cmd, args, opts = {}) {
   return execFileSync(cmd, args, { stdio: ['ignore', 'pipe', 'pipe'], ...opts });
 }
 
+// Single source of the PlantUML jar fetch — used by the full-render
+// path (step 1) AND `make deps-plantuml` (GALLERY_FETCH_JAR_ONLY).
+function ensureJar() {
+  const jar = process.env.PLANTUML_JAR ?? join(OUT, 'plantuml.jar');
+  if (!existsSync(jar)) {
+    console.log(`· downloading plantuml ${PLANTUML_VERSION}`);
+    sh('curl', ['-sSL', '-o', jar,
+      `https://repo1.maven.org/maven2/net/sourceforge/plantuml/plantuml/${PLANTUML_VERSION}/plantuml-${PLANTUML_VERSION}.jar`]);
+  }
+  return jar;
+}
+
 mkdirSync(IMG, { recursive: true });
 mkdirSync(DRAWIO_DIR, { recursive: true });
+
+if (FETCH_JAR_ONLY) {
+  ensureJar();
+  process.exit(0);
+}
 
 const fixtures = readdirSync(CORPUS_DIR).filter((f) => f.endsWith('.puml')).sort();
 if (fixtures.length === 0) {
@@ -77,12 +101,7 @@ if (DRAWIO_ONLY) console.log('· GALLERY_DRAWIO_ONLY=1 — .drawio only (drift g
 
 if (RENDER) {
 // 1. PlantUML: render the whole corpus dir in one JVM invocation.
-const jar = process.env.PLANTUML_JAR ?? join(OUT, 'plantuml.jar');
-if (!existsSync(jar)) {
-  console.log(`· downloading plantuml ${PLANTUML_VERSION}`);
-  sh('curl', ['-sSL', '-o', jar,
-    `https://repo1.maven.org/maven2/net/sourceforge/plantuml/plantuml/${PLANTUML_VERSION}/plantuml-${PLANTUML_VERSION}.jar`]);
-}
+const jar = ensureJar();
 console.log(`· rendering ${fixtures.length} source puml via PlantUML`);
 sh('java', ['-jar', jar, '-tpng', '-nometadata', `${CORPUS_DIR}/`, '-o', IMG]);
 for (const f of fixtures) {

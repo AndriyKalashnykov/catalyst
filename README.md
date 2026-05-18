@@ -213,7 +213,9 @@ Run `make help` to list targets.
 | `make golden-update` | Regenerate draw.io structural snapshots after an intentional change |
 | `make render-compare` | Visual proof: render one `.puml` + catalyst `.drawio` side by side (Java + Docker) |
 | `make gallery` | Dual-render the whole corpus into `docs/gallery/` (Java + Docker) |
-| `make factcheck` | Numeric PlantUML→drawio fidelity audit of all conversions (Java) |
+| `make deps-plantuml` | Fetch the Renovate-pinned PlantUML jar (idempotent; no Java/Docker) |
+| `make factcheck` | Numeric PlantUML→drawio fidelity audit of all conversions (Java; auto-fetches the jar) |
+| `make arrowskew` | Arrowhead-skew gate on draw.io's REAL render (Docker; the CI render-truth contract) |
 | `make gallery-verify` | Fail if committed gallery `.drawio` drifted from current emit |
 | `make ci` | Local pipeline == CI: static-check (lint+sec) + build + coverage-check + gallery-verify |
 | `make ci-run` | Run the real `.github/workflows/ci.yml` locally via `act` (Docker) |
@@ -225,15 +227,26 @@ PR, `v*` tag, `workflow_call`, and `workflow_dispatch`. **Every job
 calls a Makefile target** — the Makefile is the single source of truth,
 so `make ci` and CI cannot drift. A `changes` path-filter skips the
 heavy jobs on doc-only pushes/PRs (`ci-pass` still goes green because
-skipped ≠ failure); `v*` tags always run the full pipeline.
+skipped ≠ failure); `v*` tags always run the full pipeline. A separate
+`render` path-filter (emit / scripts / corpus / committed gallery)
+gates the Docker-based `render-gate` job so fast PRs stay fast.
 
 | Job | Make target | What it runs |
 |-----|-------------|--------------|
-| **changes** | — (`dorny/paths-filter`) | doc-only detection; gates the jobs below |
+| **changes** | — (`dorny/paths-filter`) | doc-only + render-input detection; gates the jobs below |
 | **static-check** | `make static-check` | `oxlint` + `markdownlint` + `npm audit` + `gitleaks` + `trivy fs` |
 | **build** | `make build` | `tsc` → `dist/` |
 | **test** | `make gallery-verify coverage-check` | gallery drift gate + Vitest (85 % `thresholds.global`) |
+| **render-gate** | `make arrowskew` | draw.io render-truth contract: pinned `drawio-export` renders every gallery `.drawio` → SVG; asserts no arrowhead skew / feeder occlusion (the deterministic anti-#107 net) |
 | **ci-pass** | — | aggregator; the single required check for branch protection |
+
+`make factcheck` is intentionally **not** a CI job: its PlantUML
+ground-truth is rendered on the host JVM and its text-width geometry is
+host-font-dependent, so the `ratioBad` ratchet is not portable across
+runners. It stays a **mandatory manual gate** for any emit/geometry
+change until the PlantUML render is Docker-pinned (tracked in
+`CLAUDE.md` backlog). `arrowskew` has no such issue — draw.io renders
+inside a pinned image, byte-portable everywhere.
 
 No repository secrets or variables are required (`GITHUB_TOKEN` only).
 Releases are **git tags only** (`vX.Y.Z`) — no formal GitHub Releases;

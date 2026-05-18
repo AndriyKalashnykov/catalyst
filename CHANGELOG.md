@@ -10,6 +10,24 @@ This project adheres to [Keep a CHANGELOG](http://keepachangelog.com/).
 
 ### Added
 
+- **CI render-truth gate (`render-gate` job).** `.github/workflows/ci.yml`
+  gains a path-filtered Docker job (new `render` `dorny/paths-filter`
+  group over `src/** scripts/** tests/fixtures/** docs/gallery/**
+  Makefile ci.yml`) that runs `make arrowskew` as a hard `ci-pass`
+  contract. It regenerates the gallery `.drawio` (pure node) then
+  renders each via the Renovate-pinned `rlespinasse/drawio-export`
+  image and asserts no arrowhead skew / feeder occlusion — the
+  deterministic safety net for the #107 false-green class, which
+  pure-node CI could not catch. Doc-only PRs skip it.
+- **`make deps-plantuml`** — idempotent fetch of the Renovate-pinned
+  PlantUML jar (no Java/Docker), single-sourced through `gallery.mjs`
+  (`GALLERY_FETCH_JAR_ONLY`). `make factcheck` now depends on it and
+  auto-fetches the jar, removing the prior "run `make gallery` once"
+  footgun. `make factcheck` remains a **manual** gate (its host-JVM
+  PlantUML ground-truth is host-font-dependent, so `ratioBad` is not
+  CI-portable; a Docker-pinned-render follow-up is tracked in
+  `CLAUDE.md`).
+
 - **Element-tag stereotypes are now rendered.** An element whose
   `$tags` match an `AddElementTag` declaration shows those tags as
   `«tag»` stereotype segments before the `«type»` line, exactly as
