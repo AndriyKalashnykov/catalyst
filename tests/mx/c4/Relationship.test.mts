@@ -33,8 +33,8 @@ describe('Relastionship', () => {
     expect(style).toContain('strokeWidth=1');
     expect(style).toContain('strokeColor=#828282');
     expect(style).toContain('endFill=1');
-    // `elbow` was removed — it only applies to elbowEdgeStyle, a no-op with
-    // orthogonalEdgeStyle.
+    // `elbow` was removed — it only applies to elbowEdgeStyle, a no-op
+    // with the curved (no-edgeStyle) routing adopted in ADR 0013.
     expect(style).not.toContain('elbow=');
     expect(style).toContain('metaEdit=1');
     expect(style).toContain('endSize=14');
@@ -56,7 +56,13 @@ describe('Relastionship', () => {
   it('should have relationship-specific styling', () => {
     const style = Relastionship.style();
     
-    expect(style).toContain('edgeStyle=orthogonalEdgeStyle');
+    // ADR 0013: curved (dot-spline-faithful) routing — `curved=1`,
+    // NO `edgeStyle=orthogonalEdgeStyle` (which made draw.io
+    // Manhattan-re-route; proven 3.5× less PlantUML-faithful by
+    // `make routefidelity`).
+    expect(style).toContain('curved=1');
+    expect(style).not.toContain('edgeStyle=orthogonalEdgeStyle');
+    expect(style).not.toContain('edgeStyle=');
     expect(style).toContain('jumpStyle=arc');
     expect(style).toContain('jumpSize=16');
     expect(style).toContain('rounded=0');

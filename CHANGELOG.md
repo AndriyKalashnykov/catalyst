@@ -38,6 +38,20 @@ This project adheres to [Keep a CHANGELOG](http://keepachangelog.com/).
 
 ### Changed
 
+- **Connectors are now curved (Graphviz-`dot`-spline-faithful), not
+  Manhattan (ADR 0013).** Relationships emit `curved: 1` instead of
+  `edgeStyle: 'orthogonalEdgeStyle'`, so draw.io splines through the
+  ELK waypoints instead of re-routing every edge as right-angles —
+  fixing the `rel-bidirectional` / `rel-parallel-duplicate` connector
+  tangle. Proven by a new committed self-verifying decision harness
+  (`make routefidelity`, `scripts/route-fidelity*.mjs`): route-shape
+  L1 distance to the PlantUML target dropped from **1.017
+  (orthogonal) → 0.294 (curved)**, ~3.5× closer, robust on both the
+  detour and turning-angle metrics independently. `make arrowskew`
+  stays CLEAN 20/20; `factcheck` is edge-style-invariant; `golden` is
+  style-agnostic; the full `docs/gallery/` was re-rendered. Node
+  placement / ELK layout / the lane machinery are unchanged.
+
 - **`scripts/factcheck-geometry.mjs` now exits non-zero on any
   non-clean fixture.** It previously only printed `CLEAN N/26` and
   exited 0 — a latent fake-gate (enforcement was a human reading the

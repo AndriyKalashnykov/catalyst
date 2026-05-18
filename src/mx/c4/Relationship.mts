@@ -39,15 +39,25 @@ class Relastionship {
             jumpStyle: 'arc',
             jumpSize: SHAPE.REL_JUMP_SIZE,
             rounded: 0,
-            edgeStyle: 'orthogonalEdgeStyle',
-            // NO hardcoded entryX/entryY/exitX/exitY. catalyst supports TB/BT/
-            // LR/RL layouts; a fixed entry point (the old entryY=1 = "enter the
-            // target's bottom") forced a left-side dog-leg with an upward
-            // arrowhead for ELK's default top-down placement. Letting drawio's
-            // orthogonal router pick the attach side from geometry — and follow
-            // the ELK-computed waypoints when present — is direction-agnostic
-            // and matches the source PlantUML routing. `elbow` was also dropped:
-            // it only applies to elbowEdgeStyle, a no-op here.
+            // ADR 0013: `curved: 1` (no edgeStyle) — draw.io splines
+            // through the ELK waypoints, the Graphviz-`dot`-spline
+            // analogue PlantUML actually uses. The prior
+            // `orthogonalEdgeStyle` made draw.io re-route every edge as
+            // Manhattan right-angles (discarding ELK's waypoints — the
+            // #107/B1 finding) → the `rel-bidirectional` connector
+            // tangle. Proven by `make routefidelity` (route-shape L1 to
+            // the PlantUML target: orthogonal 1.017 → curved 0.294,
+            // ~3.5× closer; ordering robust on both detour AND turn).
+            // arrowskew stays CLEAN 20/20; factcheck is edge-style-
+            // invariant; golden is style-agnostic.
+            curved: 1,
+            // NO hardcoded entryX/entryY/exitX/exitY. catalyst supports
+            // TB/BT/LR/RL layouts; a fixed entry point (the old
+            // entryY=1 = "enter the target's bottom") forced a
+            // left-side dog-leg. Letting draw.io pick the attach side
+            // from geometry — and spline through the ELK-computed
+            // waypoints — is direction-agnostic. `elbow` was also
+            // dropped: it only applies to elbowEdgeStyle, a no-op here.
         }
 
         return Object.entries(styles).map(([key, value]) => `${key}=${value}`).join(';');
