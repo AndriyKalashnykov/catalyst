@@ -141,6 +141,18 @@ export type SeqEvent =
   | SeqFragmentStart | SeqFragmentElse | SeqFragmentEnd | SeqRef
   | SeqLifecycle
 
+/** ADR 0007 phase d2b — a `box "T" … end box` (raw PlantUML) or a
+ *  C4 `*_Boundary(...) … Boundary_End()` lifeline grouping. Groups a
+ *  CONTIGUOUS declaration range (`firstIdx..lastIdx` into
+ *  `lifelines[]`) in a titled rectangle that frames the whole
+ *  interaction for those lifelines. PlantUML boxes do NOT nest. */
+export interface SeqBox {
+  label: string
+  /** inclusive declaration-index range into SeqModel.lifelines. */
+  firstIdx: number
+  lastIdx: number
+}
+
 export interface SeqModel {
   title?: string
   /** PlantUML `autonumber` was present → messages get a running index. */
@@ -149,4 +161,7 @@ export interface SeqModel {
   lifelines: Lifeline[]
   /** SOURCE order — the Y axis. */
   events: SeqEvent[]
+  /** phase d2b `box`/`Boundary` lifeline groupings (declaration-range,
+   *  non-nesting). Empty when none. */
+  boxes: SeqBox[]
 }

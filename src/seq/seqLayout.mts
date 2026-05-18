@@ -139,6 +139,10 @@ export interface SeqLayout {
   /** `destroy X` cross-glyph anchors (phase d2b): the lifeline foot is
    *  truncated at `y` and an `X` is drawn centred on `cx`. */
   destroyMarks: { cx: number; y: number }[]
+  /** `box`/`Boundary` lifeline groupings (phase d2b): a full-height
+   *  bordered rect over a contiguous lifeline range, with a top title
+   *  band of `bandH`. Emitted BEHIND the lifelines. */
+  boxes: { x: number; y: number; w: number; h: number; bandH: number; label: string }[]
 }
 
 const lines = (s: string): string[] => {
@@ -440,21 +444,44 @@ export function layoutSeq(model: SeqModel): SeqLayout {
   const llRight = lifelines.reduce((m, l) => Math.max(m, l.headX + l.headW), 0)
   const titleH = model.title
     ? Math.ceil(renderedLineHeight(NAME_PX) + 2 * INSET) : 0
-  // shift everything down by the title band
-  if (titleH) {
-    for (const l of lifelines) { l.headY += titleH; l.bottomY += titleH }
-    for (const e of laidEvents) e.y += titleH
-    for (const a of activations) { a.y1 += titleH; a.y2 += titleH }
+  // phase d2b: a uniform box title band above the (aligned) heads when
+  // any `box`/`Boundary` exists. One measured text line + insets — the
+  // same metric basis as every other band; deterministic for labelled
+  // AND unlabelled boxes (an unlabelled box just has an empty band).
+  const boxBandH = model.boxes.length
+    ? Math.ceil(renderedLineHeight(BODY_PX) + 2 * INSET) : 0
+  // single top shift = title band + box band, so boxed and non-boxed
+  // heads stay aligned (PlantUML draws the box title ABOVE a uniform
+  // participant row). Generalises the former title-only shift.
+  const topShift = titleH + boxBandH
+  if (topShift) {
+    for (const l of lifelines) { l.headY += topShift; l.bottomY += topShift }
+    for (const e of laidEvents) e.y += topShift
+    for (const a of activations) { a.y1 += topShift; a.y2 += topShift }
     for (const f of fragments) {
-      f.y += titleH
-      for (const el of f.elses) el.y += titleH
+      f.y += topShift
+      for (const el of f.elses) el.y += topShift
     }
-    for (const d of destroyMarks) d.y += titleH
+    for (const d of destroyMarks) d.y += topShift
   }
 
+  // Box rects, derived from FINAL lifeline positions (post-shift): a
+  // full-height border over the contiguous declaration range, its
+  // title band sitting in the `boxBandH` strip just above the heads.
+  const diagramBottom = lifelines.reduce((m, l) => Math.max(m, l.bottomY), bottomY + topShift)
+  const laidBoxes = model.boxes.map((b) => {
+    const lo = lifelines[b.firstIdx]
+    const hi = lifelines[b.lastIdx]
+    const x = lo.headX - INSET
+    const w = (hi.headX + hi.headW + INSET) - x
+    const y = lo.headY - boxBandH
+    return { x, y, w, h: diagramBottom - y, bandH: boxBandH, label: b.label }
+  })
+
+  const boxRight = laidBoxes.reduce((m, b) => Math.max(m, b.x + b.w), 0)
   return {
-    width: Math.ceil(Math.max(noteRight, fragRight, llRight) + marginX),
-    height: Math.ceil(bottomY + titleH),
+    width: Math.ceil(Math.max(noteRight, fragRight, llRight, boxRight) + marginX),
+    height: Math.ceil(bottomY + topShift),
     ...(model.title ? { title: model.title } : {}),
     titleH,
     lifelines,
@@ -462,5 +489,6 @@ export function layoutSeq(model: SeqModel): SeqLayout {
     activations,
     fragments,
     destroyMarks,
+    boxes: laidBoxes,
   }
 }

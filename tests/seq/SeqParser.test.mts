@@ -110,27 +110,10 @@ describe('SeqParser — title, autonumber, activate, notes', () => {
   })
 })
 
-describe('SeqParser — v2 deferred constructs FAIL LOUD (never silent drop)', () => {
-  const cases: [string, RegExp][] = [
-    // d1 divider, d2 fragments, d2b `ref` + `create`/`destroy` are NOT
-    // here — they are supported (see the phase describes below). Only
-    // `box`/`Boundary` lifeline grouping remains deferred.
-    ['box "Team"', /box/],
-    ['System_Boundary(b, "B")', /Boundary/],
-    ['Boundary_End()', /Boundary_End/],
-  ]
-  for (const [line, re] of cases) {
-    it(`throws SeqParseError naming the token: "${line}"`, () => {
-      let err: unknown
-      try { SeqParser.parse(wrap(`participant a\nparticipant b\na -> b : ok\n${line}`)) }
-      catch (e) { err = e }
-      expect(err).toBeInstanceOf(SeqParseError)
-      expect((err as SeqParseError).message).toMatch(re)
-      expect((err as SeqParseError).message).toMatch(/v1|v2|ADR 0007/)
-      expect((err as SeqParseError).line).toBeGreaterThan(0)
-    })
-  }
-
+describe('SeqParser — FAIL LOUD on unknown/malformed (never silent drop)', () => {
+  // As of phase d2b EVERY ADR-0007 construct is supported — there are
+  // no "deferred token" cases left. The contract-lock guarantee is now:
+  // a genuinely-unknown line OR malformed input throws precisely.
   it('an unrecognised construct fails loud, not a silent drop', () => {
     // No arrow, no macro, no keyword, not a preprocessor `!` line —
     // must hit the terminal fail-loud, never be silently dropped.
@@ -331,5 +314,52 @@ describe('SeqParser — phase d2b `create` / `destroy` lifespan', () => {
       .toThrowError(/`destroy` needs a lifeline/)
     expect(() => SeqParser.parse(wrap('participant a\ncreate participant   ')))
       .toThrowError(/`create participant` with no name/)
+  })
+})
+
+describe('SeqParser — phase d2b `box` / `Boundary` lifeline grouping', () => {
+  it('raw `box "T"` … `end box` groups the contiguous declaration range', () => {
+    const m = SeqParser.parse(wrap(
+      'participant op\nbox "control plane"\nparticipant ctl\nparticipant iss\n'
+      + 'end box\nparticipant v\nop -> ctl : go'))
+    expect(m.boxes).toHaveLength(1)
+    expect(m.boxes[0]).toMatchObject({ label: 'control plane' })
+    // ctl=idx1, iss=idx2 (op=0 before, v=3 after)
+    expect(m.lifelines[m.boxes[0].firstIdx].alias).toBe('ctl')
+    expect(m.lifelines[m.boxes[0].lastIdx].alias).toBe('iss')
+  })
+
+  it('C4 `System_Boundary(a,"L")` … `Boundary_End()` groups the range', () => {
+    const m = SeqParser.parse(wrap(
+      'Person(op,"Op")\nSystem_Boundary(cp, "Control Plane")\n'
+      + 'Container(ctl,"Controller","Go")\nBoundary_End()\nSystem(v,"Vault")\n'
+      + 'Rel(op, ctl, "go")'))
+    expect(m.boxes).toHaveLength(1)
+    expect(m.boxes[0].label).toBe('Control Plane')
+    expect(m.lifelines[m.boxes[0].firstIdx].alias).toBe('ctl')
+    expect(m.lifelines[m.boxes[0].lastIdx].alias).toBe('ctl')
+  })
+
+  it('a nested box fails loud (PlantUML boxes do not nest)', () => {
+    expect(() => SeqParser.parse(wrap(
+      'box "a"\nparticipant x\nbox "b"\nparticipant y\nend box\nend box')))
+      .toThrowError(/nested `box`\/`Boundary` is not supported/)
+  })
+
+  it('an unterminated box fails loud', () => {
+    expect(() => SeqParser.parse(wrap('box "a"\nparticipant x\nx -> x : m')))
+      .toThrowError(/unterminated `box`\/`Boundary`/)
+  })
+
+  it('an empty box (no lifelines declared) fails loud', () => {
+    expect(() => SeqParser.parse(wrap('participant p\nbox "a"\nend box\np -> p : m')))
+      .toThrowError(/empty `box`\/`Boundary`/)
+  })
+
+  it('`end box` / `Boundary_End()` with no open box fails loud', () => {
+    expect(() => SeqParser.parse(wrap('participant p\nend box')))
+      .toThrowError(/`end box` .*with no open box/)
+    expect(() => SeqParser.parse(wrap('participant p\nBoundary_End()')))
+      .toThrowError(/`Boundary_End\(\)` .*with no open box/)
   })
 })

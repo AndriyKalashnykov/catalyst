@@ -1,11 +1,12 @@
 # ADR 0007 — Sequence-diagram support (design)
 
-- Status: accepted — v1 + d1 + d2 fragments + d2b `ref` +
-  `create`/`destroy` implemented (phases a–d2b landed; `box`/
-  `Boundary` lifeline grouping is the ONLY remaining fail-loud
-  deferred construct)
+- Status: accepted — **FULLY IMPLEMENTED (phases a–d2b complete;
+  NOTHING deferred).** v1 + d1 dividers + d2 fragments + d2b
+  `ref` + `create`/`destroy` + `box`/`Boundary` lifeline grouping.
+  The fail-loud seam is retained for malformed input + future
+  grammar (contract-lock), but every ADR-0007 construct converts.
 - Date: 2026-05-16 (design); phase-a 2026-05-17; phase-b+c+d1+d2 2026-05-18;
-  phase-d2b `ref` + `create`/`destroy` 2026-05-18
+  phase-d2b `ref` + `create`/`destroy` + `box`/`Boundary` 2026-05-18
 - Phases: **(a) `SeqParser` + ordering invariants — ✅ DONE
   2026-05-17** (`src/seq/SeqParser.mts` + `SeqModel.interface.mts`,
   29-test ordering+fail-loud matrix). **(b) linear `seqLayout` +
@@ -68,8 +69,26 @@
   lands ON the created head box (PlantUML attaches to the box side) —
   no data loss / mis-order; the same "structurally-faithful first
   draft" bar as the other v1 seq notes.
-  Still deferred (fail-loud, token+line, no silent drop):
-  **`box`/`Boundary` lifeline grouping** (the only remaining one).
+  **(d2b) `box` / `Boundary` lifeline grouping — ✅ DONE 2026-05-18
+  (the final construct; ADR now fully implemented).** Raw
+  `box "T"` … `end box` AND C4 `*_Boundary(a,"L")` … `Boundary_End()`
+  (also the `{ … }` brace form). A `SeqBox` (contiguous
+  declaration-range `firstIdx..lastIdx`; PlantUML boxes do NOT nest —
+  nested/unterminated/empty/orphan-close fail loud). `seqLayout`: a
+  uniform `boxBandH` title band folded into ONE `topShift =
+  titleH + boxBandH` so boxed AND non-boxed heads stay aligned
+  (PlantUML draws the box title above a uniform participant row);
+  the box rect derives from final post-shift lifeline positions
+  (full diagram height). Emitted BEHIND lifelines (no-fill border +
+  filled title band, z-order). 14 new parser+whole-path+layout
+  tests (77 seq, 519 vitest); the stale "box still fail-louds"
+  output-correctness contract was UPDATED (not deleted) to the new
+  truth (box converts; malformed box fails loud);
+  `tests/fixtures/seq/seq-d2b-box-boundary.puml` render-compare =
+  structurally faithful vs PlantUML. Zero C4 risk VERIFIED
+  (gallery-verify + seq-gallery-verify CLEAN; separate pipeline).
+  **No construct is deferred — the fail-loud seam now guards only
+  malformed input + future grammar (contract-lock).**
 
 ## Context
 
@@ -164,15 +183,17 @@ sync/async/return messages (`->`,`-->`,`->>`,`<-` incl. `Rel_Back`/
 the "materially harder nested Y-ranges" are handled by a deterministic
 stack: a frame's lifeline span accumulates over ALL events seen while
 open, incl. nested children, so depth-inset boxes strictly nest), and
-`ref over` reference frames + `create`/`destroy` lifeline lifespan
-(phase d2b — a self-contained framed box spanning named lifelines;
-created/destroyed lifelines start/end mid-timeline with an `X` foot).
+`ref over` reference frames, `create`/`destroy` lifeline lifespan,
+and `box`/`Boundary` lifeline grouping (phase d2b — self-contained
+framed box; created/destroyed lifelines start/end mid-timeline with
+an `X` foot; a `box`/`*_Boundary` grouping rect with a head-shifting
+title band over a contiguous declaration range).
 
-**Still deferred (explicit out-of-scope):** `box`/`Boundary` lifeline
-grouping (the only remaining construct). The pipeline must **fail-loud
-with a precise message** on a deferred construct (never silently drop
-— the contract-lock rule), naming the unsupported token, so downstream
-sees a clear error not a wrong diagram.
+**Nothing is deferred — the ADR is fully implemented.** The pipeline
+still **fails loud with a precise message** (never silently drops —
+the contract-lock rule) on malformed input (nested/unterminated/empty
+box, orphan close, …) or a genuinely-unknown line, naming the exact
+token + line, so downstream sees a clear error not a wrong diagram.
 
 ### Test strategy (BLOCKING gates, same bar as the C4 path)
 

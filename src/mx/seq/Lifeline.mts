@@ -67,6 +67,34 @@ export function buildSeqDoc(L: SeqLayout): unknown {
     })
   }
 
+  // Box / Boundary groupings (phase d2b): a full-height no-fill border
+  // over a contiguous lifeline range, label in its top band. Emitted
+  // BEFORE the lifelines so the border sits BEHIND them (draw.io
+  // z-order = document order) and never occludes a head/message.
+  for (const b of L.boxes) {
+    cells.push({
+      $: {
+        id: id('box'),
+        style: `rounded=0;html=1;fillColor=none;strokeColor=${PALETTE.BOUNDARY_STROKE};`
+          + `verticalAlign=top;align=center`,
+        vertex: 1, parent: '1',
+      },
+      MxGeometry: geom(b.x, b.y, b.w, b.h),
+    })
+    if (b.label) {
+      cells.push({
+        $: {
+          id: id('box-title'), value: seqText(b.label),
+          style: `text;html=1;align=center;verticalAlign=middle;fontStyle=1;`
+            + `fillColor=${PALETTE.DEPLOYMENT_NODE_FILL};strokeColor=${PALETTE.BOUNDARY_STROKE};`
+            + `fontColor=${PALETTE.BOUNDARY_FONT};whiteSpace=wrap`,
+          vertex: 1, parent: '1',
+        },
+        MxGeometry: geom(b.x, b.y, b.w, b.bandH),
+      })
+    }
+  }
+
   // Lifelines: draw.io native umlLifeline (head box + dashed line).
   // `size=` = the head height (cited: drawio CylinderShape-style head
   // band convention for umlLifeline). Neutral palette (cited PALETTE).
