@@ -1,7 +1,7 @@
 # ADR 0007 — Sequence-diagram support (design)
 
-- Status: accepted — v1 implemented (phases a–c landed)
-- Date: 2026-05-16 (design); phase-a 2026-05-17; phase-b+c 2026-05-18
+- Status: accepted — v1 + d1 + d2 fragments implemented (phases a–d2 landed)
+- Date: 2026-05-16 (design); phase-a 2026-05-17; phase-b+c+d1+d2 2026-05-18
 - Phases: **(a) `SeqParser` + ordering invariants — ✅ DONE
   2026-05-17** (`src/seq/SeqParser.mts` + `SeqModel.interface.mts`,
   29-test ordering+fail-loud matrix). **(b) linear `seqLayout` +
@@ -22,9 +22,23 @@
   `SeqConverter` + `output-correctness` divider tests; static C4
   byte-identical 26/26 + factcheck + arrowskew unaffected — separate
   pipeline; **unblocks the ibm-wm `==dividers==` downstream fixture**).
-  Next: **(d2) v2 fragments** (`alt/opt/loop/par/critical`,
-  `box`/`Boundary` grouping, `ref`, create/destroy) — still fail-loud
-  with token+line, the no-silent-drop guard.
+  **(d2) combined fragments — ✅ DONE 2026-05-18**
+  (`alt/else/opt/loop/par/critical/group/break`, nested): paired
+  `fragment-start|else|end` events (`SeqModel`), a nesting stack in
+  `SeqParser` with unterminated/orphan-`else` fail-loud, a
+  `LaidFragment` box in `seqLayout` (header-widened so `[guard]` is
+  one line; `minChildRight` floor ⇒ a parent strictly encloses its
+  children by construction), and `umlFrame`-style emit BEHIND the
+  messages (document/z-order). 11 new parser+whole-path tests;
+  `tests/fixtures/seq/seq-d2-fragments.puml` render-compare = clean
+  vs PlantUML. Zero C4 risk VERIFIED (not just by construction):
+  gallery-verify CLEAN (C4 `.drawio` byte-identical) + arrowskew
+  CLEAN 20/20 + 475 vitest; factcheck `ratioBad` 24/26 proven
+  pre-existing host-calibration noise (origin/main yields identical
+  w/hRatio on this host — the documented host-font MANUAL-gate
+  caveat; baseline correctly NOT regenerated).
+  Still deferred (fail-loud, token+line, no silent drop):
+  **`box`/`Boundary` lifeline grouping, `ref`, `create`/`destroy`**.
 
 ## Context
 
@@ -114,13 +128,17 @@ sync/async/return messages (`->`,`-->`,`->>`,`<-` incl. `Rel_Back`/
 `BiRel`), `title`, `autonumber`, `activate`/`deactivate`,
 `note left|right|over`.
 
-**Deferred v2 (explicit out-of-scope here):** `alt/else/opt/loop/par`
-nested fragments (the layout is materially harder — nested Y-ranges),
-`==dividers==`, `box`/`Boundary` lifeline grouping, `ref`,
-create/destroy. v1 must **fail-loud with a precise message** on a
-deferred construct (never silently drop — the contract-lock rule),
-naming the unsupported token, so downstream sees a clear error not a
-wrong diagram.
+**Landed after v1:** `==dividers==` (phase d1) and the nested
+`alt/else/opt/loop/par/critical/group/break` fragments (phase d2 —
+the "materially harder nested Y-ranges" are handled by a deterministic
+stack: a frame's lifeline span accumulates over ALL events seen while
+open, incl. nested children, so depth-inset boxes strictly nest).
+
+**Still deferred (explicit out-of-scope):** `box`/`Boundary` lifeline
+grouping, `ref`, `create`/`destroy`. The pipeline must **fail-loud
+with a precise message** on a deferred construct (never silently drop
+— the contract-lock rule), naming the unsupported token, so downstream
+sees a clear error not a wrong diagram.
 
 ### Test strategy (BLOCKING gates, same bar as the C4 path)
 
@@ -178,6 +196,14 @@ intact:
   `== X ==` is faithful (centred bold band ≈ PlantUML's pill); only
   the label-less separator differs. v1.x candidate: emit an empty
   divider as a thin rule, not a full band. No data loss / mis-order.
+- **(phase d2)** a fragment's left border can graze the activation bar
+  on its leftmost involved lifeline (same family as the note↔activation
+  overlap above) — the box is anchored on `cx ± FRAG_PAD`, not on the
+  activation-bar outer edge. No occlusion of message text or arrowheads;
+  ordering and nesting intact. v1.x candidate: widen `FRAG_PAD` to clear
+  the activation extent on the boundary lifelines. The kind tab is a
+  plain filled rect (a clean, deterministic stand-in for PlantUML's
+  notched pentagon) — cosmetic, not a fidelity gap.
 
-These are tracked for v1.x/v2 polish; they do NOT gate v1 (the
-structural emit contract + fail-loud-on-deferred are the v1 bar).
+These are tracked for v1.x/v2 polish; they do NOT gate the phase (the
+structural emit contract + fail-loud-on-deferred are the bar).

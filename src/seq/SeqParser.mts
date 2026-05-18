@@ -15,10 +15,14 @@
  * `autonumber`; `activate`/`deactivate`; `note left|right|over`
  * (single-line and `… end note` block).
  *
- * DEFERRED to v2 — the parser FAILS LOUD (never silently drops, per the
- * contract-lock rule) naming the exact token + line: `== divider ==`,
- * `alt/else/opt/loop/par/critical/group/break` fragments, `box`/`Boundary*`
- * lifeline grouping, `ref`, `create`/`destroy`.
+ * Phase d1 adds `== divider ==`; phase d2 adds the combined/grouped
+ * fragments `alt/else/opt/loop/par/critical/group/break` (nested),
+ * parsed into paired `fragment-start|else|end` events with a precise
+ * unterminated/orphan-`else` fail-loud.
+ *
+ * DEFERRED to a later phase — the parser FAILS LOUD (never silently
+ * drops, per the contract-lock rule) naming the exact token + line:
+ * `box`/`Boundary*` lifeline grouping, `ref`, `create`/`destroy`.
  */
 import type {
   SeqModel, SeqEvent, Lifeline, ArrowKind,
@@ -50,10 +54,10 @@ const C4_LIFELINE_KINDS = new Set([...C4_TECHN_KINDS, ...C4_PLAIN_KINDS])
  *  token-naming fail-loud message (so downstream sees a clear error,
  *  not a wrong diagram). Order matters: most specific first. */
 const DEFERRED: { re: RegExp; what: string }[] = [
-  // NB: `== divider ==` is v1.x-supported (phase d1) — parsed below,
-  // NOT in this fail-loud list. Fragments/box/ref remain deferred.
-  { re: /^\s*(alt|opt|loop|par|critical|group|break)\b/i, what: 'fragment (`alt/opt/loop/par/critical/group/break`)' },
-  { re: /^\s*else\b/i, what: 'fragment `else`' },
+  // NB: `== divider ==` (phase d1) and the `alt/opt/loop/par/critical/
+  // group/break` + `else` fragments (phase d2) are parsed below, NOT in
+  // this fail-loud list. `box`/`Boundary`/`ref`/create/destroy remain
+  // deferred to a later phase.
   { re: /^\s*box\b/i, what: '`box` lifeline grouping' },
   { re: /^\s*end\s+box\b/i, what: '`end box`' },
   { re: /^\s*(Enterprise_Boundary|System_Boundary|Container_Boundary|Boundary)\s*\(/, what: 'C4 sequence `Boundary(...)` grouping' },
@@ -101,6 +105,12 @@ export class SeqParser {
     const events: SeqEvent[] = []
     let title: string | undefined
     let autonumber = false
+    // Open-fragment stack (LIFO) for `alt/opt/loop/par/critical/group/
+    // break` … optional `else` … `end`. `fragId` is a monotone counter
+    // pairing a fragment's three marker kinds across nesting depth.
+    const fragStack: { fragId: number; kind: string; lineNo: number }[] = []
+    let fragSeq = 0
+    const FRAGMENT_KW = /^(alt|opt|loop|par|critical|group|break)\b\s*(.*)$/i
 
     const addLifeline = (alias: string, label: string, kind: string, technology?: string): void => {
       if (byAlias.has(alias)) return
@@ -167,7 +177,46 @@ export class SeqParser {
         continue
       }
 
-      // v2-deferred → fail loud, naming the token + line.
+      // --- fragments (phase d2): alt/opt/loop/par/critical/group/break,
+      // optional `else` compartments, closed by a matching `end`.
+      // Parsed BEFORE the deferred guard so they are consumed, and
+      // BEFORE the message/macro grammar so a fragment keyword is never
+      // mis-read as a participant or message. Nesting via fragStack.
+      const mFrag = FRAGMENT_KW.exec(t)
+      if (mFrag) {
+        const fragId = fragSeq++
+        fragStack.push({ fragId, kind: mFrag[1].toLowerCase(), lineNo })
+        events.push({
+          type: 'fragment-start', kind: mFrag[1].toLowerCase(),
+          label: mFrag[2].trim(), fragId, order: events.length,
+        })
+        continue
+      }
+      const mElse = /^else\b\s*(.*)$/i.exec(t)
+      if (mElse) {
+        const top = fragStack[fragStack.length - 1]
+        if (!top) {
+          throw new SeqParseError(
+            `sequence: \`else\` with no open fragment (line ${lineNo}: `
+            + `"${t}"). This is a fail-loud guard, not a silent drop.`, lineNo)
+        }
+        events.push({
+          type: 'fragment-else', fragId: top.fragId,
+          label: mElse[1].trim(), order: events.length,
+        })
+        continue
+      }
+      // `end` closing the most-recently-opened fragment (note blocks are
+      // consumed above; `end box` stays deferred and is unreachable
+      // because `box` itself fails loud at its opener).
+      if (/^end\b/i.test(t) && !/^end\s*note\b/i.test(t)
+          && !/^end\s+box\b/i.test(t) && fragStack.length) {
+        const top = fragStack.pop()!
+        events.push({ type: 'fragment-end', fragId: top.fragId, order: events.length })
+        continue
+      }
+
+      // deferred → fail loud, naming the token + line.
       for (const d of DEFERRED) {
         if (d.re.test(t)) {
           throw new SeqParseError(
@@ -341,6 +390,13 @@ export class SeqParser {
     if (noteBuf) {
       throw new SeqParseError(
         'sequence: unterminated `note … end note` block.', rawLines.length)
+    }
+    if (fragStack.length) {
+      const f = fragStack[fragStack.length - 1]
+      throw new SeqParseError(
+        `sequence: unterminated \`${f.kind}\` fragment opened on line `
+        + `${f.lineNo} — missing \`end\`. This is a fail-loud guard, `
+        + `not a silent drop.`, f.lineNo)
     }
     if (lifelines.length === 0) {
       throw new SeqParseError(

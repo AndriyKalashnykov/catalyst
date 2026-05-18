@@ -158,9 +158,27 @@ Everything below is researched, not speculative. Sizes are honest.
 Completed-work root-cause prose lives in git history + ADRs +
 `docs/UPGRADE-NOTES.md` + agent memories — not re-dumped here.
 
-> ▶ **RESUME HERE — session handoff #17, 2026-05-18 (cont.) —
-> `main` @ `dd764f1` (post-#122), clean, 0 warnings, no stray
-> branches, all gates green. This session landed, all MERGED:**
+> ▶ **RESUME HERE — session handoff #18, 2026-05-18 (cont.) —
+> ADR 0007 phase (d2) sequence fragments LANDED.** Branch
+> `feat/seq-d2-fragments` (PR pending): `alt/else/opt/loop/par/
+> critical/group/break` (nested) now convert — paired
+> `fragment-start|else|end` events, `SeqParser` nesting stack
+> (unterminated/orphan-`else` fail-loud), `LaidFragment` box
+> (header-widened so `[guard]` is one line; `minChildRight` floor ⇒
+> parent strictly encloses children by construction), `umlFrame`
+> emit BEHIND messages. +11 seq tests (47 total), 475 vitest, lint 0,
+> mdlint 0, gallery-verify CLEAN, arrowskew CLEAN 20/20,
+> `tests/fixtures/seq/seq-d2-fragments.puml` render-compare clean vs
+> PlantUML. **factcheck 24/26 = proven pre-existing host-calibration
+> noise** (origin/main yields identical `ratioBad` w/hRatio on THIS
+> host for `c4-all-rel-variants`/`edge-unicode-specialchars` — the
+> documented host-font MANUAL-gate caveat; baseline correctly NOT
+> regenerated since there is no intentional C4 geometry change). Zero
+> C4 risk VERIFIED, not assumed. Still deferred (fail-loud, no silent
+> drop): `box`/`Boundary` grouping, `ref`, `create`/`destroy`.
+>
+> Prior handoff #17, 2026-05-18 — `main` @ `dd764f1` (post-#122),
+> connector-fidelity arc COMPLETE. That session landed, all MERGED:**
 > #117 path-filtered `render-gate` ci.yml job (`make arrowskew` hard
 > `ci-pass` contract; new `render` paths-filter group) + the
 > bind-mount-EACCES fix its own first CI run flushed out · #118
@@ -188,15 +206,18 @@ Completed-work root-cause prose lives in git history + ADRs +
 >
 > **▶▶ NEXT SESSION — pick up here (priority order):**
 >
-> 1. **ADR 0007 phase (d2): v2 sequence fragments — NOW THE TOP
->    ITEM.** `alt/opt/loop/par/critical`, `box`/`Boundary` grouping,
->    `ref`, create/destroy. Currently fail-loud with token+line (the
->    no-silent-drop guard). The ADR's explicitly "materially harder"
->    nested-Y-range layout; own phased PR(s) (maybe d2a single-level
->    alt/opt/loop, d2b nested+box) with the SAME gates: render-compare
->    visual + factcheck 26/26 + arrowskew 20/20 + 26 static
->    byte-identical (separate seq pipeline ⇒ zero C4 risk by
->    construction, but VERIFY).
+> 1. **ADR 0007 phase (d2b): remaining deferred seq constructs —
+>    `box`/`Boundary*` lifeline grouping, `ref`, `create`/`destroy`.**
+>    Now the only fail-loud sequence constructs (d2 fragments DONE,
+>    handoff #18). `box`/`Boundary` = a grouping rect over a
+>    contiguous lifeline range (header band shifts lifelines down);
+>    `ref` = a labelled box like a fragment but no compartments;
+>    `create`/`destroy` = a lifeline that starts/ends mid-timeline
+>    (head at first-use Y; an `X` foot). Same gate bar as d2:
+>    render-compare visual + 475+ vitest + gallery-verify CLEAN +
+>    arrowskew 20/20 (separate seq pipeline ⇒ zero C4 risk, but
+>    VERIFY; factcheck `ratioBad` is host-noise here — see #18 — do
+>    NOT regenerate the baseline for a seq-only change).
 > 2. **Sequence v1.x polish** (ADR 0007 "Known v1 imperfections"):
 >    note↔activation row overlap; empty `====` → thin rule not a full
 >    band. Self-message-loop-width = MEASURED no-op for long labels —

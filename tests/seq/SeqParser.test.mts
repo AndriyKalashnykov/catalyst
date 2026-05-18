@@ -110,14 +110,10 @@ describe('SeqParser — title, autonumber, activate, notes', () => {
 
 describe('SeqParser — v2 deferred constructs FAIL LOUD (never silent drop)', () => {
   const cases: [string, RegExp][] = [
-    // `== Stage 1 ==` is NOT here — phase d1 supports dividers (see the
-    // "phase d1 — == divider ==" describe below). Fragments/box/ref
-    // remain deferred.
-    ['alt success', /fragment/],
-    ['opt maybe', /fragment/],
-    ['loop 3 times', /fragment/],
-    ['par', /fragment/],
-    ['else other', /else/],
+    // `== Stage 1 ==` (phase d1) and `alt/opt/loop/par/critical/group/
+    // break`+`else` (phase d2) are NOT here — they are supported (see
+    // the "phase d2 — fragments" describe below). box/Boundary/ref/
+    // create/destroy remain deferred.
     ['box "Team"', /box/],
     ['System_Boundary(b, "B")', /Boundary/],
     ['Boundary_End()', /Boundary_End/],
@@ -151,6 +147,81 @@ describe('SeqParser — v2 deferred constructs FAIL LOUD (never silent drop)', (
 
   it('empty diagram (no lifelines) fails loud', () => {
     expect(() => SeqParser.parse(wrap('title only'))).toThrowError(/no participants/)
+  })
+})
+
+describe('SeqParser — phase d2 fragments (alt/opt/loop/par/critical/group/break)', () => {
+  type FStart = Extract<ReturnType<typeof SeqParser.parse>['events'][number], { type: 'fragment-start' }>
+
+  it('alt/else/end → paired fragment-start/else/end in SOURCE order, same fragId', () => {
+    const m = SeqParser.parse(wrap(
+      'participant a\nparticipant b\n'
+      + 'alt success\na -> b : ok\nelse failure\na -> b : retry\nend\n'
+      + 'a -> b : after'))
+    const kinds = m.events.map((e) => e.type)
+    expect(kinds).toEqual([
+      'fragment-start', 'message', 'fragment-else', 'message',
+      'fragment-end', 'message',
+    ])
+    const fs = m.events[0] as FStart
+    expect(fs).toMatchObject({ kind: 'alt', label: 'success' })
+    const el = m.events.find((e) => e.type === 'fragment-else')!
+    const fe = m.events.find((e) => e.type === 'fragment-end')!
+    expect((el as { fragId: number }).fragId).toBe(fs.fragId)
+    expect((fe as { fragId: number }).fragId).toBe(fs.fragId)
+    expect((el as { label: string }).label).toBe('failure')
+    // order is the event-stream index — strictly monotone
+    expect(m.events.map((e) => e.order)).toEqual([0, 1, 2, 3, 4, 5])
+  })
+
+  it('nested fragments pair by fragId across depth (LIFO)', () => {
+    const m = SeqParser.parse(wrap(
+      'participant a\nparticipant b\n'
+      + 'alt outer\nloop 3 times\na -> b : tick\nend\nend'))
+    const starts = m.events.filter((e) => e.type === 'fragment-start') as FStart[]
+    const ends = m.events.filter((e) => e.type === 'fragment-end')
+    expect(starts.map((s) => s.kind)).toEqual(['alt', 'loop'])
+    expect(starts[1].label).toBe('3 times')
+    // inner `end` closes the loop (LIFO), outer `end` closes the alt
+    expect((ends[0] as { fragId: number }).fragId).toBe(starts[1].fragId)
+    expect((ends[1] as { fragId: number }).fragId).toBe(starts[0].fragId)
+    expect(starts[0].fragId).not.toBe(starts[1].fragId)
+  })
+
+  it.each(['opt', 'loop', 'par', 'critical', 'group', 'break'])(
+    'parses `%s` fragment (kind lower-cased, label verbatim)', (kw) => {
+      const m = SeqParser.parse(wrap(
+        `participant a\nparticipant b\n${kw} the label\na -> b : x\nend`))
+      const fs = m.events[0] as FStart
+      expect(fs).toMatchObject({ type: 'fragment-start', kind: kw, label: 'the label' })
+    })
+
+  it('an unterminated fragment fails loud naming the kind + its open line', () => {
+    let err: unknown
+    try { SeqParser.parse(wrap('participant a\nparticipant b\nalt x\na -> b : ok')) }
+    catch (e) { err = e }
+    expect(err).toBeInstanceOf(SeqParseError)
+    expect((err as SeqParseError).message).toMatch(/unterminated `alt`/)
+    expect((err as SeqParseError).message).toMatch(/missing `end`/)
+    // line points at the opener (`alt x` is line 4 incl. @startuml)
+    expect((err as SeqParseError).line).toBe(4)
+  })
+
+  it('an `else` with no open fragment fails loud (not a silent drop)', () => {
+    expect(() => SeqParser.parse(wrap('participant a\nparticipant b\nelse oops')))
+      .toThrowError(/`else` with no open fragment/)
+  })
+
+  it('a stray `end` with no open fragment still fails loud', () => {
+    expect(() => SeqParser.parse(wrap('participant a\na -> a : x\nend')))
+      .toThrowError(/unexpected `end`/)
+  })
+
+  it('participant whose name starts with a fragment keyword is NOT mis-read', () => {
+    // `optional`/`parser` etc. — \b after the keyword must not match.
+    const m = SeqParser.parse(wrap('participant optional\nparticipant parser\noptional -> parser : x'))
+    expect(m.lifelines.map((l) => l.alias)).toEqual(['optional', 'parser'])
+    expect(m.events.every((e) => e.type === 'message')).toBe(true)
   })
 })
 
