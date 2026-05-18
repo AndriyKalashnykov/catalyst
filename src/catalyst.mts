@@ -3,7 +3,7 @@ import { Mx, MxGeometry } from './mx/Mx.mjs'
 import { MxPoint } from './mx/MxPoint.mjs'
 import { RelParser } from './puml/RelParser.mjs'
 import { LayoutEngine, LayoutResult } from './layout/LayoutEngine.mjs'
-import { assignEdgeLanes, resolveLabelOverlap, slideLabelAlongLane, polylineMidpoint, type NodeCenter, type NodeRect } from './layout/edgeLanes.mjs'
+import { assignEdgeLanes, resolveLabelOverlap, slideLabelAlongLane, polylineMidpoint, endpointAttachFraction, type NodeCenter, type NodeRect } from './layout/edgeLanes.mjs'
 import { measureEdgeLabel } from './layout/measureNode.mjs'
 import { spaceAdvance, textWidth, renderedLineHeight, MX_DEFAULT_FONTSIZE } from './text/TextMetrics.mjs'
 import { RELATIONSHIP_LABEL_PX, DIAGRAM_TITLE_PX } from './mx/c4/theme.mjs'
@@ -166,6 +166,9 @@ async function layoutData2mx(layoutData: LayoutResult, pumlElements: EntityDescr
     g.$.relative = 1
     const lane = edgeLanes.get(i)
     const poly = layoutEdgeByRelIdx.get(i)
+    // Border attach for a non-laned multi-bend edge (set in that branch
+    // below): pins exit/entry so the arrowhead enters the box head-on.
+    let borderAttach: { exit: { x: number; y: number }; entry: { x: number; y: number } } | undefined
     if (lane) {
       // Collect the interior waypoints actually emitted so the label
       // anchor below is computed against the SAME polyline the renderer
@@ -253,8 +256,35 @@ async function layoutData2mx(layoutData: LayoutResult, pumlElements: EntityDescr
       const lbl = layoutEdgeLabelByRelIdx.get(i)
       const A = nodeCenter.get(rel.source)
       const B = nodeCenter.get(rel.target)
-      if (lbl && A && B) {
-        const route = [{ x: A.cx, y: A.cy }, ...interior, { x: B.cx, y: B.cy }]
+      // Perpendicular border-anchored arrowhead. ELK routed `poly`
+      // orthogonally; previously catalyst dropped poly[0]/poly[last]
+      // and let drawio re-attach to the box CENTRE, turning the last
+      // segment into a diagonal into the arrowhead's SIDE (the
+      // `topology-cyclic` `requeues` defect). Pin exit/entry at ELK's
+      // own attach points on the axis of the adjacent bend so the first
+      // and last segments stay perpendicular to the border — the head
+      // enters the triangle's base flush. Scoped to THIS branch only
+      // (laned / straight-2pt / cluster paths untouched ⇒ byte-stable
+      // there); fixtures with multi-bend edges change by design.
+      // drawio attaches the endpoint at the BORDER point given by the
+      // emitted exit/entry fraction — NOT ELK's raw pA/pB (which ELK
+      // placed against ITS node rects, off catalyst's emitted border).
+      // Derive the fraction, then the absolute attach point it yields,
+      // and use THOSE for the rendered route (P12 base-point rule: the
+      // label anchor must be the route drawio actually draws, else the
+      // offset is mis-based — the c4-container 186px-displacement /
+      // c4-exhaustive labelHit lesson).
+      let attachA: { x: number; y: number } | undefined
+      let attachB: { x: number; y: number } | undefined
+      if (A && B) {
+        const eFrac = endpointAttachFraction(poly[0], poly[1], A)
+        const nFrac = endpointAttachFraction(poly[poly.length - 1], poly[poly.length - 2], B)
+        borderAttach = { exit: eFrac, entry: nFrac }
+        attachA = { x: (A.cx - A.hw) + eFrac.x * A.hw * 2, y: (A.cy - A.hh) + eFrac.y * A.hh * 2 }
+        attachB = { x: (B.cx - B.hw) + nFrac.x * B.hw * 2, y: (B.cy - B.hh) + nFrac.y * B.hh * 2 }
+      }
+      if (lbl && A && B && attachA && attachB) {
+        const route = [attachA, ...interior, attachB]
         const mid = polylineMidpoint(route)
         // The label renders at ELK's placed rect `lbl` (the offset
         // below re-anchors renderedMidpoint → lbl.centre). ELK places
@@ -318,7 +348,7 @@ async function layoutData2mx(layoutData: LayoutResult, pumlElements: EntityDescr
     // -> c4Technology). Passing rel.description as the `technology` arg fixes
     // the swapped-field bug where the verb landed in unused c4Name and the
     // template rendered the technology bold + an empty "[]".
-    await mx.addMxC4Relationship(g, rel.source, rel.target, 'Relationship', rel.label, rel.description, undefined, rel.bidirectional === true, Object.keys(relOvr).length ? relOvr : undefined, edgeLabelCap(rel.source, rel.target), rel.back === true, lane ? { exit: lane.exit, entry: lane.entry } : undefined)
+    await mx.addMxC4Relationship(g, rel.source, rel.target, 'Relationship', rel.label, rel.description, undefined, rel.bidirectional === true, Object.keys(relOvr).length ? relOvr : undefined, edgeLabelCap(rel.source, rel.target), rel.back === true, lane ? { exit: lane.exit, entry: lane.entry } : borderAttach)
     if (!emittedIds.has(rel.source) || !emittedIds.has(rel.target)) {
       // Not silently swallowed: an unresolved endpoint means the puml
       // referenced an alias that never produced a shape. Surface it so the

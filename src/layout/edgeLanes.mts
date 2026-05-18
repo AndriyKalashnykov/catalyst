@@ -219,6 +219,44 @@ export function assignEdgeLanes(
 /** Axis-aligned rectangle (top-left + size) — a node's box in absolute px. */
 export interface NodeRect { x: number; y: number; w: number; h: number }
 
+/**
+ * Border attach fraction for a routed edge's endpoint, chosen so the
+ * incident segment is PERPENDICULAR to the attached border.
+ *
+ * A non-laned multi-bend edge is routed orthogonally by ELK; catalyst
+ * used to drop ELK's endpoint attach points and let draw.io re-attach
+ * to the box CENTRE — making the last segment a diagonal into the
+ * arrowhead's *side* (the `topology-cyclic` `requeues` defect: the head
+ * enters skew instead of head-on into the triangle's base). Pinning
+ * `exit`/`entry` here at the border on the same axis as the adjacent
+ * waypoint makes draw.io draw that segment straight into the border, so
+ * the arrowhead sits flush and the shaft enters the triangle's base.
+ *
+ * `p`   = ELK's endpoint attach point (on/at the box border).
+ * `adj` = the adjacent interior waypoint (ELK's next/prev bend).
+ * `box` = the endpoint node's centre + half-extents.
+ *
+ * The p→adj segment ELK produced is axis-aligned; we keep the border on
+ * that axis (vertical segment ⇒ top/bottom border, horizontal ⇒
+ * left/right) and clamp the along-border fraction to [0,1]. Pure
+ * geometry, no tuned constant.
+ */
+export function endpointAttachFraction(
+  p: { x: number; y: number },
+  adj: { x: number; y: number },
+  box: NodeCenter,
+): { x: number; y: number } {
+  const left = box.cx - box.hw, top = box.cy - box.hh
+  const w = box.hw * 2 || 1, h = box.hh * 2 || 1
+  const dx = Math.abs(adj.x - p.x), dy = Math.abs(adj.y - p.y)
+  if (dx >= dy) {
+    // incident segment horizontal ⇒ attach on the left/right border
+    return { x: p.x <= box.cx ? 0 : 1, y: clamp01((p.y - top) / h) }
+  }
+  // incident segment vertical ⇒ attach on the top/bottom border
+  return { x: clamp01((p.x - left) / w), y: p.y <= box.cy ? 0 : 1 }
+}
+
 /** Epsilon for the "fully contains" test — MUST equal the factcheck
  *  `labelHit` gate's `contains(...,eps)` inset so this de-collision
  *  triggers on EXACTLY the cases the gate flags (and stays inert,
