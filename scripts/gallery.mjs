@@ -6,6 +6,8 @@
  *   - <name>.puml.png    — PlantUML render of the SOURCE (ground truth)
  *   - <name>.drawio      — the catalyst conversion
  *   - <name>.drawio.png  — draw.io render of that conversion
+ *   - svg/<name>.{puml,drawio}.svg — reproducible vector evidence
+ *     (parity with the seq gallery #132; the README embeds the PNGs)
  * and writes docs/gallery/README.md grouping the fixtures by use-case class
  * with both images next to each other so a human can eyeball that every
  * element/connector/label survived the conversion.
@@ -50,6 +52,11 @@ const RENDER = !MD_ONLY && !DRAWIO_ONLY;
 const CORPUS_DIR = resolve(process.env.CORPUS_DIR ?? 'tests/fixtures/corpus');
 const OUT = resolve(process.env.GALLERY_OUT ?? 'docs/gallery');
 const IMG = join(OUT, 'img');
+// Committed reproducible-SVG render evidence (parity with the seq
+// gallery, #132): SVG is vector + diff-stable (PNG carries AA jitter —
+// e.g. the level-component.puml.png render-noise churn in #129). PNG
+// stays for the human README embed; SVG is the reproducible artifact.
+const SVG = join(OUT, 'svg');
 const DRAWIO_DIR = join(OUT, 'drawio');
 
 const CLASSES = [
@@ -78,6 +85,7 @@ function ensureJar() {
 
 mkdirSync(IMG, { recursive: true });
 mkdirSync(DRAWIO_DIR, { recursive: true });
+if (RENDER) mkdirSync(SVG, { recursive: true });
 
 const fixtures = readdirSync(CORPUS_DIR).filter((f) => f.endsWith('.puml')).sort();
 if (fixtures.length === 0) {
@@ -101,6 +109,13 @@ for (const f of fixtures) {
     // isn't left behind as a redundant duplicate of <stem>.puml.png.
     renameSync(produced, join(IMG, `${stem}.puml.png`));
   }
+}
+// 1b. PlantUML -tsvg (reproducible vector evidence, parity with seq).
+sh('java', ['-jar', jar, '-tsvg', '-nometadata', `${CORPUS_DIR}/`, '-o', SVG]);
+for (const f of fixtures) {
+  const stem = basename(f, '.puml');
+  const produced = join(SVG, `${stem}.svg`);
+  if (existsSync(produced)) renameSync(produced, join(SVG, `${stem}.puml.svg`));
 }
 }
 
@@ -140,6 +155,19 @@ for (const f of fixtures) {
   const hit = exported.find((x) => x === `${stem}.png` || x.startsWith(`${stem}-`));
   if (hit) copyFileSync(join(expDir, hit), join(IMG, `${stem}.drawio.png`));
   else console.warn(`! no drawio png for ${stem}`);
+}
+cleanExport();
+// 3b. drawio-export -f svg (reproducible vector evidence, parity w/ seq).
+sh('docker', ['run', '--rm', '-v', `${DRAWIO_DIR}:/data`, DRAWIO_IMAGE,
+  '-f', 'svg', '.']);
+const exportedSvg = existsSync(expDir)
+  ? readdirSync(expDir).filter((x) => x.endsWith('.svg'))
+  : [];
+for (const f of fixtures) {
+  const stem = basename(f, '.puml');
+  const hit = exportedSvg.find((x) => x === `${stem}.svg` || x.startsWith(`${stem}-`));
+  if (hit) copyFileSync(join(expDir, hit), join(SVG, `${stem}.drawio.svg`));
+  else console.warn(`! no drawio svg for ${stem}`);
 }
 cleanExport();
 }
