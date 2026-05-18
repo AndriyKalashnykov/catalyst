@@ -17,12 +17,12 @@
  *
  * Phase d1 adds `== divider ==`; phase d2 adds the combined/grouped
  * fragments `alt/else/opt/loop/par/critical/group/break` (nested),
- * parsed into paired `fragment-start|else|end` events with a precise
- * unterminated/orphan-`else` fail-loud.
+ * parsed into paired `fragment-start|else|end` events; phase d2b adds
+ * `ref over` reference frames and `create`/`destroy` lifeline lifespan.
  *
  * DEFERRED to a later phase — the parser FAILS LOUD (never silently
  * drops, per the contract-lock rule) naming the exact token + line:
- * `box`/`Boundary*` lifeline grouping, `ref`, `create`/`destroy`.
+ * `box`/`Boundary*` lifeline grouping.
  */
 import type {
   SeqModel, SeqEvent, Lifeline, ArrowKind,
@@ -54,15 +54,14 @@ const C4_LIFELINE_KINDS = new Set([...C4_TECHN_KINDS, ...C4_PLAIN_KINDS])
  *  token-naming fail-loud message (so downstream sees a clear error,
  *  not a wrong diagram). Order matters: most specific first. */
 const DEFERRED: { re: RegExp; what: string }[] = [
-  // NB: `== divider ==` (phase d1), the `alt/opt/loop/par/critical/
-  // group/break` + `else` fragments (phase d2) and `ref` (phase d2b)
-  // are parsed below, NOT in this fail-loud list. `box`/`Boundary`/
-  // `create`/`destroy` remain deferred to a later phase.
+  // NB: `== divider ==` (d1), `alt/opt/loop/par/critical/group/break`
+  // + `else` (d2), `ref` (d2b) and `create`/`destroy` (d2b) are parsed
+  // below, NOT in this fail-loud list. `box`/`Boundary` remain
+  // deferred to a later phase.
   { re: /^\s*box\b/i, what: '`box` lifeline grouping' },
   { re: /^\s*end\s+box\b/i, what: '`end box`' },
   { re: /^\s*(Enterprise_Boundary|System_Boundary|Container_Boundary|Boundary)\s*\(/, what: 'C4 sequence `Boundary(...)` grouping' },
   { re: /^\s*Boundary_End\s*\(/, what: '`Boundary_End()`' },
-  { re: /^\s*(create|destroy)\b/i, what: '`create`/`destroy` lifeline' },
 ]
 
 /** Arrow token → (kind, reversed). Longest tokens first so `-->>`
@@ -188,6 +187,41 @@ export class SeqParser {
       const div = /^==+(.*?)==+$/.exec(t)
       if (div) {
         events.push({ type: 'divider', label: div[1].trim(), order: events.length })
+        continue
+      }
+
+      // `create [participant|actor] X` / `destroy X` (phase d2b) —
+      // lifeline lifespan markers, source-ordered like activate (no
+      // own Y row). `create` may carry a declaration; both ensure the
+      // lifeline. Parsed BEFORE the deferred guard.
+      const mLife = /^(create|destroy)\b\s*(.*)$/i.exec(t)
+      if (mLife) {
+        const kind = mLife[1].toLowerCase() as 'create' | 'destroy'
+        const rest = mLife[2].trim()
+        const mDeclKw = /^(participant|actor|boundary|control|entity|database|collections|queue)\b\s*(.*)$/i.exec(rest)
+        let alias: string
+        if (kind === 'create' && mDeclKw) {
+          const dk = mDeclKw[1].toLowerCase()
+          const r = mDeclKw[2].trim()
+          let label: string
+          const mAs = /^(.*?)\s+as\s+([A-Za-z_][\w]*)\s*$/i.exec(r)
+          if (mAs) { label = unquote(mAs[1].trim()); alias = mAs[2].trim() }
+          else { alias = unquote(r).replace(/\s+/g, '_'); label = unquote(r) }
+          if (!alias) {
+            throw new SeqParseError(
+              `sequence: \`create ${dk}\` with no name (line ${lineNo}).`, lineNo)
+          }
+          addLifeline(alias, label || alias, dk === 'actor' ? 'actor' : 'participant')
+        } else {
+          alias = unquote(rest)
+          if (!alias) {
+            throw new SeqParseError(
+              `sequence: \`${kind}\` needs a lifeline (line ${lineNo}: `
+              + `"${t}"). This is a fail-loud guard, not a silent drop.`, lineNo)
+          }
+          ensure(alias)
+        }
+        events.push({ type: kind, lifeline: alias, order: events.length })
         continue
       }
 

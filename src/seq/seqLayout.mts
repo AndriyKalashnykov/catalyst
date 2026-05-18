@@ -136,6 +136,9 @@ export interface SeqLayout {
   events: LaidEvent[]
   activations: LaidActivation[]
   fragments: LaidFragment[]
+  /** `destroy X` cross-glyph anchors (phase d2b): the lifeline foot is
+   *  truncated at `y` and an `X` is drawn centred on `cx`. */
+  destroyMarks: { cx: number; y: number }[]
 }
 
 const lines = (s: string): string[] => {
@@ -194,6 +197,10 @@ export function layoutSeq(model: SeqModel): SeqLayout {
   const laidEvents: LaidEvent[] = []
   const activations: LaidActivation[] = []
   const actStack = new Map<string, number[]>()          // alias → LIFO of startY
+  // phase d2b lifespan: created lifelines start their head at first-use
+  // Y (not the top); destroyed ones end the foot at the destroy Y.
+  const createY = new Map<string, number>()
+  const destroyY = new Map<string, number>()
   const idxOf = new Map(model.lifelines.map((l, i) => [l.alias, i]))
   const loopW = Math.ceil(colGap / 2 + ARROW)           // self-message loop
 
@@ -289,6 +296,14 @@ export function layoutSeq(model: SeqModel): SeqLayout {
         : Math.ceil(2 * INSET)
       laidEvents.push({ type: 'divider', y, h, label: ev.label, order: ev.order })
       y += h + rowGap
+      continue
+    }
+    if (ev.type === 'create' || ev.type === 'destroy') {
+      // Lifespan markers — no own Y row (like activate/deactivate).
+      // `create` head starts at the current cursor (the creating
+      // message lands just below); `destroy` foot ends here + an X.
+      touch(idxOf.get(ev.lifeline))
+      ;(ev.type === 'create' ? createY : destroyY).set(ev.lifeline, y)
       continue
     }
     if (ev.type === 'activate') {
@@ -391,17 +406,31 @@ export function layoutSeq(model: SeqModel): SeqLayout {
   }
 
   const bottomY = y + 2 * INSET
-  const lifelines: LaidLifeline[] = model.lifelines.map((ll, i) => ({
-    alias: ll.alias,
-    label: ll.label,
-    kind: ll.kind,
-    cx: cxs[i],
-    headX: Math.round(cxs[i] - heads[i].headW / 2),
-    headY,
-    headW: heads[i].headW,
-    headH: heads[i].headH,
-    bottomY,
-  }))
+  const lifelines: LaidLifeline[] = model.lifelines.map((ll, i) => {
+    // phase d2b: a created lifeline's head drops to its first-use Y;
+    // a destroyed one's foot truncates at the destroy Y (clamped so
+    // the head box always fits even if destroy precedes any growth).
+    const hY = createY.get(ll.alias) ?? headY
+    const bY = destroyY.has(ll.alias)
+      ? Math.max(destroyY.get(ll.alias)!, hY + heads[i].headH)
+      : bottomY
+    return {
+      alias: ll.alias,
+      label: ll.label,
+      kind: ll.kind,
+      cx: cxs[i],
+      headX: Math.round(cxs[i] - heads[i].headW / 2),
+      headY: hY,
+      headW: heads[i].headW,
+      headH: heads[i].headH,
+      bottomY: bY,
+    }
+  })
+  // `destroy X` cross-glyph anchors (foot of the truncated lifeline).
+  const destroyMarks = [...destroyY].flatMap(([alias, dy]) => {
+    const i = idxOf.get(alias)
+    return i === undefined ? [] : [{ cx: cxs[i], y: dy }]
+  })
 
   // canvas extent (include a note/ref OR a fragment box that overhangs
   // the last lifeline — FRAG_PAD pushes past the rightmost cx)
@@ -420,6 +449,7 @@ export function layoutSeq(model: SeqModel): SeqLayout {
       f.y += titleH
       for (const el of f.elses) el.y += titleH
     }
+    for (const d of destroyMarks) d.y += titleH
   }
 
   return {
@@ -431,5 +461,6 @@ export function layoutSeq(model: SeqModel): SeqLayout {
     events: laidEvents,
     activations,
     fragments,
+    destroyMarks,
   }
 }

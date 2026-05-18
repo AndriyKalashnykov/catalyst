@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { SeqParser, SeqParseError } from '../../src/seq/SeqParser.mjs'
-import type { SeqMessage, SeqNote, SeqDivider, SeqRef } from '../../src/seq/SeqModel.interface.mjs'
+import type {
+  SeqMessage, SeqNote, SeqDivider, SeqRef, SeqLifecycle,
+} from '../../src/seq/SeqModel.interface.mjs'
 
 // ADR 0007 phase-a BLOCKING gate: the parser's ORDERING INVARIANTS
 // (declaration order → X index; source order → event order; arrowKind
@@ -110,15 +112,12 @@ describe('SeqParser — title, autonumber, activate, notes', () => {
 
 describe('SeqParser — v2 deferred constructs FAIL LOUD (never silent drop)', () => {
   const cases: [string, RegExp][] = [
-    // `== Stage 1 ==` (phase d1), `alt/opt/loop/par/critical/group/
-    // break`+`else` (phase d2) and `ref` (phase d2b) are NOT here —
-    // they are supported (see the phase describes below).
-    // box/Boundary/create/destroy remain deferred.
+    // d1 divider, d2 fragments, d2b `ref` + `create`/`destroy` are NOT
+    // here — they are supported (see the phase describes below). Only
+    // `box`/`Boundary` lifeline grouping remains deferred.
     ['box "Team"', /box/],
     ['System_Boundary(b, "B")', /Boundary/],
     ['Boundary_End()', /Boundary_End/],
-    ['create participant z', /create|destroy/],
-    ['destroy z', /create|destroy/],
   ]
   for (const [line, re] of cases) {
     it(`throws SeqParseError naming the token: "${line}"`, () => {
@@ -300,5 +299,37 @@ describe('SeqParser — phase d2b `ref` reference frames', () => {
   it('an unterminated block `ref over … (no end ref)` fails loud', () => {
     expect(() => SeqParser.parse(wrap('participant a\nref over a\ndangling')))
       .toThrowError(/unterminated `ref over/)
+  })
+})
+
+describe('SeqParser — phase d2b `create` / `destroy` lifespan', () => {
+  const life = (s: ReturnType<typeof SeqParser.parse>) =>
+    s.events.filter((e): e is SeqLifecycle =>
+      e.type === 'create' || e.type === 'destroy')
+
+  it('`create participant "L" as x` declares the lifeline AND emits a create event', () => {
+    const m = SeqParser.parse(wrap(
+      'participant a\na -> b : spawn\ncreate participant "Job" as j\na -> j : run'))
+    expect(m.lifelines.find((l) => l.alias === 'j')).toMatchObject({ label: 'Job' })
+    const l = life(m)
+    expect(l).toHaveLength(1)
+    expect(l[0]).toMatchObject({ type: 'create', lifeline: 'j' })
+  })
+
+  it('bare `create X` / `destroy X` auto-register + emit ordered events', () => {
+    const m = SeqParser.parse(wrap(
+      'participant a\ncreate x\na -> x : go\ndestroy x\na -> a : done'))
+    expect(m.lifelines.map((l) => l.alias)).toContain('x')
+    expect(life(m).map((e) => e.type)).toEqual(['create', 'destroy'])
+    // source order: create(1) < destroy(3)
+    expect(m.events.map((e) => e.type)).toEqual(
+      ['create', 'message', 'destroy', 'message'])
+  })
+
+  it('`create` / `destroy` with no lifeline fails loud (no silent drop)', () => {
+    expect(() => SeqParser.parse(wrap('participant a\ndestroy   ')))
+      .toThrowError(/`destroy` needs a lifeline/)
+    expect(() => SeqParser.parse(wrap('participant a\ncreate participant   ')))
+      .toThrowError(/`create participant` with no name/)
   })
 })

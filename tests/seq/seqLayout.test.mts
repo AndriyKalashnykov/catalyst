@@ -101,3 +101,29 @@ describe('layoutSeq — phase d2b `ref` frame geometry (#131)', () => {
     expect(ry).toBeLessThan(ys[1])
   })
 })
+
+describe('layoutSeq — phase d2b create/destroy lifespan', () => {
+  it('a created lifeline head Y > a normal lifeline head Y', () => {
+    const L = lay('participant a\na -> a : warm\ncreate j\na -> j : go')
+    const a = L.lifelines.find((l) => l.alias === 'a')!
+    const j = L.lifelines.find((l) => l.alias === 'j')!
+    expect(j.headY).toBeGreaterThan(a.headY)
+  })
+
+  it('a destroyed lifeline foot Y < a normal lifeline foot Y, + a destroy mark', () => {
+    const L = lay('participant a\na -> a : one\ncreate j\na -> j : go\n'
+      + 'destroy j\na -> a : later\na -> a : even later')
+    const a = L.lifelines.find((l) => l.alias === 'a')!
+    const j = L.lifelines.find((l) => l.alias === 'j')!
+    expect(j.bottomY).toBeLessThan(a.bottomY)
+    expect(L.destroyMarks).toHaveLength(1)
+    expect(L.destroyMarks[0].cx).toBe(j.cx)
+    expect(L.destroyMarks[0].y).toBe(j.bottomY)
+  })
+
+  it('destroy clamps foot ≥ head+headH even if destroy precedes growth', () => {
+    const L = lay('participant a\ncreate j\ndestroy j\na -> a : x')
+    const j = L.lifelines.find((l) => l.alias === 'j')!
+    expect(j.bottomY).toBeGreaterThanOrEqual(j.headY + j.headH)
+  })
+})

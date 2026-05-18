@@ -70,6 +70,16 @@ export interface SeqActivation {
   order: number
 }
 
+/** ADR 0007 phase d2b — `create X` / `destroy X` lifeline lifespan.
+ *  `create` shifts the lifeline head DOWN to its first-use Y (it does
+ *  not exist before); `destroy` truncates the foot at that Y with an
+ *  `X` glyph. Source-ordered like activate/deactivate (no own Y row). */
+export interface SeqLifecycle {
+  type: 'create' | 'destroy'
+  lifeline: string
+  order: number
+}
+
 /** A PlantUML `== label ==` divider — a full-width labelled band that
  *  segments the timeline (ADR 0007 phase d1). Spans all lifelines at
  *  its source-order Y; carries no from/to. */
@@ -129,6 +139,7 @@ export interface SeqRef {
 export type SeqEvent =
   | SeqMessage | SeqNote | SeqActivation | SeqDivider
   | SeqFragmentStart | SeqFragmentElse | SeqFragmentEnd | SeqRef
+  | SeqLifecycle
 
 export interface SeqModel {
   title?: string
