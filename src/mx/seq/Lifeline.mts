@@ -161,9 +161,31 @@ export function buildSeqDoc(L: SeqLayout): unknown {
   // Events: messages (edges) + notes + dividers, in source order.
   for (const ev of L.events) {
     if (ev.type === 'divider') {
-      // Full-width labelled band (phase d1). PlantUML draws the divider
-      // as a centred label on a banded separator spanning every
-      // lifeline — a neutral filled rect, bold centred text.
+      if (ev.label.trim().length === 0) {
+        // Empty `====` → a thin full-width separator RULE (PlantUML's
+        // hairline), centred in the reserved INSET footprint; emitted
+        // as a line edge (no fill, no arrowheads) exactly like a
+        // fragment else-separator. NOT a filled band — phase d1 v1.x.
+        const ry = Math.round(ev.y + ev.h / 2)
+        cells.push({
+          $: {
+            id: id('divider'),
+            style: `html=1;endArrow=none;startArrow=none;strokeColor=${PALETTE.BOUNDARY_STROKE}`,
+            edge: 1, parent: '1',
+          },
+          MxGeometry: {
+            $: { relative: 1, as: 'geometry' },
+            mxPoint: [
+              { $: { x: 0, y: ry, as: 'sourcePoint' } },
+              { $: { x: Math.round(L.width), y: ry, as: 'targetPoint' } },
+            ],
+          },
+        })
+        continue
+      }
+      // Labelled `== X ==` → full-width band (phase d1). PlantUML draws
+      // the divider as a centred label on a banded separator spanning
+      // every lifeline — a neutral filled rect, bold centred text.
       cells.push({
         $: {
           id: id('divider'), value: seqText(ev.label),

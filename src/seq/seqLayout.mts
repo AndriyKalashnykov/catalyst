@@ -253,10 +253,19 @@ export function layoutSeq(model: SeqModel): SeqLayout {
       continue
     }
     if (ev.type === 'divider') {
-      // Full-width band at this source-order Y (phase d1). Height = a
-      // measured label line + insets (same metric basis as a note row);
+      // A labelled `== X ==` → full-width centred band sized to the
+      // label (PlantUML's filled pill — phase d1). An EMPTY `====` is a
+      // thin separator RULE in PlantUML, NOT a band (phase d1 v1.x): it
+      // gets only the symmetric `2·INSET` footprint around a
+      // zero-thickness line. INSET is the same measured PlantUML text
+      // inset used for every other band's padding — reused, not a new
+      // constant; for the label-less footprint (which neither PlantUML
+      // nor draw.io defines canonically) it is a documented convention.
       // x/w are set at emit from the final canvas width.
-      const h = Math.ceil(blockH(ev.label, BODY_PX) + 2 * INSET)
+      const labelled = ev.label.trim().length > 0
+      const h = labelled
+        ? Math.ceil(blockH(ev.label, BODY_PX) + 2 * INSET)
+        : Math.ceil(2 * INSET)
       laidEvents.push({ type: 'divider', y, h, label: ev.label, order: ev.order })
       y += h + rowGap
       continue
