@@ -219,6 +219,98 @@ export function assignEdgeLanes(
 /** Axis-aligned rectangle (top-left + size) — a node's box in absolute px. */
 export interface NodeRect { x: number; y: number; w: number; h: number }
 
+/**
+ * Border attach fraction for a routed edge's endpoint, chosen so the
+ * incident segment is PERPENDICULAR to the attached border.
+ *
+ * A non-laned multi-bend edge is routed orthogonally by ELK; catalyst
+ * used to drop ELK's endpoint attach points and let draw.io re-attach
+ * to the box CENTRE — making the last segment a diagonal into the
+ * arrowhead's *side* (the `topology-cyclic` `requeues` defect: the head
+ * enters skew instead of head-on into the triangle's base). Pinning
+ * `exit`/`entry` here at the border on the same axis as the adjacent
+ * waypoint makes draw.io draw that segment straight into the border, so
+ * the arrowhead sits flush and the shaft enters the triangle's base.
+ *
+ * `p`   = ELK's endpoint attach point (on/at the box border).
+ * `adj` = the adjacent interior waypoint (ELK's next/prev bend).
+ * `box` = the endpoint node's centre + half-extents.
+ *
+ * The p→adj segment ELK produced is axis-aligned; we keep the border on
+ * that axis (vertical segment ⇒ top/bottom border, horizontal ⇒
+ * left/right) and clamp the along-border fraction to [0,1]. Pure
+ * geometry, no tuned constant.
+ */
+/**
+ * Border-normal axis `endpointAttachFraction` selects for an incident
+ * segment `p→adj`: `'x'` (left/right border ⇒ head-on horizontal) when
+ * the segment is more horizontal than vertical, else `'y'` (top/bottom
+ * border ⇒ head-on vertical). Shared so a port-stub (below) is built
+ * perpendicular to the SAME border the fraction attaches to — never
+ * parallel to it (a degenerate, still-skewed stub).
+ */
+export function incidentAxis(
+  p: { x: number; y: number },
+  adj: { x: number; y: number },
+): 'x' | 'y' {
+  return Math.abs(adj.x - p.x) >= Math.abs(adj.y - p.y) ? 'x' : 'y'
+}
+
+export function endpointAttachFraction(
+  p: { x: number; y: number },
+  adj: { x: number; y: number },
+  box: NodeCenter,
+): { x: number; y: number } {
+  const left = box.cx - box.hw, top = box.cy - box.hh
+  const w = box.hw * 2 || 1, h = box.hh * 2 || 1
+  if (incidentAxis(p, adj) === 'x') {
+    // incident segment horizontal ⇒ attach on the left/right border
+    return { x: p.x <= box.cx ? 0 : 1, y: clamp01((p.y - top) / h) }
+  }
+  // incident segment vertical ⇒ attach on the top/bottom border
+  return { x: clamp01((p.x - left) / w), y: p.y <= box.cy ? 0 : 1 }
+}
+
+/**
+ * Perpendicular port-stub for a pinned-attach edge endpoint.
+ *
+ * draw.io attaches a pinned edge at the `exit/entry` border fraction
+ * catalyst emits, then draws a STRAIGHT segment from that border point
+ * to the first emitted waypoint. When the adjacent waypoint sits off
+ * the border's parallel extent — ELK routed the path against its own
+ * node rects (off catalyst's emitted border), or a lane is fanned
+ * perpendicular — that segment is a DIAGONAL into the arrowhead's
+ * *side*: the `arrowSkew` defect, the head fails to enter the box
+ * head-on (`topology-cyclic` `requeues`; c4-exhaustive `dev->api`,
+ * firstwp x=983 vs box left=988 ⇒ a 5 px skew no border-clamped attach
+ * can remove, because the waypoint is OUTSIDE the box extent on the
+ * parallel axis — a perpendicular first segment is geometrically
+ * impossible without an intermediate point).
+ *
+ * Construction-correct, parameter-free fix: insert a stub waypoint that
+ * shares the attach point's ON-border coordinate and the adjacent
+ * interior waypoint's FREE coordinate. `attach→stub` is then
+ * axis-aligned (perpendicular to the attached border ⇒ head-on
+ * arrowhead) BY CONSTRUCTION; `stub→interior` carries the remaining
+ * offset. One helper unifies the laned and non-laned multi-bend paths.
+ *
+ * `axis`   = the border-normal axis from `incidentAxis` for this
+ *            endpoint (the SAME decision `endpointAttachFraction` used).
+ * `attach` = absolute emitted attach point (border fraction × box).
+ * `inner`  = adjacent EMITTED interior waypoint.
+ */
+export function endpointStub(
+  axis: 'x' | 'y',
+  attach: { x: number; y: number },
+  inner: { x: number; y: number },
+): { x: number; y: number } {
+  // axis 'x' (left/right border): head-on is horizontal ⇒ the first
+  // segment must be horizontal ⇒ hold attach.y, advance x to `inner`.
+  return axis === 'x'
+    ? { x: inner.x, y: attach.y }
+    : { x: attach.x, y: inner.y }
+}
+
 /** Epsilon for the "fully contains" test — MUST equal the factcheck
  *  `labelHit` gate's `contains(...,eps)` inset so this de-collision
  *  triggers on EXACTLY the cases the gate flags (and stays inert,
