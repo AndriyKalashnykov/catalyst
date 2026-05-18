@@ -329,6 +329,37 @@ class Mx {
         object.push(t);
     }
 
+    /**
+     * A PlantUML `note <pos> of X` / `note over X[,Y]` callout (C4
+     * residual — was silently dropped via the EntityParser skip-list,
+     * a contract-lock/no-silent-drop violation). Placed POST-LAYOUT at
+     * a geometry computed from the target node's laid-out box, so ELK /
+     * EntityParser are untouched ⇒ the static-C4 corpus is byte-
+     * identical by construction. `shape=note` = draw.io's folded-corner
+     * note (the same shape the seq pipeline's notes use); the value is
+     * run through the proven `c4Text` encoder so `\n`/`<`/`>`/`&` are
+     * escaped exactly like every other catalyst-authored text.
+     */
+    addMxNote(geometry: MxGeometry, text: string, id: string): void {
+        const t = {
+            $: {
+                value: c4Text(text),
+                id,
+            },
+            MxCell: {
+                $: {
+                    style: 'shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;'
+                        + 'darkOpacity=0.05;align=left;verticalAlign=top',
+                    parent: '1',
+                    vertex: 1,
+                },
+                MxGeometry: geometry,
+            },
+        } as unknown as c4
+        const object = this.getRoot().object ?? []
+        object.push(t)
+    }
+
     async addMxC4Relationship(geometry: MxGeometry, source: string, target: string, type: string, name: string, technology?: string, description?: string, bidirectional: boolean = false, styleOverride?: StyleOverride, maxLabelWidthPx: number = Infinity, back: boolean = false, attach?: { exit: { x: number; y: number }; entry: { x: number; y: number } }): Promise<void> {
 
         // Arrowhead placement mirrors C4-PlantUML v2.13.0 C4.puml exactly:

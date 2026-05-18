@@ -2,6 +2,9 @@ import { EntityParser, EntityDescriptor } from "./puml/EntityParser.mjs"
 import { Mx, MxGeometry } from './mx/Mx.mjs'
 import { MxPoint } from './mx/MxPoint.mjs'
 import { RelParser } from './puml/RelParser.mjs'
+import { parseNotes, type C4Note } from './puml/NoteParser.mjs'
+import { splitLabelLines } from './text/labelLines.mjs'
+import { ELEMENT_BODY_PX, PUML_LEAF_BOX } from './mx/c4/theme.mjs'
 import { LayoutEngine, LayoutResult } from './layout/LayoutEngine.mjs'
 import { assignEdgeLanes, resolveLabelOverlap, slideLabelAlongLane, polylineMidpoint, enforceApproachClearance, type NodeCenter, type NodeRect } from './layout/edgeLanes.mjs'
 import { measureEdgeLabel } from './layout/measureNode.mjs'
@@ -42,7 +45,7 @@ function overrideFor(type: string, tags: string | undefined, styles: ParsedStyle
   return Object.keys(merged).length ? merged : undefined
 }
 
-async function layoutData2mx(layoutData: LayoutResult, pumlElements: EntityDescriptor[], pumlRelations: { source: string, target: string, label: string, description: string, bidirectional?: boolean, back?: boolean, tags?: string }[], styles: ParsedStyles, title?: string): Promise<string> {
+async function layoutData2mx(layoutData: LayoutResult, pumlElements: EntityDescriptor[], pumlRelations: { source: string, target: string, label: string, description: string, bidirectional?: boolean, back?: boolean, tags?: string }[], styles: ParsedStyles, title?: string, notes: C4Note[] = []): Promise<string> {
   const mx = new Mx(layoutData.height || 600, layoutData.width || 800,
     { sketch: styles.sketch, hideStereotype: styles.hideStereotype })
   const parser = new EntityParser()
@@ -111,6 +114,45 @@ async function layoutData2mx(layoutData: LayoutResult, pumlElements: EntityDescr
       }
     }
   }
+
+  // C4 `note left|right|top|bottom of X` callouts (was silently
+  // dropped; `note over` is sequence-only — PlantUML errors on it in a
+  // static diagram — so it is NOT a static-C4 form, see NoteParser).
+  // Placed POST-LAYOUT from the target node's laid-out box —
+  // ELK/EntityParser untouched ⇒ static-C4 corpus byte-identical by
+  // construction (no corpus fixture has a note; gallery-verify proves
+  // it). Every dimension is a measured font metric or the cited
+  // PlantUML inset — no magic constant. v1 limitation: ELK is unaware
+  // of notes (no reflow); a note is clamped to ≥0 so it never goes
+  // off-canvas, which can overlap an edge-of-diagram target.
+  const NOTE_PX = ELEMENT_BODY_PX;
+  const NOTE_PAD = PUML_LEAF_BOX.INSET;
+  const NOTE_GAP = renderedLineHeight(NOTE_PX);
+  notes.forEach((nt, i) => {
+    const geoms = nt.targets
+      .map((tg) => nodeCenter.get(tg)).filter((c): c is NodeCenter => !!c);
+    if (geoms.length === 0) return;            // unresolved target → best-effort skip (v1)
+    const bx1 = Math.min(...geoms.map((g) => g.cx - g.hw));
+    const by1 = Math.min(...geoms.map((g) => g.cy - g.hh));
+    const bx2 = Math.max(...geoms.map((g) => g.cx + g.hw));
+    const by2 = Math.max(...geoms.map((g) => g.cy + g.hh));
+    const lines = splitLabelLines(nt.text);
+    const lns = lines.length ? lines : [''];
+    const w = Math.ceil(lns.reduce(
+      (m, l) => Math.max(m, textWidth(l, NOTE_PX, false)), 0) + 2 * NOTE_PAD);
+    const h = Math.ceil(lns.length * renderedLineHeight(NOTE_PX) + 2 * NOTE_PAD);
+    let x: number, y: number;
+    switch (nt.pos) {
+      case 'left':   x = bx1 - w - NOTE_GAP;            y = by1 + (by2 - by1 - h) / 2; break;
+      case 'right':  x = bx2 + NOTE_GAP;                y = by1 + (by2 - by1 - h) / 2; break;
+      case 'top':    x = bx1 + (bx2 - bx1 - w) / 2;     y = by1 - h - NOTE_GAP;        break;
+      case 'bottom': x = bx1 + (bx2 - bx1 - w) / 2;     y = by2 + NOTE_GAP;            break;
+      default:       x = (bx1 + bx2) / 2 - w / 2;       y = (by1 + by2) / 2 - h / 2;   break; // fallback (centred)
+    }
+    mx.addMxNote(
+      new MxGeometry(h, w, Math.max(0, Math.round(x)), Math.max(0, Math.round(y))),
+      nt.text, `note-${i}`);
+  });
 
   // Emit ONE drawio edge per parsed relation — driven by pumlRelations, NOT by
   // the layout engine's edge set. The hard guarantee is "no relation is
@@ -489,7 +531,7 @@ export class Catalyst {
     // invariant (every source construct traces to a target element)
     // holds: the title is emitted as a drawio cell, not dropped.
     const title = (/^[ \t]*title[ \t]+(.+?)[ \t]*$/m.exec(pumlContent) ?? [])[1]
-    return await layoutData2mx(layoutData, elements, relations, styles, title)
+    return await layoutData2mx(layoutData, elements, relations, styles, title, parseNotes(pumlContent))
   }
 
   /**
