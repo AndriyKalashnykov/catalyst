@@ -87,14 +87,23 @@ done
 | `Node` | same | ✓ (dispatched to `DeploymentNode`) |
 | `Node_L` / `_R` | same | ✓ |
 
-### Sequence level
+### Sequence level (C4_Sequence.puml — ADR 0007, v1 landed)
+
+Dispatched to the parallel `SeqConverter` pipeline (`src/seq/`,
+`src/mx/seq/`) via the `catalyst.mts` detector seam — NOT the C4
+ELK/box path. v1 = participants + ordered messages + activations +
+notes + title; v2-deferred constructs **fail-loud** (no silent drop).
 
 | Primitive | State |
 |---|---|
-| All Context/Container/Component types | ✓ (inherited) |
-| `Boundary` (generic) | ✓ |
-| `SHOW_ELEMENT_DESCRIPTIONS` | ✗ (skipped as comment) |
-| `SHOW_FOOT_BOXES` / `SHOW_INDEX` | ✗ (skipped as comment) |
+| `participant` / `actor` + all C4 lifeline kinds | ✓ v1 (decl order → lifeline X; `shape=umlLifeline`) |
+| Messages `->` `-->` `->>` + `Rel`/`Rel_Back`/`BiRel` kinds | ✓ v1 (source order → monotone Y; sync/async/return/bi arrowheads) |
+| `activate` / `deactivate` | ✓ v1 (LIFO-paired activation bars) |
+| `note left\|right\|over` | ✓ v1 (note shape; self-loop/activation overlap is a v1.x polish item — ADR 0007) |
+| `title` | ✓ v1 (traced to a title cell — completeness invariant) |
+| Self-message (`a -> a`) | ✓ v1 (loop route; wide vs PlantUML's hook — v1.x polish) |
+| `==divider==`, `alt/opt/loop/par/critical`, `box`/`Boundary` grouping, `ref`, create/destroy | ✗ v2 — **fail-loud** with token+line (`SeqParseError`; no silent drop) |
+| `autonumber`, `SHOW_ELEMENT_DESCRIPTIONS`, `SHOW_FOOT_BOXES`/`SHOW_INDEX` | ✗ v2 (deferred) |
 
 ## Relationships
 

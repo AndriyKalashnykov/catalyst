@@ -62,18 +62,42 @@ describe('Bug 1 — XML escaping of catalyst-authored attribute values', () => {
 });
 
 describe('Bug 2 — fail loudly, never a content-less stub', () => {
-  it('rejects a C4_Sequence diagram with a clear, specific message', async () => {
+  // ADR 0007 phase b: a v1 sequence diagram now CONVERTS (parallel
+  // SeqConverter pipeline) instead of fail-louding. The fail-loud
+  // detector is retained as the dispatch seam + the v1→v2 guard.
+  it('converts a v1 C4_Sequence diagram to a umlLifeline drawio', async () => {
     const puml = C4('C4_Sequence.puml',
       'actor "Operator / app" as op\nparticipant "Certificate CR" as crt\nop -> crt : apply');
-    await expect(Catalyst.convert(puml)).rejects.toThrow(
-      /unsupported C4-PlantUML diagram type: C4_Sequence/,
-    );
+    const xml = await Catalyst.convert(puml);
+    expect(xml).toContain('<mxfile');
+    // one umlLifeline per declared participant/actor, in decl order
+    expect((xml.match(/shape=umlLifeline/g) ?? []).length).toBe(2);
+    expect(xml.indexOf('ll-op')).toBeLessThan(xml.indexOf('ll-crt'));
+    // the message is an edge
+    expect((xml.match(/edge="1"/g) ?? []).length).toBe(1);
+    await expect(xml2js.parseStringPromise(xml)).resolves.toBeDefined();
   });
 
-  it('rejects sequence syntax even without the C4_Sequence include', async () => {
-    await expect(
-      Catalyst.convert('@startuml s\nparticipant "A" as a\nparticipant "B" as b\na -> b : x\n@enduml'),
-    ).rejects.toThrow(/unsupported C4-PlantUML diagram type: C4_Sequence/);
+  it('converts bare participant sequence syntax (no C4_Sequence include)', async () => {
+    const xml = await Catalyst.convert(
+      '@startuml s\nparticipant "A" as a\nparticipant "B" as b\na -> b : x\n@enduml');
+    expect((xml.match(/shape=umlLifeline/g) ?? []).length).toBe(2);
+    await expect(xml2js.parseStringPromise(xml)).resolves.toBeDefined();
+  });
+
+  // The no-silent-drop contract (ADR 0007): a v2-DEFERRED construct
+  // must fail-loud with a precise message naming the token + line —
+  // never a wrong/partial diagram.
+  it('fail-louds on a v2-deferred ==divider== (names token + line)', async () => {
+    await expect(Catalyst.convert(C4('C4_Sequence.puml',
+      'participant "A" as a\nparticipant "B" as b\n==phase==\na -> b : x')))
+      .rejects.toThrow(/`== divider ==` is not supported in v1.*Line \d+/s);
+  });
+
+  it('fail-louds on a v2-deferred alt/opt/loop fragment', async () => {
+    await expect(Catalyst.convert(C4('C4_Sequence.puml',
+      'participant "A" as a\nparticipant "B" as b\nalt ok\na -> b : x\nend')))
+      .rejects.toThrow(/fragment \(`alt\/opt\/loop/);
   });
 
   it('rejects any non-empty input that yields zero entities and zero relations', async () => {

@@ -1,13 +1,22 @@
 # ADR 0007 — Sequence-diagram support (design)
 
-- Status: accepted — phased implementation in progress
-- Date: 2026-05-16 (design); phase-a landed 2026-05-17
+- Status: accepted — v1 implemented (phases a–c landed)
+- Date: 2026-05-16 (design); phase-a 2026-05-17; phase-b+c 2026-05-18
 - Phases: **(a) `SeqParser` + ordering invariants — ✅ DONE
   2026-05-17** (`src/seq/SeqParser.mts` + `SeqModel.interface.mts`,
-  29-test ordering+fail-loud matrix; net-new, zero existing-path
-  change, factcheck CLEAN 26/26 by construction). Next: (b) linear
-  `seqLayout` + `umlLifeline` emit; (c) corpus fixture +
-  render-compare gate; (d) v2 fragments/dividers.
+  29-test ordering+fail-loud matrix). **(b) linear `seqLayout` +
+  `umlLifeline` emit + dispatch — ✅ DONE 2026-05-18**
+  (`src/seq/seqLayout.mts`, `src/mx/seq/Lifeline.mts`,
+  `src/seq/SeqConverter.mts`; `catalyst.mts` detector `throw` →
+  `SeqConverter.convert` — the only existing-path change, proven
+  zero-risk: factcheck CLEAN 26/26 + arrowskew 20/20 + 26 static
+  fixtures byte-identical). **(c) v1 corpus fixture +
+  render-compare gate — ✅ DONE 2026-05-18**
+  (`tests/fixtures/seq/seq-v1-cert-lifecycle.puml`;
+  `tests/seq/SeqConverter.test.mts` whole-path emit contract;
+  visual gate run — structurally faithful, see Consequences for
+  honest v1 imperfections). Next: **(d) v2 fragments/dividers**
+  (currently fail-loud, the no-silent-drop guard).
 
 ## Context
 
@@ -137,3 +146,25 @@ wrong diagram.
   that fixture converts instead of erroring (coordinate the release
   per the catalyst→puml2drawio→ibm-wm chain — memory
   `release-chain-topology`).
+
+### Known v1 imperfections (honest; non-blocking, no data loss)
+
+Recorded from the phase-c render-compare visual gate
+(`seq-v1-cert-lifecycle`, draw.io vs PlantUML). v1's bar is "a clean,
+structurally-faithful first draft" — these are aesthetic, not
+correctness, and every construct renders with the ordering invariants
+intact:
+
+- **Self-message** (`a -> a`) renders as a wide rectangular loop with
+  a full sync arrowhead, vs PlantUML's compact hook. Semantically
+  correct (it IS a self-message); a v1.x polish candidate (tighten the
+  `loopW`/use a smaller return-style head).
+- **`note over` slightly overlaps** the activation bar / self-loop
+  when both land on the same lifeline row. No occlusion of message
+  text; a v1.x layout-nudge candidate (reserve the note's row height
+  against the activation extent).
+- Lifeline spacing is generous (measured `colGap`) — sparse, not
+  crammed; acceptable, tunable later if a wide fixture needs it.
+
+These are tracked for v1.x/v2 polish; they do NOT gate v1 (the
+structural emit contract + fail-loud-on-deferred are the v1 bar).
