@@ -1,42 +1,32 @@
-# Catalyst
+[![CI](https://github.com/AndriyKalashnykov/catalyst/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/AndriyKalashnykov/catalyst/actions/workflows/ci.yml)
+[![Hits](https://hits.sh/github.com/AndriyKalashnykov/catalyst.svg?view=today-total&style=plastic)](https://hits.sh/github.com/AndriyKalashnykov/catalyst/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen.svg)](LICENSE)
+[![Renovate enabled](https://img.shields.io/badge/renovate-enabled-brightgreen.svg)](https://app.renovatebot.com/dashboard#github/AndriyKalashnykov/catalyst)
+
+# Catalyst — PlantUML C4 → draw.io Converter
 
 <div align="center">
   <img src="logo.svg" width="100" height="100" alt="Catalyst Logo">
 </div>
-
-[![CI](https://github.com/AndriyKalashnykov/catalyst/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/AndriyKalashnykov/catalyst/actions/workflows/ci.yml)
-[![Hits](https://hits.sh/github.com/AndriyKalashnykov/catalyst.svg?view=today-total&style=plastic)](https://hits.sh/github.com/AndriyKalashnykov/catalyst/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen.svg)](LICENSE)
 
 JavaScript/TypeScript library that converts C4 diagrams written in PlantUML
 C4 syntax (`.puml`) into [draw.io](https://draw.io) XML — no PlantUML runtime
 required. The **consumer surface** is a one-call API
 (`Catalyst.convert(puml, options)`) plus `parseEntities` / `parseRelations`,
 installed as a git dependency. The **engine surface** uses
-[elkjs](https://github.com/kieler/elkjs) (Eclipse Layout Kernel) with
-spec-driven algorithm selection — `layered` (+`NETWORK_SIMPLEX`) for
-hierarchical C4 (Container/Component/Deployment), `stress`
-(+`sporeOverlap`) for hub-and-spoke Context — real
-font-metric node sizing, and structural-parity + golden-snapshot +
-layout-quality test gates.
+[elkjs](https://github.com/kieler/elkjs) (Eclipse Layout Kernel) —
+`org.eclipse.elk.layered` (+`NETWORK_SIMPLEX`) for **every** C4 type
+(Context, Container, Component, Deployment alike — matching PlantUML's
+own Graphviz `dot`; ADR 0008/0009), real font-metric node sizing, and
+structural-parity + golden-snapshot + layout-quality test gates.
 
 > **Project status:** independently maintained. The layout engine is
-> elkjs with real font-metric node sizing and spec-driven algorithm
-> selection (`layered`/`NETWORK_SIMPLEX` for hierarchical C4,
-> `stress`/`sporeOverlap` for Context), with structural-parity,
-> golden-snapshot and layout-quality test gates. Third-party
-> copyright/license terms are retained in [LICENSE](LICENSE). Not
-> published to npm — consumed as a git dependency.
-
-```mermaid
-flowchart LR
-  P[".puml<br/>(PlantUML C4 syntax)"] --> A["Catalyst.convert()"]
-  subgraph A[" "]
-    direction LR
-    PR[parse entities + relations] --> EL["ELK layout<br/>(layered / stress)"] --> MX[emit draw.io XML]
-  end
-  A --> D[".drawio"]
-```
+> elkjs with real font-metric node sizing; ELK `layered`+`NETWORK_SIMPLEX`
+> is used for all C4 diagram types (ADR 0008 superseded the earlier
+> Context→`stress` branch; ADR 0009 sets `cycleBreaking=DEPTH_FIRST`),
+> with structural-parity, golden-snapshot and layout-quality test gates.
+> Third-party copyright/license terms are retained in [LICENSE](LICENSE).
+> Not published to npm — consumed as a git dependency.
 
 ## What a conversion looks like
 
@@ -69,7 +59,7 @@ order, and every relationship verb with its `[technology]`.
 |-----------|-----------|
 | Language | TypeScript 6.0, ES2024 (`.mts` ESM) |
 | Runtime | Node.js 26 (ES2024+), mise-managed (`.mise.toml`) |
-| Layout engine | elkjs (Eclipse Layout Kernel) — `layered` + `stress` (+`sporeOverlap` declump) |
+| Layout engine | elkjs (Eclipse Layout Kernel) — `layered` + `NETWORK_SIMPLEX`, all C4 types (ADR 0008/0009) |
 | Text metrics | fontkit + bundled Liberation Sans (SIL OFL) |
 | Serialization | xml2js |
 | Tests | Vitest — unit, structural parity, golden snapshot, layout quality, corpus sanity |
@@ -95,23 +85,58 @@ make ci        # full local pipeline == CI (build + lint + static-check
 
 ## Prerequisites
 
-`mise` provides node + the CLI tools (act/gitleaks/trivy) from
-`.mise.toml`; `make deps` bootstraps it. graphviz (system package, no
-mise backend) is needed only for the local render path — `./setup.sh`
-installs it cross-platform (apt/dnf/brew/pacman, idempotent).
+`mise` provides Node, Java (Temurin), and the CLI tools
+(act/gitleaks/trivy) from `.mise.toml`; `make deps` bootstraps it. Only
+graphviz has no mise backend — it is a system package needed solely for
+the local render path, installed cross-platform by `./setup.sh`
+(apt/dnf/brew/pacman, idempotent).
 
 | Tool | Version | Purpose |
 |------|---------|---------|
-| [Node.js](https://nodejs.org/) | ES2024+ (via mise) | Runtime and build |
+| [Node.js](https://nodejs.org/) | 26 (via mise) | Runtime and build |
+| [Java](https://adoptium.net/) | Temurin 21 LTS (via mise) | `make render-compare` / `gallery` / `factcheck` (PlantUML `-tsvg`) |
 | [GNU Make](https://www.gnu.org/software/make/) | 3.81+ | Build orchestration |
 | [Git](https://git-scm.com/) | latest | Dependency resolution (git install) |
 | [Docker](https://www.docker.com/) | latest | `make render-compare` / `gallery` / `ci-run` |
-| [Java](https://adoptium.net/) | 17+ | `make render-compare` / `gallery` / `factcheck` (PlantUML) |
 | [graphviz](https://graphviz.org/) | latest | PlantUML `-tsvg` layout — installed by `./setup.sh` |
 
 ```bash
 make deps
 ```
+
+## Layout engine
+
+elkjs lays out **every** C4 spec level with `org.eclipse.elk.layered` +
+`NETWORK_SIMPLEX` node placement — Context, Container, Component and
+Deployment alike. This matches PlantUML's own engine (Graphviz `dot` is
+hierarchical layered ranking for all C4 types, Context included), which
+is the parity target:
+
+- **Layered + `NETWORK_SIMPLEX`** — layered flow, orthogonal routed
+  connectors, native compound nesting (~32% fewer crossings on a large
+  multi-boundary Container vs the default placement; `docs/adr/0006`).
+- **`cycleBreaking=DEPTH_FIRST`** (`docs/adr/0009`) — keeps a 2-cycle
+  compact (source rank, both targets one rank below) as `dot` does,
+  instead of the GREEDY default's three-rank spread.
+- ADR 0008 superseded the earlier Context→`stress`(+`sporeOverlap`)
+  branch: `stress` diverged from PlantUML in every Context shape
+  (linear chain, hub-and-spoke, wide rank), so it was removed — a
+  single layered engine is both faithful and simpler.
+
+Node sizes are measured from the real label font (fontkit + bundled
+Liberation Sans), floored at the conventional C4 element-box size so rendered
+shapes never cram. Directional intent: `Rel_U/D` honored on the layered path;
+`Rel_L/R` honored when nodes share a rank (cross-rank L/R is not expressible
+in any layered engine).
+
+Relationship rendering: the verb is shown bold with the technology
+bracketed below it (an absent technology yields no `[]` artifact); entity
+descriptions are preserved for every C4 element (including `Person`/`System`,
+which have no technology parameter); `RelIndex(...)` dynamic relations are
+parsed. When two or more relations connect the **same node pair**
+(antiparallel `Rel`+`Rel_Back` or parallel duplicates), each is fanned onto
+its own lane — a perpendicular waypoint plus an offset label — so connectors
+and labels never render collinear or stacked.
 
 ## Usage
 
@@ -168,38 +193,6 @@ dividers) is **not** supported: `Catalyst.convert()` **throws** a clear
 error rather than emitting a content-less stub, so callers fail fast
 instead of generating blank artifacts. Likewise, any input that yields
 zero entities and zero relations is rejected.
-
-## Layout engine
-
-elkjs is selected per the **C4 spec level** of the source (a semantic fact,
-not a heuristic):
-
-- **Container / Component / Deployment** (hierarchical) → `org.eclipse.elk.layered`
-  with `NETWORK_SIMPLEX` node placement — layered flow, orthogonal routed
-  connectors, native compound nesting (~32% fewer crossings on a large
-  multi-boundary Container vs the default placement; see `docs/adr/0006`).
-- **Context** (people/systems only — hub-and-spoke) → `org.eclipse.elk.stress`
-  followed by an `org.eclipse.elk.sporeOverlap` declump pass — crossing-
-  minimal, deterministic placement with zero node overlap (a Context
-  overview is not a flow diagram; a layered engine, including PlantUML's own
-  Graphviz/dot, spreads a star into a wide ribbon). `stress` replaced the
-  seed-based `force` (0 vs 3 crossings on the real c4-context; see
-  `docs/adr/0005`).
-
-Node sizes are measured from the real label font (fontkit + bundled
-Liberation Sans), floored at the conventional C4 element-box size so rendered
-shapes never cram. Directional intent: `Rel_U/D` honored on the layered path;
-`Rel_L/R` honored when nodes share a rank (cross-rank L/R is not expressible
-in any layered engine).
-
-Relationship rendering: the verb is shown bold with the technology
-bracketed below it (an absent technology yields no `[]` artifact); entity
-descriptions are preserved for every C4 element (including `Person`/`System`,
-which have no technology parameter); `RelIndex(...)` dynamic relations are
-parsed. When two or more relations connect the **same node pair**
-(antiparallel `Rel`+`Rel_Back` or parallel duplicates), each is fanned onto
-its own lane — a perpendicular waypoint plus an offset label — so connectors
-and labels never render collinear or stacked.
 
 ## Available Make Targets
 
