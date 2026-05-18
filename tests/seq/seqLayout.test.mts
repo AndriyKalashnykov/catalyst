@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { SeqParser } from '../../src/seq/SeqParser.mjs'
 import { layoutSeq } from '../../src/seq/seqLayout.mjs'
 import type {
-  LaidDivider, LaidRef, LaidLifeline,
+  LaidDivider, LaidRef, LaidLifeline, LaidMessage,
 } from '../../src/seq/seqLayout.mjs'
 import type { LaidFragment } from '../../src/seq/seqLayout.mjs'
 
@@ -163,5 +163,49 @@ describe('layoutSeq — phase d2b box/Boundary grouping', () => {
     expect(L.boxes[0].label).toBe('Plane')
     const ctl = L.lifelines.find((l) => l.alias === 'ctl')!
     expect(L.boxes[0].x).toBeLessThan(ctl.headX)
+  })
+})
+
+describe('layoutSeq — self-message loopW = own-label width (v1.x re-spike, task 13)', () => {
+  const selfLoop = (label: string) => {
+    const L = lay(`participant w\nparticipant other\n`
+      + `w -> w : ${label}\nw -> other : x`)
+    return L.events.find((e): e is LaidMessage =>
+      e.type === 'message' && e.selfLoop)!
+  }
+
+  it('a SHORT self-label gives a compact loop (NOT coupled to colGap)', () => {
+    const short = selfLoop('ok')
+    // colGap is driven by the widest inter-column label ("x" here is
+    // tiny, but the floor is 2*ARROW); a short self-loop must be small
+    // — far narrower than the old colGap/2+ARROW would have produced
+    // for a wide-gap diagram. Assert it is bounded by its own label.
+    expect(short.loopW).toBeGreaterThan(0)
+    expect(short.loopW).toBeLessThan(120)                  // compact hook
+  })
+
+  it('a LONG self-label widens the loop (no regression — own label)', () => {
+    const short = selfLoop('ok')
+    const long = selfLoop('reconcile until the desired state fully converges')
+    expect(long.loopW).toBeGreaterThan(short.loopW)        // scales with ITS label
+  })
+
+  it('loopW never collapses below the cited 2*ARROW arrowhead floor', () => {
+    // empty-ish label → the floor, not zero (hook must clear the head)
+    const tiny = selfLoop('.')
+    expect(tiny.loopW).toBeGreaterThanOrEqual(2 * 10)      // 2*REL_ARROW_SIZE(=10)
+  })
+
+  it('self-loop width is independent of the neighbour-column gap', () => {
+    // Same self-label, but a much wider OTHER column label. Old impl
+    // (colGap/2) would balloon the self-loop; new impl must not.
+    const narrow = layoutSeq(SeqParser.parse(
+      '@startuml\nparticipant w\nparticipant o\nw -> w : tick\nw -> o : hi\n@enduml'))
+    const wide = layoutSeq(SeqParser.parse(
+      '@startuml\nparticipant w\nparticipant o\n'
+      + 'w -> w : tick\nw -> o : an extremely long inter column message label\n@enduml'))
+    const lw = (L: ReturnType<typeof layoutSeq>) =>
+      L.events.find((e): e is LaidMessage => e.type === 'message' && e.selfLoop)!.loopW
+    expect(lw(wide)).toBe(lw(narrow))                       // colGap-independent
   })
 })

@@ -252,10 +252,19 @@ structurally-faithful first draft" — these are aesthetic, not
 correctness, and every construct renders with the ordering invariants
 intact:
 
-- **Self-message** (`a -> a`) renders as a wide rectangular loop with
-  a full sync arrowhead, vs PlantUML's compact hook. Semantically
-  correct (it IS a self-message); a v1.x polish candidate (tighten the
-  `loopW`/use a smaller return-style head).
+- **Self-message** (`a -> a`) loop width — **FIXED 2026-05-18 (v1.x
+  re-spike, task 13).** `loopW` was `colGap/2 + ARROW` — wrongly
+  coupled to the unrelated *neighbour-column* gap, so every self-loop
+  (short or long) was the same wide rectangle vs PlantUML's compact
+  hook. Re-spiked with `seq-perm-self-message` (short `tick` + a long
+  self-label): `loopW` is now driven by THIS message's own measured
+  label width (`blockW(label)+2·INSET`, floored at `2·ARROW` so the
+  hook always clears the arrowhead). Short self-loops are now the
+  compact PlantUML-style hook; long ones still get the width they
+  need from THEIR label (the prior "no-op for long labels" finding
+  holds — confirmed by render-compare). 4 new `seqLayout` unit
+  contracts incl. a colGap-independence assertion. Zero C4 risk
+  (gallery-verify + seq-gallery-verify CLEAN; separate pipeline).
 - **`note over` slightly overlaps** the activation bar / self-loop
   when both land on the same lifeline row. **v1.x re-examined against
   the real render (2026-05-18) — DECLINED on evidence.** The suggested
