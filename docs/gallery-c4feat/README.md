@@ -38,6 +38,33 @@ Rel(api, db, "reads/writes", "SQL")
 
 </details>
 
+### `feat-legend-properties.puml`
+
+| Source PlantUML | catalyst → draw.io |
+|---|---|
+| <img src="img/feat-legend-properties.puml.png" alt="feat-legend-properties puml" height="360"> | <img src="img/feat-legend-properties.drawio.png" alt="feat-legend-properties drawio" height="360"> |
+
+<details><summary>PlantUML source</summary>
+
+```plantuml
+@startuml feat-legend-properties
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Container.puml
+title Feature — SHOW_LEGEND + AddProperty table
+AddElementTag("critical", $bgColor="#c0392b", $fontColor="#ffffff")
+AddElementTag("external", $bgColor="#8a8a8a", $fontColor="#ffffff")
+SetPropertyHeader("Property", "Value")
+AddProperty("SLA", "99.95%")
+AddProperty("Owner", "Platform Team")
+AddProperty("PII", "no")
+System(api, "Payments API", "Mission critical", $tags="critical")
+System(bank, "Acquiring Bank", "Third party", $tags="external")
+Rel(api, bank, "settles via", "ISO 8583")
+SHOW_LEGEND()
+@enduml
+```
+
+</details>
+
 ### `feat-note.puml`
 
 | Source PlantUML | catalyst → draw.io |

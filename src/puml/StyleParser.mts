@@ -51,6 +51,11 @@ export interface ParsedStyles {
      *  render (PlantUML `skinparam handwritten true`) → draw.io
      *  `sketch=1` on every cell. */
     sketch?: boolean;
+    /** C4 `SHOW_LEGEND()` / `SHOW_FLOATING_LEGEND()` /
+     *  `SHOW_DYNAMIC_LEGEND()` → synthesize a tag-entry legend box
+     *  (PlantUML renders the active AddElementTag/AddRelTag/
+     *  AddBoundaryTag stereotypes "legend right"). */
+    legend?: boolean;
 }
 
 const kw = (args: string, name: string): string | undefined => {
@@ -156,6 +161,9 @@ export class StyleParser {
             // SET_SKETCH_STYLE → `skinparam handwritten true`.
             if (/^HIDE_STEREOTYPE\s*\(/.test(line)) { styles.hideStereotype = true; continue; }
             if (/^(LAYOUT_AS_SKETCH|SET_SKETCH_STYLE)\s*\(/.test(line)) { styles.sketch = true; continue; }
+            // SHOW_LEGEND / SHOW_FLOATING_LEGEND / SHOW_DYNAMIC_LEGEND
+            // (deprecated alias) — all render the tag-entry legend.
+            if (/^SHOW_(FLOATING_|DYNAMIC_)?LEGEND\s*\(/.test(line)) { styles.legend = true; continue; }
 
             const directive = /^(AddElementTag|AddRelTag|AddBoundaryTag|UpdateElementStyle|UpdateRelStyle|UpdateBoundaryStyle)\b/.exec(line);
             if (!directive) continue;

@@ -343,7 +343,13 @@ class Mx {
     addMxNote(geometry: MxGeometry, text: string, id: string): void {
         const t = {
             $: {
-                value: c4Text(text),
+                // drawio renders an <object>-wrapped cell's `label`
+                // attribute (NOT `value` — that is the plain-mxCell
+                // attr); the c4 element path uses `label` for exactly
+                // this reason. `value` here silently dropped the note
+                // text (the note SHAPE rendered from style, the text
+                // did not) — caught by render-eyeball of the SVG.
+                label: c4Text(text),
                 id,
             },
             MxCell: {
@@ -358,6 +364,66 @@ class Mx {
         } as unknown as c4
         const object = this.getRoot().object ?? []
         object.push(t)
+    }
+
+    /** Shared push for a synthesized html=1 overlay cell (legend /
+     *  property table). The markup MUST be encoded the way the c4
+     *  element templates encode theirs — single HTML entities
+     *  (`<`→`&lt;`, `>`→`&gt;`, `"`→`&quot;`, `&`→`&amp;`) — so the
+     *  generate() pipeline (xml2js `&`→`&amp;` then the un-double
+     *  pass) lands a SINGLE `&lt;` that drawio XML-unescapes to `<`
+     *  and renders as HTML. `c4Text` is WRONG here: it double-escapes
+     *  `<`→`&amp;lt;` (correct for user TEXT that must SHOW a literal
+     *  `<`, wrong for markup that must be INTERPRETED) — the legend
+     *  rendered as raw `<div>` source until this was fixed. */
+    private pushHtmlCell(id: string, html: string, style: string, geometry: MxGeometry): void {
+        const markup = html
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+        const t = {
+            $: { label: markup, id },         // object-wrapped ⇒ `label`, not `value`
+            MxCell: { $: { style, parent: '1', vertex: 1 }, MxGeometry: geometry },
+        } as unknown as c4
+        const object = this.getRoot().object ?? []
+        object.push(t)
+    }
+
+    /**
+     * C4 `SHOW_LEGEND` — a tag-entry legend box (PlantUML renders the
+     * active AddElementTag/AddRelTag/AddBoundaryTag stereotypes
+     * "legend right"). Each entry: a fill-colour swatch + the tag
+     * name. Placed POST-LAYOUT to the right of the content.
+     */
+    addMxLegend(geometry: MxGeometry, entries: { name: string; fill: string }[], id = 'legend'): void {
+        const rows = entries.map((e) =>
+            `<div><span style="display:inline-block;width:11px;height:11px;`
+            + `background:${e.fill};border:1px solid #666;">&#160;</span> ${e.name}</div>`)
+            .join('');
+        const html = `<div style="font-weight:bold;">Legend</div>${rows}`;
+        this.pushHtmlCell(id, html,
+            'rounded=0;html=1;whiteSpace=wrap;align=left;verticalAlign=top;'
+            + 'fillColor=#ffffff;strokeColor=#666666;', geometry);
+    }
+
+    /**
+     * C4 `AddProperty`/`SetPropertyHeader` — a property table rendered
+     * as an html grid next to its element (POST-LAYOUT). v1: a
+     * separate adjacent cell (PlantUML embeds it inside the element;
+     * structurally faithful — the properties are SHOWN not dropped).
+     */
+    addMxPropertyTable(geometry: MxGeometry, header: string[], rows: string[][], id: string): void {
+        const td = (s: string, h = false): string =>
+            `<td style="border:1px solid #999;padding:2px 5px;${h ? 'font-weight:bold;' : ''}">${s}</td>`;
+        const tr = (cells: string[], h = false): string =>
+            `<tr>${cells.map((c) => td(c, h)).join('')}</tr>`;
+        const body = [
+            ...(header.length ? [tr(header, true)] : []),
+            ...rows.map((r) => tr(r)),
+        ].join('');
+        this.pushHtmlCell(id,
+            `<table style="border-collapse:collapse;font-size:11px;">${body}</table>`,
+            'text;html=1;align=left;verticalAlign=top;strokeColor=none;fillColor=none;',
+            geometry);
     }
 
     async addMxC4Relationship(geometry: MxGeometry, source: string, target: string, type: string, name: string, technology?: string, description?: string, bidirectional: boolean = false, styleOverride?: StyleOverride, maxLabelWidthPx: number = Infinity, back: boolean = false, attach?: { exit: { x: number; y: number }; entry: { x: number; y: number } }): Promise<void> {
