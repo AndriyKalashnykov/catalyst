@@ -16,11 +16,14 @@ Standalone, independently-maintained library (no upstream; never add an
   4-space nested-list indent — never 2**, it bit the CHANGELOG repeatedly).
 - `npm run test:coverage` — CI gate, thresholds 85 % (currently ≈97 %).
 - `make ci` = **static-check** + build + **coverage-check** +
-  **gallery-verify** (mirrors ci.yml's canonical graph: `changes` →
-  `static-check` → `build`+`test` → `ci-pass`). `coverage-check` runs
-  `test:coverage` — the real 85 % `thresholds.global` gate (NOTE:
-  `vitest.config.ts` `exclude:` omits `src/catalyst.mts` from the
-  gate — a `/test-coverage-analysis` follow-up, not a CI concern).
+  **gallery-verify** + **seq-gallery-verify** (mirrors ci.yml's
+  canonical graph: `changes` → `static-check` → `build`+`test` →
+  `ci-pass`). `coverage-check` runs `test:coverage` — the real 85 %
+  gate, now ACTUALLY enforced over `src/**/*.mts` incl.
+  `src/catalyst.mts` (PR #128 fixed it: `thresholds.global` is
+  Jest/nyc syntax vitest silently ignored — the gate was a no-op at
+  ~72 % branch; correct vitest schema + `include:` scoping makes it
+  the documented ≈97 %).
   `make ci-run` = the real `ci.yml` via mise-managed `act`. A second
   workflow `cleanup-runs.yml` (weekly cron + dispatch, native `gh`
   CLI, no third-party actions) prunes old runs + stale-branch caches
@@ -44,6 +47,17 @@ Standalone, independently-maintained library (no upstream; never add an
   (and CI) fails. Prevents the P4b-class defect: emit fixed but the
   committed gallery left advertising the old output. PNG freshness is
   NOT gated (needs docker) — the `.drawio` is the deterministic root.
+- **`make seq-gallery-verify` — the SEQ analogue (also a `ci.yml`
+  `test` step).** The seq pipeline (ADR 0007 a–d2b) is a separate emit
+  family from C4, so it needs its OWN committed artifact + drift gate:
+  `docs/gallery-seq/drawio/*.drawio` (deterministic, pure node) +
+  committed `svg/*.{puml,drawio}.svg` render evidence (the `-tsvg` /
+  drawio-export vector basis, NOT gated — same split as the C4 PNGs).
+  ANY seq emit/layout change ⇒ run **`make seq-gallery`** (java+docker)
+  and commit the refresh. Closes the pre-2026-05-18 gap where seq
+  fidelity was an ephemeral `/tmp` render-compare eyeball with zero
+  regression protection (every seq phase shipped without a committed
+  visual artifact). `scripts/seq-gallery.mjs` mirrors `gallery.mjs`.
 - **`make factcheck` — the NO-EYEBALLING fidelity gate (run it for any
   geometry/emit change).** Audits ALL puml→drawio conversions — the
   22-fixture gallery corpus AND the 6 canonical C4-PlantUML-spec

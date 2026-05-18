@@ -1,0 +1,117 @@
+<mxfile version="20.1.4" type="atlas">
+  <diagram id="catalyst-diagram" name="Page-1">
+    <mxGraphModel pageHeight="699" pageWidth="1002">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="seq-title-0" value="Certificate reconcile — fragments (alt/else, nested loop, opt)" style="text;html=1;align=center;verticalAlign=middle;fontSize=16;fontStyle=1;fontColor=#333333" vertex="1" parent="1">
+          <mxGeometry x="0" y="0" width="1002" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="ll-op" value="Operator" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;fillColor=#FFFFFF;strokeColor=#666666;fontColor=#333333;fontStyle=1;verticalAlign=top" vertex="1" parent="1">
+          <mxGeometry x="48" y="60" width="88" height="638" as="geometry"/>
+        </mxCell>
+        <mxCell id="ll-ctl" value="Controller" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;fillColor=#FFFFFF;strokeColor=#666666;fontColor=#333333;fontStyle=1;verticalAlign=top" vertex="1" parent="1">
+          <mxGeometry x="312" y="60" width="97" height="638" as="geometry"/>
+        </mxCell>
+        <mxCell id="ll-v" value="Vault PKI" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;fillColor=#FFFFFF;strokeColor=#666666;fontColor=#333333;fontStyle=1;verticalAlign=top" vertex="1" parent="1">
+          <mxGeometry x="585" y="60" width="90" height="638" as="geometry"/>
+        </mxCell>
+        <mxCell id="ll-sec" value="K8s Secret" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;fillColor=#FFFFFF;strokeColor=#666666;fontColor=#333333;fontStyle=1;verticalAlign=top" vertex="1" parent="1">
+          <mxGeometry x="851" y="60" width="103" height="638" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-act-1" style="html=1;fillColor=#FFFFFF;strokeColor=#666666" vertex="1" parent="1">
+          <mxGeometry x="354" y="157" width="14" height="521" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-frag-2" style="rounded=0;html=1;fillColor=none;strokeColor=#666666;verticalAlign=top;align=left" vertex="1" parent="1">
+          <mxGeometry x="333" y="157" width="598" height="406" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-frag-else-3" value="cert still valid" style="html=1;endArrow=none;startArrow=none;dashed=1;strokeColor=#666666;fontColor=#333333;verticalAlign=bottom;align=left" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="333" y="473" as="sourcePoint"/>
+            <mxPoint x="931" y="473" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="seq-frag-tab-4" value="alt" style="rounded=0;html=1;fillColor=#FFFFFF;strokeColor=#666666;fontColor=#333333;fontStyle=1;align=center;verticalAlign=middle" vertex="1" parent="1">
+          <mxGeometry x="333" y="157" width="33" height="34" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-frag-guard-5" value="cert missing or expiring" style="text;html=1;align=left;verticalAlign=middle;fontColor=#333333;whiteSpace=wrap" vertex="1" parent="1">
+          <mxGeometry x="366" y="157" width="565" height="34" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-frag-6" style="rounded=0;html=1;fillColor=none;strokeColor=#666666;verticalAlign=top;align=left" vertex="1" parent="1">
+          <mxGeometry x="347" y="280" width="161" height="91" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-frag-tab-7" value="loop" style="rounded=0;html=1;fillColor=#FFFFFF;strokeColor=#666666;fontColor=#333333;fontStyle=1;align=center;verticalAlign=middle" vertex="1" parent="1">
+          <mxGeometry x="347" y="280" width="44" height="34" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-frag-guard-8" value="until chain validates" style="text;html=1;align=left;verticalAlign=middle;fontColor=#333333;whiteSpace=wrap" vertex="1" parent="1">
+          <mxGeometry x="391" y="280" width="117" height="34" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-frag-9" style="rounded=0;html=1;fillColor=none;strokeColor=#666666;verticalAlign=top;align=left" vertex="1" parent="1">
+          <mxGeometry x="64" y="577" width="325" height="88" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-frag-tab-10" value="opt" style="rounded=0;html=1;fillColor=#FFFFFF;strokeColor=#666666;fontColor=#333333;fontStyle=1;align=center;verticalAlign=middle" vertex="1" parent="1">
+          <mxGeometry x="64" y="577" width="38" height="34" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-frag-guard-11" value="notify on change" style="text;html=1;align=left;verticalAlign=middle;fontColor=#333333;whiteSpace=wrap" vertex="1" parent="1">
+          <mxGeometry x="102" y="577" width="287" height="34" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-msg-12" value="create CertificateRequest" style="html=1;rounded=0;endArrow=block;endFill=1;startArrow=none;endSize=14;startSize=14;strokeColor=#828282;fontColor=#404040;verticalAlign=bottom;endFill=1" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="92" y="130" as="sourcePoint"/>
+            <mxPoint x="361" y="130" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="seq-msg-13" value="issue leaf cert" style="html=1;rounded=0;endArrow=open;endFill=0;startArrow=none;endSize=14;startSize=14;strokeColor=#828282;fontColor=#404040;verticalAlign=bottom;endFill=1" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="361" y="208" as="sourcePoint"/>
+            <mxPoint x="630" y="208" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="seq-msg-14" value="signed cert + key" style="html=1;rounded=0;endArrow=open;endFill=0;dashed=1;startArrow=none;endSize=14;startSize=14;strokeColor=#828282;fontColor=#404040;verticalAlign=bottom;endFill=0" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="630" y="253" as="sourcePoint"/>
+            <mxPoint x="361" y="253" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="seq-msg-15" value="validate chain" style="html=1;rounded=0;endArrow=block;endFill=1;startArrow=none;endSize=14;startSize=14;strokeColor=#828282;fontColor=#404040;verticalAlign=bottom;endFill=1" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="361" y="314" as="sourcePoint"/>
+            <mxPoint x="361" y="348" as="targetPoint"/>
+            <Array as="points">
+              <mxPoint x="463" y="314"/>
+              <mxPoint x="463" y="348"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="seq-msg-16" value="write tls.crt / tls.key" style="html=1;rounded=0;endArrow=block;endFill=1;startArrow=none;endSize=14;startSize=14;strokeColor=#828282;fontColor=#404040;verticalAlign=bottom;endFill=1" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="361" y="401" as="sourcePoint"/>
+            <mxPoint x="903" y="401" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="seq-msg-17" value="stored" style="html=1;rounded=0;endArrow=open;endFill=0;dashed=1;startArrow=none;endSize=14;startSize=14;strokeColor=#828282;fontColor=#404040;verticalAlign=bottom;endFill=0" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="903" y="445" as="sourcePoint"/>
+            <mxPoint x="361" y="445" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="seq-msg-18" value="no-op (within renewal window)" style="html=1;rounded=0;endArrow=block;endFill=1;startArrow=none;endSize=14;startSize=14;strokeColor=#828282;fontColor=#404040;verticalAlign=bottom;endFill=1" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="361" y="507" as="sourcePoint"/>
+            <mxPoint x="361" y="541" as="targetPoint"/>
+            <Array as="points">
+              <mxPoint x="463" y="507"/>
+              <mxPoint x="463" y="541"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="seq-msg-19" value="status = Ready" style="html=1;rounded=0;endArrow=block;endFill=1;startArrow=none;endSize=14;startSize=14;strokeColor=#828282;fontColor=#404040;verticalAlign=bottom;endFill=1" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="361" y="628" as="sourcePoint"/>
+            <mxPoint x="92" y="628" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
