@@ -101,10 +101,13 @@ notes + title; v2-deferred constructs **fail-loud** (no silent drop).
 | `activate` / `deactivate` | ✓ v1 (LIFO-paired activation bars) |
 | `note left\|right\|over` | ✓ v1 (note shape; self-loop/activation overlap is a v1.x polish item — ADR 0007) |
 | `title` | ✓ v1 (traced to a title cell — completeness invariant) |
-| Self-message (`a -> a`) | ✓ v1 (loop route; wide vs PlantUML's hook — v1.x polish) |
-| `== divider ==` | ✓ v1.x (phase d1 — full-width band at source-order Y; unblocks ibm-wm `==dividers==`) |
-| `alt/else/opt/loop/par/critical/group/break` fragments (nested) | ✓ d2 (phase d2 — `umlFrame`-style box behind messages, kind tab + one-line `[guard]`, `else` compartment separators; strict nesting by construction) |
-| `box`/`Boundary` lifeline grouping, `ref`, create/destroy | ✗ deferred — **fail-loud** with token+line (`SeqParseError`; no silent drop) |
+| Self-message (`a -> a`) | ✓ v1.x (loop width = own measured label, PlantUML-compact for short labels — #137) |
+| `== divider ==` (labelled + empty) | ✓ v1.x (phase d1 — labelled band at source-order Y; empty `====` = thin rule not a band #130; unblocks ibm-wm `==dividers==`) |
+| `alt/else/opt/loop/par/critical/group/break` fragments (nested) | ✓ d2 (`umlFrame`-style box behind messages, kind tab + one-line `[guard]`, `else` compartment separators; strict nesting by construction) |
+| `ref over` reference frames (inline + block) | ✓ d2b (#131 — self-contained framed box spanning the named lifelines) |
+| `create` / `destroy` lifeline lifespan | ✓ d2b (#133 — head drops to first-use Y; foot truncates with an ✕ glyph) |
+| `box` / `*_Boundary` lifeline grouping | ✓ d2b (#134 — grouping rect over a contiguous declaration range, head-shifting title band; non-nesting) |
+| **ADR 0007 status** | **FULLY IMPLEMENTED — phases a–d2b, NOTHING deferred.** Fail-loud retained for malformed/unknown input only (contract-lock) |
 | `autonumber`, `SHOW_ELEMENT_DESCRIPTIONS`, `SHOW_FOOT_BOXES`/`SHOW_INDEX` | ✗ v2 (deferred) |
 
 ## Relationships
@@ -148,14 +151,14 @@ Handled by `src/puml/StyleParser.mts` (colour kwargs `$bgColor`/`$fontColor`/`$b
 | `$lineStyle`/`$borderStyle` = `DashedLine()`/`DottedLine()`/`BoldLine()`/`SolidLine()` (helper-call OR resolved-literal form) | ✓ **2026-05-16** — faithful map: dashed→`dashed=1`, dotted→`dashed=1;dashPattern=1 4`, bold→`strokeWidth` (cited emphasis), solid→`dashed=0`. Render-compare verified |
 | `$lineThickness` / `$borderThickness` (numeric) | ✓ → explicit `strokeWidth`; an explicit value wins over the `bold` keyword default |
 | `$shadowing="true"\|"false"` | ✓ → draw.io `shadow=1\|0` (render-compare verified: drop shadow) |
-| `SET_SKETCH_STYLE` / `LAYOUT_AS_SKETCH` | ✗ (sketch/handwritten mode — draw.io `sketch=1`; next Item-2 sub-task, fact-check pending) |
+| `SET_SKETCH_STYLE` / `LAYOUT_AS_SKETCH` | ✓ → draw.io `sketch=1` on every cell (PlantUML `skinparam handwritten true`; fact-checked vs pinned v2.13.0 C4.puml; render-verified hand-drawn). Off by default ⇒ static C4 corpus byte-identical |
 
 ## Legend / display
 
 | Primitive | State |
 |---|---|
 | `SHOW_LEGEND`, `SHOW_FLOATING_LEGEND`, `SHOW_DYNAMIC_LEGEND` | ✗ (skipped) |
-| `HIDE_STEREOTYPE` | ✗ |
+| `HIDE_STEREOTYPE` | ✓ → drops the `«Type»` line from element labels (PlantUML `hide stereotype`); the `c4Type` structural attribute is KEPT so golden/parity stay byte-identical. v1: box keeps the reserved stereotype-line height (measureNode untouched ⇒ static-C4 layout provably unchanged). Off by default |
 | `SHOW_PERSON_OUTLINE` / `_PORTRAIT` / `_SPRITE` | ✗ |
 
 ## Properties

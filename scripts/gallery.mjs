@@ -64,6 +64,11 @@ const CLASSES = [
   ['Relationship variants', 'rel-', 'Bidirectional, directional hints, with/without technology, long labels, layout-only `Lay_` constraints.'],
   ['C4 level coverage', 'level-', 'One canonical diagram per C4 abstraction (Component, Dynamic, System Landscape). Context/Container/Deployment live in tests/fixtures/.'],
   ['Edge cases & styling', 'edge-', 'Tags / dashed rels, Unicode & XML-special chars, label-only entities, a ~30-node diagram.'],
+  // Inert for the use-case corpus (no `feat-` fixtures there); active
+  // when this same script renders the c4-feat gallery (CORPUS_DIR=
+  // tests/fixtures/c4-feat) — dedicated coverage for the display/style
+  // residual features that have zero use-case-corpus usage.
+  ['C4 display/style features', 'feat-', 'HIDE_STEREOTYPE, sketch (LAYOUT_AS_SKETCH/SET_SKETCH_STYLE), note callouts, legend, AddProperty — each zero-corpus-usage, dedicated fixtures + committed SVG.'],
 ];
 
 function sh(cmd, args, opts = {}) {

@@ -28,6 +28,8 @@ RENDER_OUT          ?= build/render-compare
 CORPUS_DIR          ?= tests/fixtures/corpus
 GALLERY_OUT         ?= docs/gallery
 SEQ_GALLERY_OUT     ?= docs/gallery-seq
+C4FEAT_DIR          ?= tests/fixtures/c4-feat
+C4FEAT_OUT          ?= docs/gallery-c4feat
 PLANTUML_JAR        ?= $(GALLERY_OUT)/plantuml.jar
 FACTCHECK_SVG_DIR   ?= build/factcheck-svg
 
@@ -208,8 +210,29 @@ seq-gallery-verify: build
 		exit 1; }
 	@echo "seq-gallery-verify: docs/gallery-seq .drawio in sync with current emit ✓"
 
+#c4feat-gallery: @ Dual-render the C4 display/style feature fixtures into docs/gallery-c4feat (SVG; needs java+docker)
+c4feat-gallery: deps-render build
+	@PLANTUML_VERSION=$(PLANTUML_VERSION) \
+		PLANTUML_JAR=$(PLANTUML_JAR) \
+		DRAWIO_EXPORT_IMAGE=$(DRAWIO_EXPORT_IMAGE) \
+		DRAWIO_EXPORT_SCALE=$(DRAWIO_EXPORT_SCALE) \
+		CORPUS_DIR=$(C4FEAT_DIR) GALLERY_OUT=$(C4FEAT_OUT) \
+		node scripts/gallery.mjs
+
+#c4feat-gallery-verify: @ Fail if the committed c4-feat gallery .drawio drifted from the current emit (deterministic; no java/docker)
+c4feat-gallery-verify: build
+	@# Same deterministic .drawio drift gate as gallery-verify, for the
+	@# C4 display/style feature fixtures (HIDE_STEREOTYPE/sketch/note/
+	@# legend/AddProperty — zero use-case-corpus usage, dedicated set).
+	@GALLERY_DRAWIO_ONLY=1 CORPUS_DIR=$(C4FEAT_DIR) GALLERY_OUT=$(C4FEAT_OUT) node scripts/gallery.mjs
+	@git diff --quiet -- $(C4FEAT_OUT)/drawio || { \
+		echo "ERROR: docs/gallery-c4feat is STALE vs the current emit — run 'make c4feat-gallery' and commit the refresh."; \
+		git --no-pager diff --stat -- $(C4FEAT_OUT)/drawio; \
+		exit 1; }
+	@echo "c4feat-gallery-verify: docs/gallery-c4feat .drawio in sync with current emit ✓"
+
 #ci: @ Local CI pipeline — mirrors ci.yml (static-check + build + test jobs)
-ci: static-check build coverage-check gallery-verify seq-gallery-verify
+ci: static-check build coverage-check gallery-verify seq-gallery-verify c4feat-gallery-verify
 	@echo "Local CI pipeline passed."
 
 #ci-run: @ Run the real .github/workflows/ci.yml locally via act (mise-managed act; needs Docker)
