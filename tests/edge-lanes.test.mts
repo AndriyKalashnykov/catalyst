@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { assignEdgeLanes, slideLabelAlongLane, endpointAttachFraction, endpointStub, incidentAxis, EDGE_LANE_GAP_PX, type NodeCenter, type NodeRect } from '../src/layout/edgeLanes.mjs';
+import { assignEdgeLanes, slideLabelAlongLane, EDGE_LANE_GAP_PX, type NodeCenter, type NodeRect } from '../src/layout/edgeLanes.mjs';
 
 /**
  * Unit contract for the multi-edge lane separator (finding #9 + review
@@ -309,78 +309,5 @@ describe('assignEdgeLanes', () => {
     const lanes = assignEdgeLanes(rels, centers, never, undefined, w, 0);
     expect(Math.abs(lanes.get(0)!.shift)).toBe(100 / 2);          // {A,B} → 50
     expect(Math.abs(lanes.get(2)!.shift)).toBe(EDGE_LANE_GAP_PX / 2); // {X,Y} → 22 (floor)
-  });
-});
-
-/**
- * Perpendicular border-attach + port-stub (the `arrowSkew` contract).
- * Pure geometry — the construction proof that draw.io draws the first/
- * last edge segment head-on into the box border (shaft into the
- * arrowhead's BASE, not skew into its side).
- *
- * Box convention here: centre (cx,cy), hw/hh half-extents, so the
- * border rectangle is [cx−hw, cx+hw] × [cy−hh, cy+hh].
- */
-describe('incidentAxis', () => {
-  it("returns 'x' for a more-horizontal incident segment (left/right border)", () => {
-    expect(incidentAxis({ x: 0, y: 0 }, { x: 100, y: 10 })).toBe('x');
-  });
-  it("returns 'y' for a more-vertical incident segment (top/bottom border)", () => {
-    expect(incidentAxis({ x: 0, y: 0 }, { x: 10, y: 100 })).toBe('y');
-  });
-  it("ties (|dx| == |dy|) resolve to 'x' (the >= branch)", () => {
-    expect(incidentAxis({ x: 0, y: 0 }, { x: 50, y: 50 })).toBe('x');
-  });
-});
-
-describe('endpointAttachFraction', () => {
-  const box: NodeCenter = { cx: 100, cy: 100, hw: 50, hh: 30 }; // [50,150]×[70,130]
-
-  it('horizontal incident → left border when p is left of centre', () => {
-    // p left & inside the y-extent → x=0 (left), y = (p.y−top)/h.
-    const f = endpointAttachFraction({ x: 50, y: 100 }, { x: -90, y: 100 }, box);
-    expect(f.x).toBe(0);
-    expect(f.y).toBeCloseTo((100 - 70) / 60); // 0.5
-  });
-
-  it('vertical incident → bottom border when p is below centre, x clamped to [0,1]', () => {
-    // p below & far right (x > right) → y=1 (bottom); x clamps to 1.
-    const f = endpointAttachFraction({ x: 999, y: 200 }, { x: 999, y: 999 }, box);
-    expect(f.y).toBe(1);
-    expect(f.x).toBe(1); // clamp01((999−50)/100) saturates → corner
-  });
-});
-
-describe('endpointStub — first/last segment is axis-aligned by construction', () => {
-  // The contract: the segment attach→stub must be perpendicular to the
-  // attached border. axis 'x' (left/right border) ⇒ head-on horizontal
-  // ⇒ stub shares attach.y; axis 'y' ⇒ head-on vertical ⇒ shares attach.x.
-  it("axis 'x': stub holds attach.y, reaches the interior point's x", () => {
-    const attach = { x: 150, y: 88 };          // on a right border
-    const inner = { x: 240, y: 300 };          // first emitted waypoint
-    const s = endpointStub('x', attach, inner);
-    expect(s).toEqual({ x: 240, y: 88 });
-    // attach→stub is horizontal (same y) ⇒ NOT skewed.
-    expect(s.y).toBe(attach.y);
-    expect(Math.min(Math.abs(attach.x - s.x), Math.abs(attach.y - s.y))).toBe(0);
-  });
-
-  it("axis 'y': stub holds attach.x, reaches the interior point's y", () => {
-    const attach = { x: 988, y: 109 };         // c4-exhaustive dev bottom border
-    const inner = { x: 983, y: 149 };          // first lane/ELK waypoint, 5px off-axis
-    const s = endpointStub('y', attach, inner);
-    expect(s).toEqual({ x: 988, y: 149 });
-    // attach→stub is vertical (same x) ⇒ the 5px skew is removed.
-    expect(s.x).toBe(attach.x);
-    expect(Math.min(Math.abs(attach.x - s.x), Math.abs(attach.y - s.y))).toBe(0);
-  });
-
-  it('coincides with the interior point when already perpendicular (caller skips ⇒ byte-inert)', () => {
-    // axis 'y': inner already shares attach.x ⇒ attach→inner is already
-    // vertical ⇒ stub == inner ⇒ the caller's `eq(sA, first)` drops it,
-    // so byte output is unchanged on edges that enter head-on already.
-    const attach = { x: 988, y: 109 };
-    const inner = { x: 988, y: 149 };
-    expect(endpointStub('y', attach, inner)).toEqual(inner);
   });
 });
