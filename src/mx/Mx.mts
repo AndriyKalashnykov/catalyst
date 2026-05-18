@@ -30,7 +30,7 @@ import { Relastionship } from './c4/Relationship.mjs';
 import { StyleParser } from '../puml/StyleParser.mjs';
 import type { StyleOverride } from '../puml/StyleParser.mjs';
 import { htmlBreaks, wrapEdgeLabelLines } from '../text/labelLines.mjs';
-import { RELATIONSHIP_LABEL_PX } from './c4/theme.mjs';
+import { RELATIONSHIP_LABEL_PX, DIAGRAM_TITLE_PX } from './c4/theme.mjs';
 
 /**
  * xml2js escapes `&`, `<`, `"` in attribute values but leaves `>` raw
@@ -368,6 +368,48 @@ class Mx {
             }
         }
 
+        const object = this.getRoot().object ?? []
+        object.push(t);
+    }
+
+    /**
+     * Emit the PlantUML `title` directive as a drawio text cell.
+     *
+     * Completeness invariant (MDE model-transformation principle): every
+     * source construct must trace to ≥1 target element — a `title` in
+     * the .puml MUST produce an element in the .drawio. catalyst
+     * previously skip-listed `title` in EntityParser, dropping it on
+     * 100% of diagrams (a silent-drop the entity/rel-only oracle never
+     * caught). PlantUML renders it bold-black `font-size:14` at the top
+     * of the canvas (`DIAGRAM_TITLE_PX`, cited from `-tsvg`).
+     *
+     * Fixed id `__title` + `c4Type="Title"` so the factcheck oracle
+     * counts it as the title-trace element while EXCLUDING it from the
+     * node-extent / overlap geometry metrics (it is chrome, like
+     * PlantUML's own title which the SVG node-extent regex also
+     * excludes — keeps wRatio/ratchet like-for-like and byte-stable).
+     * Not a placeholder template: the value is the literal title text.
+     */
+    addTitle(text: string, geometry: MxGeometry): void {
+        const t: c4 = {
+            $: {
+                c4Name: c4Text(text),
+                c4Type: 'Title',
+                label: c4Text(text),
+                id: '__title',
+            },
+            MxCell: {
+                $: {
+                    style:
+                        `text;html=1;align=left;verticalAlign=middle;` +
+                        `whiteSpace=nowrap;fontSize=${DIAGRAM_TITLE_PX};` +
+                        `fontStyle=1;fontColor=#000000;`,
+                    parent: '1',
+                    vertex: 1,
+                },
+                MxGeometry: geometry,
+            },
+        }
         const object = this.getRoot().object ?? []
         object.push(t);
     }

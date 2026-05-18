@@ -27,7 +27,11 @@ function fingerprint(xml) {
   let m;
   while ((m = re.exec(xml)) !== null) {
     const o = m[1], c = m[2];
-    if (/\bvertex="1"/.test(c)) {
+    if (/\bvertex="1"/.test(c) && attr(o, 'id') !== '__title') {
+      // `__title` is the source-`title` trace element (completeness
+      // invariant) — chrome, NOT C4 topology. Excluded from this
+      // fingerprint (as in factcheck + corpus-sanity) so golden stays a
+      // pure C4-topology gate and the title change is byte-stable here.
       nodes.push(`${attr(o, 'id')}:${attr(o, 'c4Type') ?? ''}`);
       if (attr(o, 'link')) links++;
       // a non-default fill/stroke/dashed beyond the base shape = applied override

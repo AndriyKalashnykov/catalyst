@@ -211,9 +211,17 @@ function parseCatalyst(xml) {
   const attr = (s, n) => (new RegExp(`\\b${n}="([^"]*)"`).exec(s) ?? [])[1]
   let m
   const byAlias = new Map()
+  // Completeness-invariant: the `__title` cell is the trace element for
+  // the source `title` directive (counted by `titleMiss` below). It is
+  // diagram chrome, NOT a C4 node — exclude it from the geometry
+  // metrics (node-extent / overlap / labelHit) exactly as the PlantUML
+  // SVG node-extent regex excludes PlantUML's own title text, keeping
+  // wRatio/hRatio like-for-like and the ratchet baseline valid.
+  let catTitle
   while ((m = ob.exec(xml)) !== null) {
     const o = m[1], rest = m[3]
     const id = attr(o, ATTR.ID)
+    if (id === '__title') { catTitle = attr(o, ATTR.C4_NAME) ?? ''; continue }
     const gm = /<mxGeometry\b([^/]*?)\/>/.exec(rest)
     if (!gm || !/vertex="1"/.test(m[2])) continue
     const g = {}
@@ -278,7 +286,7 @@ function parseCatalyst(xml) {
   // bbox
   const minX = Math.min(...nodes.map(n => n.x)), minY = Math.min(...nodes.map(n => n.y))
   const maxX = Math.max(...nodes.map(n => n.x + n.w)), maxY = Math.max(...nodes.map(n => n.y + n.h))
-  return { nodes, byAlias, objAttrs, edges, W: maxX - minX, H: maxY - minY }
+  return { nodes, byAlias, objAttrs, edges, catTitle, W: maxX - minX, H: maxY - minY }
 }
 
 const intersects = (a, b) =>
@@ -490,12 +498,22 @@ function factcheck(stem, dir = CORPUS) {
     // ratchet — `ratioBad` joins the clean predicate (no fidelity
     // regression on either bbox axis vs the committed baseline).
     const { ratioBad, missing: ratioMissing } = ratioContract(RATIO_BASELINE, stem, wRatio, hRatio)
+    // Completeness invariant (MDE M2M-transformation principle, the
+    // FIRST-class structural gate before any visual check): every
+    // source construct must trace to a target element — a `title`
+    // directive in the .puml MUST yield a non-empty `__title` cell in
+    // the .drawio. A silent drop here is the exact class that shipped
+    // on 100% of diagrams while the entity/rel-only oracle stayed
+    // green (memory `factcheck-harness-gate`: coverage gaps hide real
+    // defects — count emitted elements, do not eyeball).
+    const srcHasTitle = /^[ \t]*title[ \t]+\S/m.test(puml)
+    const titleMiss = srcHasTitle && !(C.catTitle && C.catTitle.trim()) ? 1 : 0
     const clean = entityMiss === 0 && relMiss === 0 && arrowBad === 0 &&
       labelDrop === 0 && attachMerge === 0 && labelHit === 0 &&
-      nodeOverlap === 0 && ratioBad === 0
+      nodeOverlap === 0 && ratioBad === 0 && titleMiss === 0
     return { stem, clean, entityMiss, relMiss, arrowBad, labelDrop,
              attachMerge, rankOrder, wRatio, hRatio, ratioBad, ratioMissing,
-             labelHit, nodeOverlap,
+             labelHit, nodeOverlap, titleMiss,
              boundaryBands: bands,
              pml: `${P.W}x${P.H}`, cat: `${Math.round(C.W)}x${Math.round(C.H)}` }
   })
@@ -546,7 +564,7 @@ if (isMain) {
     console.log(
       `${r.stem.padEnd(26)} arrowBad=${r.arrowBad} attachMerge=${r.attachMerge} ` +
       `labelHit=${r.labelHit} entityMiss=${r.entityMiss} relMiss=${r.relMiss} ` +
-      `labelDrop=${r.labelDrop} nodeOverlap=${r.nodeOverlap}${ratio}`)
+      `labelDrop=${r.labelDrop} nodeOverlap=${r.nodeOverlap} titleMiss=${r.titleMiss}${ratio}`)
   }
   if (UPDATE_BASELINE) {
     const sorted = Object.fromEntries(

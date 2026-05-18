@@ -5,8 +5,8 @@ import { RelParser } from './puml/RelParser.mjs'
 import { LayoutEngine, LayoutResult } from './layout/LayoutEngine.mjs'
 import { assignEdgeLanes, resolveLabelOverlap, slideLabelAlongLane, polylineMidpoint, type NodeCenter, type NodeRect } from './layout/edgeLanes.mjs'
 import { measureEdgeLabel } from './layout/measureNode.mjs'
-import { spaceAdvance } from './text/TextMetrics.mjs'
-import { RELATIONSHIP_LABEL_PX } from './mx/c4/theme.mjs'
+import { spaceAdvance, textWidth, renderedLineHeight, MX_DEFAULT_FONTSIZE } from './text/TextMetrics.mjs'
+import { RELATIONSHIP_LABEL_PX, DIAGRAM_TITLE_PX } from './mx/c4/theme.mjs'
 import { StyleParser } from './puml/StyleParser.mjs'
 import { DECIMAL_RADIX } from "./constants.mjs"
 import type { ParsedStyles, StyleOverride } from './puml/StyleParser.mjs'
@@ -32,7 +32,7 @@ function overrideFor(type: string, tags: string | undefined, styles: ParsedStyle
   return Object.keys(merged).length ? merged : undefined
 }
 
-async function layoutData2mx(layoutData: LayoutResult, pumlElements: EntityDescriptor[], pumlRelations: { source: string, target: string, label: string, description: string, bidirectional?: boolean, back?: boolean, tags?: string }[], styles: ParsedStyles): Promise<string> {
+async function layoutData2mx(layoutData: LayoutResult, pumlElements: EntityDescriptor[], pumlRelations: { source: string, target: string, label: string, description: string, bidirectional?: boolean, back?: boolean, tags?: string }[], styles: ParsedStyles, title?: string): Promise<string> {
   const mx = new Mx(layoutData.height || 600, layoutData.width || 800)
   const parser = new EntityParser()
 
@@ -327,6 +327,28 @@ async function layoutData2mx(layoutData: LayoutResult, pumlElements: EntityDescr
     }
   }
 
+  // Completeness invariant (MDE M2M-transformation principle): the
+  // source `title` directive MUST trace to a target element. PlantUML
+  // renders it bold-black at the TOP of the canvas, content below; we
+  // mirror that by seating the title one blank line above the topmost
+  // emitted shape (the same "one renderedLineHeight of clearance"
+  // convention as the boundary title-band). Placing it ABOVE the
+  // content (rather than translating every cell down) keeps every
+  // existing cell byte-identical — the only delta is one added cell,
+  // and the factcheck oracle excludes `__title` from node-extent so
+  // wRatio/overlap/ratchet stay like-for-like.
+  if (title) {
+    const boxes = [...(layoutData.nodes ?? []), ...(layoutData.clusters ?? [])]
+    if (boxes.length) {
+      const minX = Math.min(...boxes.map(b => b.x ?? 0))
+      const minY = Math.min(...boxes.map(b => b.y ?? 0))
+      const titleH = Math.ceil(renderedLineHeight(DIAGRAM_TITLE_PX))
+      const gap = Math.ceil(renderedLineHeight(MX_DEFAULT_FONTSIZE))
+      const titleW = Math.ceil(textWidth(title, DIAGRAM_TITLE_PX, true))
+      mx.addTitle(title, new MxGeometry(titleH, titleW, minX, minY - titleH - gap))
+    }
+  }
+
   return await mx.generate()
 }
 
@@ -414,7 +436,12 @@ export class Catalyst {
     }
 
     const layoutData = await LayoutEngine.calculateLayout(elements, relations, layoutOptions, layoutConstraints)
-    return await layoutData2mx(layoutData, elements, relations, styles)
+    // PlantUML `title <text>` (single-line; the form used corpus-wide).
+    // Skip-listed by EntityParser — parsed here so the completeness
+    // invariant (every source construct traces to a target element)
+    // holds: the title is emitted as a drawio cell, not dropped.
+    const title = (/^[ \t]*title[ \t]+(.+?)[ \t]*$/m.exec(pumlContent) ?? [])[1]
+    return await layoutData2mx(layoutData, elements, relations, styles, title)
   }
 
   /**

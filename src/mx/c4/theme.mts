@@ -50,6 +50,14 @@ export const BOUNDARY_TITLE_PX = 12
  *  `font-size:11px` in the boundary label `<div>` CSS. */
 export const BOUNDARY_BODY_PX = 11
 
+/** Diagram `title` directive text. Source (cited, category-2): PlantUML
+ *  renders the C4 `title` as `<text font-size="14" font-weight="bold"
+ *  fill="#000000">` in every `-tsvg` ground-truth render (verified
+ *  across the 26-fixture corpus, e.g. topology-cyclic.svg). Bold black,
+ *  top of the canvas — the value the renderer actually emits, not a
+ *  tuned guess. */
+export const DIAGRAM_TITLE_PX = 14
+
 /** Relationship label (verb + `[technology]`). Source: the Relationship
  *  `<div>`s set NO inline font-size, so the label renders at the
  *  cell-level `fontSize` — `Relationship.style()` sets that to **10**.

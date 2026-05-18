@@ -7,9 +7,19 @@ spots**: if a path here had no guarding contract metric, a regression
 in it could ship green. Maintained alongside the code — extend it (and
 the harness) when a new emit path or fidelity contract is added.
 
+**Verification order (ADR 0012, MDE M2M principle):** this is a
+model-to-model transformation, so the **completeness invariant** is
+the FIRST gate — *every source construct must trace to ≥1 target
+element (no silent drops)* — checked structurally **before** any
+geometry/visual metric. PNG/pixel inspection is corroborative only,
+and only after the structural gate is green. (`titleMiss` is the first
+completeness contract; the title dropped on 100% of diagrams while the
+geometry-only oracle stayed green — coverage gaps hide real defects.)
+
 See also: `scripts/factcheck-geometry.mjs` (the comparator),
-`docs/C4-COVERAGE.md` (C4-PlantUML surface coverage), CLAUDE.md
-"Build / test / verify" (how to run the gate).
+`docs/adr/0012-completeness-invariant-and-title.md` (the principle +
+research), `docs/C4-COVERAGE.md` (C4-PlantUML surface coverage),
+CLAUDE.md "Build / test / verify" (how to run the gate).
 
 ## Metric classification (the true contract)
 
@@ -26,6 +36,7 @@ A fixture is **clean** iff all **eight contract metrics are 0**
 | `labelHit` | an edge-label rect lands over a NON-endpoint leaf | no label on an unrelated box |
 | `nodeOverlap` | a PARTIAL node–node overlap (containment = legit nesting, excluded) | no box collision |
 | `ratioBad` | (ADR 0011) the parity distance `abs(1−wRatio)` **or** `abs(1−hRatio)` grew > one quantisation quantum (0.01) vs the committed per-fixture baseline (`tests/factcheck-ratio-baseline.json`; ratchet, regen via `UPDATE_FACTCHECK_BASELINE=1`; predicate `scripts/factcheck-ratio.mjs`, unit-tested). **wRatio/hRatio = catalyst node-extent ÷ PlantUML node-extent — like-for-like** (NOT PlantUML's title-inflated SVG viewBox; 2026-05-17 fix, locked by `tests/factcheck-geometry.test.mts`) | no node-extent-aspect fidelity regression vs PlantUML on either axis |
+| `titleMiss` | (ADR 0012 — the **completeness invariant**, the FIRST-class structural gate, checked before any geometry/visual metric) the source `.puml` has a `title` directive but the `.drawio` has no non-empty `__title` trace cell | every source construct traces to a target element — no silent drops (the class that dropped the title on 100% of diagrams while entity/rel-only stayed green) |
 
 **Advisory** diagnostics — reported, NOT clean-disqualifying (ELK
 `layered` and PlantUML `dot` legitimately differ in same-rank order):

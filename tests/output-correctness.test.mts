@@ -162,3 +162,52 @@ describe('Edge-label wrap — long verb is bounded, not smeared across nodes', (
     expect(rel.c4Technology).toBe('[HTTPS]');
   });
 });
+
+/**
+ * Completeness invariant (MDE model-transformation principle): every
+ * source construct MUST trace to ≥1 target element — no silent drops.
+ * The `title` directive was skip-listed by EntityParser and dropped on
+ * 100% of diagrams; the entity/rel-only oracle never caught it (a
+ * coverage gap, not a node defect). Whole-path contracts so the wiring
+ * — parse → emit → escape — is exercised, not a helper in isolation.
+ */
+describe('completeness invariant — PlantUML `title` traces to a drawio element', () => {
+  const titleOf = async (puml: string) => {
+    const doc = await xml2js.parseStringPromise(await Catalyst.convert(puml));
+    const objs = (doc.mxfile.diagram[0].mxGraphModel[0].root[0].object ?? []) as { $: Record<string, string> }[];
+    return objs.find((o) => o.$.id === '__title')?.$;
+  };
+
+  it('emits a __title cell carrying the exact title text', async () => {
+    const t = await titleOf(C4('C4_Context.puml',
+      'title My Context Title\nSystem(a, "A")\nSystem(b, "B")\nRel(a, b, "uses")'));
+    expect(t).toBeDefined();
+    expect(t!.c4Type).toBe('Title');
+    expect(t!.c4Name).toBe('My Context Title');
+  });
+
+  it('preserves Unicode (em-dash, arrows) in the title — escape wiring', async () => {
+    const t = await titleOf(C4('C4_Context.puml',
+      'title Topology — cyclic (A→B→C→A)\nSystem(a, "A")\nRel(a, a, "self")'));
+    expect(t).toBeDefined();
+    // c4Text escapes < > & only; the em-dash/arrows must round-trip
+    // through xml2js verbatim (the topology-cyclic regression class).
+    expect(t!.c4Name).toBe('Topology — cyclic (A→B→C→A)');
+  });
+
+  it('the title is NOT a C4 node (excluded from entity geometry)', async () => {
+    const doc = await xml2js.parseStringPromise(await Catalyst.convert(
+      C4('C4_Context.puml', 'title T\nSystem(a, "A")\nSystem(b, "B")\nRel(a,b,"r")')));
+    const objs = (doc.mxfile.diagram[0].mxGraphModel[0].root[0].object ?? []) as { $: Record<string, string> }[];
+    const title = objs.find((o) => o.$.id === '__title')!.$;
+    expect(title.c4Type).toBe('Title');               // not System/Container/…
+    // exactly two C4 element nodes (a, b) — the title does not inflate them
+    const elems = objs.filter((o) => o.$.c4Type === 'System');
+    expect(elems).toHaveLength(2);
+  });
+
+  it('iff: NO title directive ⇒ NO __title cell (does not fabricate)', async () => {
+    const t = await titleOf(C4('C4_Context.puml', 'System(a, "A")\nSystem(b, "B")\nRel(a,b,"r")'));
+    expect(t).toBeUndefined();
+  });
+});

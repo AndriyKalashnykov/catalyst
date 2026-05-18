@@ -341,6 +341,11 @@
             </mxGeometry>
           </mxCell>
         </object>
+        <object c4Name="Edge cases — large diagram (~30 nodes)" c4Type="Title" label="Edge cases — large diagram (~30 nodes)" id="__title">
+          <mxCell style="text;html=1;align=left;verticalAlign=middle;whiteSpace=nowrap;fontSize=14;fontStyle=1;fontColor=#000000;" parent="1" vertex="1">
+            <mxGeometry as="geometry" height="17" width="273" x="13" y="-19"/>
+          </mxCell>
+        </object>
       </root>
     </mxGraphModel>
   </diagram>
