@@ -92,7 +92,7 @@ Decision: **`edgeStyle: 'orthogonalEdgeStyle'` → `curved: 1`.**
 | `arrowskew` | render changes | must stay CLEAN 20/20 (spike: it does for curved). |
 | `factcheck` | edge-style-invariant | un-regressed (proven byte-identical). |
 | `golden` | fingerprints topology + `fillColor/strokeColor/fontColor/dashed` only — NOT `edgeStyle`/`curved` | style-agnostic ⇒ no drift (verified). |
-| corpus-stress fixtures | `rel-self-loop`, `rel-fan-stress` added | regenerate gallery + factcheck ratio baseline entries for them in the implementing PR. |
+| corpus-stress fixtures | `rel-self-loop`, `rel-fan-stress` added | **DONE** (post-#122 follow-up): promoted from `tests/fixtures/route-stress/` into `tests/fixtures/corpus/` so they get gallery + factcheck + arrowskew cover; the empty `route-stress/` dir is removed and `route-fidelity-matrix.mjs` now sources them from `corpus/`. Gallery regenerated (22), arrowskew CLEAN 22/22, factcheck baseline gained the 2 entries (this-host-measured, existing 26 byte-identical — NOT a full recalibration, per the host-calibration MANUAL-gate caveat). |
 
 Lane machinery is intentionally **kept** (curved-through-lane-points
 read well in the spike); simplifying the orthogonal-era lane code is a

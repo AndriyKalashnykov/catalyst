@@ -46,9 +46,9 @@ Standalone, independently-maintained library (no upstream; never add an
   NOT gated (needs docker) — the `.drawio` is the deterministic root.
 - **`make factcheck` — the NO-EYEBALLING fidelity gate (run it for any
   geometry/emit change).** Audits ALL puml→drawio conversions — the
-  20-fixture gallery corpus AND the 6 canonical C4-PlantUML-spec
+  22-fixture gallery corpus AND the 6 canonical C4-PlantUML-spec
   fixtures in `tests/fixtures/` (c4-exhaustive, c4-all-rel-variants,
-  …) — 26 total. Renders each to PlantUML SVG
+  …) — 28 total. Renders each to PlantUML SVG
   (the `-tsvg` vector ground truth) and runs
   `scripts/factcheck-geometry.mjs`, a numeric PlantUML→drawio
   comparator: `entityMiss / relMiss / arrowBad` (arrowhead count ≠ C4
@@ -253,14 +253,18 @@ Completed-work root-cause prose lives in git history + ADRs +
 >    Only revisit if *layout* fidelity (node placement/crossings/
 >    aspect — NOT connectors; those are now solved by curved) remains
 >    the dominant residual after a release.
-> 5. **Optional / low:** (a) promote `tests/fixtures/route-stress/{rel
->    -self-loop,rel-fan-stress}.puml` into `corpus/` (adds gallery +
->    factcheck-baseline entries — deferred per ADR 0013; they feed
->    `make routefidelity` from route-stress/ already). (b) Housekeeping
->    PR: `scripts/bendcount-svg.mjs` has no `make` target;
->    `vitest.config.ts` `exclude:` omits `src/catalyst.mts` from the
->    coverage gate (`/test-coverage-analysis` scope finding, CI gate
->    correct). (c) **layout-readability — DO NOT reopen** without a
+> 5. **Optional / low:** (a) **DONE** — `rel-self-loop`/
+>    `rel-fan-stress` promoted from `route-stress/` into `corpus/`
+>    (gallery regenerated 22, arrowskew CLEAN 22/22, factcheck
+>    baseline +2 this-host entries, existing 26 byte-identical;
+>    `route-stress/` removed, `route-fidelity-matrix.mjs` sources
+>    from `corpus/`; per ADR 0013 blast-radius). (b) **DONE** —
+>    `make bendcount` target added + the instrument fixed for
+>    ADR-0013 curved edges (PR #127); the vitest 85% gate was a
+>    silent no-op (`thresholds.global` is Jest/nyc syntax, never
+>    enforced) — fixed to the real vitest schema + scoped to
+>    `src/**/*.mts`, `src/catalyst.mts` now under the gate (PR
+>    #128). (c) **layout-readability — DO NOT reopen** without a
 >    render-measured user-pointable defect (B1 declined on evidence;
 >    tall-ribbon is `dot`-faithful per ADR 0011).
 >

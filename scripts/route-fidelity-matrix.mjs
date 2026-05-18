@@ -27,9 +27,10 @@
  * the PlantUML `-tsvg` target; lower L1 distance = more PlantUML-
  * faithful. The PlantUML target is rendered once (invariant).
  *
- * Inputs: tests/fixtures/corpus/*.puml + tests/fixtures/route-stress/
- * *.puml (self-loop + combined fan stress — the connector-stress
- * coverage the curated corpus lacked).
+ * Inputs: tests/fixtures/corpus/*.puml — the curated corpus now
+ * includes the connector-stress fixtures (rel-self-loop,
+ * rel-fan-stress; promoted from the former route-stress/ dir per
+ * ADR 0013 blast-radius so they also get gallery + factcheck cover).
  *
  * Needs: node, java + docs/gallery/plantuml.jar (one-time `make
  * gallery`), docker (drawio-export). Heavy (3× clean build + render);
@@ -51,7 +52,6 @@ const REL = 'src/mx/c4/Relationship.mts';
 const JAR = process.env.PLANTUML_JAR ?? 'docs/gallery/plantuml.jar';
 const IMAGE = process.env.DRAWIO_EXPORT_IMAGE ?? 'rlespinasse/drawio-export:v4.51.0';
 const CORPUS = 'tests/fixtures/corpus';
-const STRESS = 'tests/fixtures/route-stress';
 const ORTHO_LINE = "            edgeStyle: 'orthogonalEdgeStyle',";
 
 const sh = (cmd, args, opts = {}) =>
@@ -80,12 +80,8 @@ const EXPECT = {
   curved: (j) => /curved/.test(j) && !j.includes('orthogonalEdgeStyle'),
 };
 
-const pumls = () => [
-  ...readdirSync(CORPUS).filter((f) => f.endsWith('.puml')).map((f) => join(CORPUS, f)),
-  ...(existsSync(STRESS)
-    ? readdirSync(STRESS).filter((f) => f.endsWith('.puml')).map((f) => join(STRESS, f))
-    : []),
-];
+const pumls = () =>
+  readdirSync(CORPUS).filter((f) => f.endsWith('.puml')).map((f) => join(CORPUS, f));
 
 async function buildStyle(style, work) {
   const orig = readFileSync(REL, 'utf8');

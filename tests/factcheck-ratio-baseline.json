@@ -63,6 +63,10 @@
     "w": 0.76,
     "h": 1.21
   },
+  "rel-fan-stress": {
+    "w": 1.25,
+    "h": 1.06
+  },
   "rel-layout-constraints": {
     "w": 1.28,
     "h": 0.61
@@ -73,6 +77,10 @@
   },
   "rel-parallel-duplicate": {
     "w": 1.01,
+    "h": 1.05
+  },
+  "rel-self-loop": {
+    "w": 0.94,
     "h": 1.05
   },
   "rel-tech-vs-notech": {

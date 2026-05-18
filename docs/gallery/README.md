@@ -235,6 +235,35 @@ Rel_R(hub, e, "right")
 
 </details>
 
+### `rel-fan-stress.puml`
+
+| Source PlantUML | catalyst → draw.io |
+|---|---|
+| <img src="img/rel-fan-stress.puml.png" alt="rel-fan-stress puml" height="360"> | <img src="img/rel-fan-stress.drawio.png" alt="rel-fan-stress drawio" height="360"> |
+
+<details><summary>PlantUML source</summary>
+
+```plantuml
+@startuml rel-fan-stress
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Container.puml
+title Relationships — combined fan stress (hub + BiRel + parallel + antiparallel)
+System(hub, "Gateway")
+System(a, "Auth")
+System(b, "Billing")
+System(c, "Catalog")
+System(d, "Notify")
+BiRel(hub, a, "authenticates", "OIDC")
+Rel(hub, b, "charges", "REST")
+Rel(b, hub, "refund callback", "webhook")
+Rel(hub, c, "reads", "gRPC")
+Rel(hub, c, "writes", "gRPC")
+Rel(hub, d, "emits", "events")
+Rel(a, b, "shares session", "JWT")
+@enduml
+```
+
+</details>
+
 ### `rel-layout-constraints.puml`
 
 | Source PlantUML | catalyst → draw.io |
@@ -297,6 +326,28 @@ System(b, "Service B")
 Rel(a, b, "sync", "REST")
 Rel(a, b, "async", "Kafka")
 Rel_Back(b, a, "callback", "webhook")
+@enduml
+```
+
+</details>
+
+### `rel-self-loop.puml`
+
+| Source PlantUML | catalyst → draw.io |
+|---|---|
+| <img src="img/rel-self-loop.puml.png" alt="rel-self-loop puml" height="360"> | <img src="img/rel-self-loop.drawio.png" alt="rel-self-loop drawio" height="360"> |
+
+<details><summary>PlantUML source</summary>
+
+```plantuml
+@startuml rel-self-loop
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Container.puml
+title Relationships — self-loop + return edge
+System(a, "Orchestrator")
+System(b, "Worker")
+Rel(a, a, "retries on failure", "internal")
+Rel(a, b, "dispatches", "gRPC")
+Rel(b, a, "reports status", "callback")
 @enduml
 ```
 
