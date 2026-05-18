@@ -1,69 +1,109 @@
-name: 🔨CI
+name: CI
+
 on:
   push:
-    branches:
-      - '**'
+    branches: ['**']
+    tags: ['v*']
   pull_request:
-    branches:
-      - '**'
+    branches: ['**']
+  workflow_call:
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Minimal at workflow level. `pull-requests: read` is required by
+# dorny/paths-filter on pull_request events (its listFiles() API call
+# 403s without it, failing the whole changes job). The `test` job
+# elevates to `pull-requests: write` locally for the coverage comment.
+permissions:
+  contents: read
+  pull-requests: read
+
 # Every job calls a Makefile target — the Makefile is the single source
-# of truth for what each check runs, so `make ci` locally and CI cannot
-# drift (the portfolio "workflow must use Makefile targets" rule). Each
-# `make <target>` chains its `deps` prerequisite (idempotent `mise
-# install` — mise-action already populated it — + `npm ci`); one make
-# invocation per job dedups `deps`.
+# of truth, so `make ci` locally and CI cannot drift. Each `make
+# <target>` chains its `deps` prerequisite (idempotent `mise install`
+# — mise-action already populated it — + `npm ci`).
 
 jobs:
-  lint:
+  # Path-filter detector (portfolio-mandatory). Doc-only pushes/PRs skip
+  # the heavy jobs; ci-pass still goes green (skipped ≠ failure) so a
+  # Ruleset/branch-protection required check on ci-pass clears. Tag
+  # pushes force code=true (a tag commonly == main HEAD → empty diff →
+  # would otherwise skip every job and "release" nothing).
+  changes:
     runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      code: ${{ startsWith(github.ref, 'refs/tags/') && 'true' || steps.filter.outputs.code }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-      # Node + act/gitleaks/trivy all come from .mise.toml — pinned
-      # local↔CI parity, not a moving `node-version: latest`. SHA is
-      # the portfolio-canonical pin (puml2drawio / ibm-wm).
-      - uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
+      - uses: dorny/paths-filter@d1c1ffe0248fe513906c8e24db8ea791d46f8590 # v3
+        id: filter
         with:
-          install: true
-          cache: true
-      - name: Lint (oxlint + markdownlint)
-        run: make lint
+          # Set only on push (act's synthesized push event omits
+          # repository.default_branch, which the action otherwise needs);
+          # on pull_request the action uses PR.base.ref and IGNORES base
+          # (an unconditional base also emits a "base ignored" annotation
+          # on every PR run).
+          base: ${{ github.event_name == 'push' && 'main' || '' }}
+          filters: |
+            code:
+              - '!(**.md|docs/**|specs/**|LICENSE|.gitignore|.claudeignore|.claude/**|benchmarks/**|**.png|**.jpg|**.gif|**.svg)'
+              - 'CLAUDE.md'
 
   static-check:
+    needs: [changes]
+    if: ${{ !failure() && !cancelled() && needs.changes.outputs.code == 'true' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-      # mise-action installs gitleaks + trivy from .mise.toml (the
-      # single source of truth) — same versions local `make` uses.
+      # Node + act/gitleaks/trivy/java come from .mise.toml — pinned
+      # local↔CI parity. SHA is the portfolio-canonical pin.
       - uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
         with:
           install: true
           cache: true
-      - name: Security/quality gate (npm audit + gitleaks + trivy-fs)
+      - name: Static check
         run: make static-check
 
-  test:
+  build:
+    needs: [changes, static-check]
+    if: ${{ !failure() && !cancelled() && needs.changes.outputs.code == 'true' }}
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: write
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
       - uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
         with:
           install: true
           cache: true
-      # gallery-verify = deterministic gallery drift gate (no java/
-      # docker): the .drawio XML IS catalyst's emit output; if it
-      # differs from the committed docs/gallery copies an emit/template
-      # change shipped without refreshing the gallery (the P4b-class
-      # stale-artifact defect). Failure ⇒ run `make gallery` + commit.
-      # coverage-check = vitest with the 85% threshold (vitest.config.ts).
-      # One make invocation so the shared `deps`/`build` prereq runs once.
-      - name: Gallery drift gate + tests with coverage
+      - name: Build
+        run: make build
+
+  test:
+    needs: [changes, static-check]
+    if: ${{ !failure() && !cancelled() && needs.changes.outputs.code == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: write   # davelosert/vitest-coverage-report-action comment
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
+        with:
+          install: true
+          cache: true
+      # gallery-verify = deterministic gallery drift gate (the .drawio
+      # XML IS catalyst's emit; drift ⇒ run `make gallery` + commit).
+      # coverage-check = vitest with the 85% threshold. One make
+      # invocation so the shared deps/build prereq runs once.
+      - name: Gallery drift gate and coverage
         run: make gallery-verify coverage-check
-      - name: Report Coverage
+      - name: Report coverage
         uses: davelosert/vitest-coverage-report-action@02f3c2e641286b7fa308cd3e430783103ce6103b # v2
         if: always()
         with:
@@ -71,3 +111,22 @@ jobs:
           json-summary-path: './coverage/coverage-summary.json'
           json-final-path: './coverage/coverage-final.json'
           vite-config-path: './vitest.config.ts'
+
+  # Single stable required check for branch-protection / Rulesets.
+  # `skipped` (doc-only) is treated as pass; only `failure`/`cancelled`
+  # fail the gate. Jobs can be added/renamed without touching Settings.
+  ci-pass:
+    if: always()
+    needs: [changes, static-check, build, test]
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Verify no job failed
+        run: |
+          if [[ "${{ contains(needs.*.result, 'failure') }}" == "true" ]]; then
+            echo "One or more jobs failed"; exit 1
+          fi
+          if [[ "${{ contains(needs.*.result, 'cancelled') }}" == "true" ]]; then
+            echo "One or more jobs were cancelled"; exit 1
+          fi
+          echo "All required jobs passed or were skipped."

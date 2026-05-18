@@ -87,8 +87,8 @@ secrets: deps
 trivy-fs: deps
 	@trivy fs --scanners vuln,secret,misconfig --severity CRITICAL,HIGH --exit-code 1 .
 
-#static-check: @ Composite security/quality gate (vulncheck + secrets + trivy-fs)
-static-check: vulncheck secrets trivy-fs
+#static-check: @ Composite quality gate — lint + security (one CI job)
+static-check: lint vulncheck secrets trivy-fs
 	@echo "static-check passed."
 
 #golden-update: @ Regenerate drawio structural snapshots after an intentional change
@@ -134,8 +134,8 @@ gallery-verify: build
 		exit 1; }
 	@echo "gallery-verify: docs/gallery .drawio in sync with current emit ✓"
 
-#ci: @ Local CI pipeline — mirrors .github/workflows/ci.yml (lint job + test job) plus static-check
-ci: build lint static-check coverage-check gallery-verify
+#ci: @ Local CI pipeline — mirrors ci.yml (static-check + build + test jobs)
+ci: static-check build coverage-check gallery-verify
 	@echo "Local CI pipeline passed."
 
 #ci-run: @ Run the real .github/workflows/ci.yml locally via act (mise-managed act; needs Docker)
