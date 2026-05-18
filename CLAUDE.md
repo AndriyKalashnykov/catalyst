@@ -117,8 +117,10 @@ Everything below is researched, not speculative. Sizes are honest.
 Completed-work root-cause prose lives in git history + ADRs +
 `docs/UPGRADE-NOTES.md` + agent memories — not re-dumped here.
 
-> ▶ **RESUME HERE — session handoff 2026-05-17 (refreshed #8 — ADR
-> 0011 C3+D shipped; NEXT = ADR 0011 C2).**
+> ▶ **RESUME HERE — session handoff 2026-05-17 (refreshed #9 — ADR
+> 0011 CLOSED: wRatio premise was a comparator artefact, fixed
+> like-for-like; C2/C1 declined on evidence. NEXT = Sequence #12
+> phase (b)).**
 > `make factcheck` is THE gate (numeric PlantUML→drawio comparator,
 > ALL 26 conversions vs `-tsvg`; NO eyeballing — every visual claim
 > cites a metric). It now has **8 contract metrics** incl. `ratioBad`
@@ -155,75 +157,39 @@ Completed-work root-cause prose lives in git history + ADRs +
 >    before AND after via version-exact docs + the tool's own
 >    registry; surface tensions, don't force.
 >
-> This session shipped (all MERGED): **#89 P4b content-fit · #90 P13
-> (→reverted #94) · #91 seq phase-a · #92 stale-gallery fix · #93
-> gallery-drift gate+Renovate · #94 P13 revert · #95 ADR 0011
-> decision base · #96 ratio-ratchet (step 0) · #97 ADR 0011 C3+cause
-> D**. Memories new/updated: `derived-artifact-enforcement-gate`
+> Prior session shipped (all MERGED): **#89 P4b · #90/#94 P13
+> (shipped→reverted) · #91 seq phase-a · #92 stale-gallery · #93
+> gallery-drift gate · #95 ADR 0011 base · #96 ratio-ratchet · #97
+> ADR 0011 C3+D · #98 handoff**. THIS session (PR open): **ADR 0011
+> wRatio comparator-artefact fix + honest re-baseline + C2 declined
+> on evidence** (catalyst emit byte-identical; `factcheck` CLEAN
+> 26/26; new `tests/factcheck-geometry.test.mts`).
+> Memories new/updated: `derived-artifact-enforcement-gate`
 > (new), `self-audit-introduced-literals` (escalation),
 > `no-guesses-fact-check-discipline`, `md-image-embedding` (P13
 > revert), `factcheck-harness-gate`.
 >
 > ### ▶▶ NEXT SESSION (priority order)
 >
-> 0. **Layout-aspect fidelity (ELK `layered` vs `dot`) — DECISION
->    BASE COMMITTED: `docs/adr/0011-layout-aspect-fidelity.md`.** THE
->    real fix for the "narrow diagram / humongous fonts" complaint.
->    4 primary-sourced research sweeps + measurement (2026-05-17):
->    boxes are PlantUML-correct per-leaf; the 0.19–0.67× WIDTH gap on
->    14/20 fixtures has THREE root causes — **A** catalyst forces
->    `nodePlacement=NETWORK_SIMPLEX` (Phase-4 crossing win, narrowing
->    cost), **B** `dot` makes every edge label/parallel-edge a
->    width-bearing ranked node, ELK reserves only a band (dominant;
->    sole cause of the ~3× parallel blow-up), **C** `measureNode`
->    wraps desc to title-width not `WRAP_WIDTH=200`. **Sequenced
->    decision (ADR 0011): C3 (wrap=200) → C2 (synthetic fan/label
->    rank-width, P2-pattern) → C1 (BK placement ONLY if crossing
->    budget holds) — each its own factcheck+byte+render-compare
->    gated PR; PROMOTE `wRatio`/`hRatio` advisory→contract BEFORE C3
->    (data-driven threshold).** Implement in that order; C1 may be
->    declined (width not worth re-tangling edges — a valid outcome).
->    **STATUS 2026-05-17: step 0 (#96) + C3 + cause D (desc font
->    14 + blank spacer, fact-observed) SHIPPED; ratchet re-baselined
->    (pre-C3 was a proven bug artifact); routed-edge label
->    de-collision added (fixed the C3+D-exposed c4-deployment
->    labelHit); factcheck CLEAN 26/26. NEXT = C2** (synthetic
->    fan/label rank-width — the dominant cause B; diagram ratios
->    still need it). See ADR 0011 §Status + memory
->    `derived-artifact-enforcement-gate`.
->    > **▶ C2 RESUME (start cold here):** *Mechanism* — `dot` makes
->    > every edge label / parallel edge a width-bearing **ranked
->    > virtual node**; ELK reserves only a thin band, and catalyst's
->    > `assignEdgeLanes` parallel-fan is applied **POST-ELK**
->    > (`edgeLanes.mts`) so ELK reserves ZERO width for it. Fix:
->    > inject **sized invisible structure** so ELK reserves the
->    > horizontal room dot does — reuse the proven P2 pattern
->    > (`LayoutEngine.mts` ~`buildGraph`/the `cmp*`+`__cmp_sink_*`
->    > synthetic-edge + 1×1 phantom-child injection, and the emit
->    > filter `/^(rel|lay)\d+$/` that discards anything synthetic so
->    > `layoutData2mx` never draws it — byte-scoping proven). Concrete
->    > options the research ranked (memory `open-followups` / ADR
->    > 0011 §Candidates): (a) inflate fan-bearing leaf widths in
->    > `measureNode`/LayoutEngine by the computed same-pair fan span
->    > (count × measured lane gap), and/or (b) feed a sized invisible
->    > label-dummy edge/node on the dummy rank mirroring dot's
->    > label-node. `measureEdgeLabel` already feeds `labels:[{w,h}]`
->    > to ELK (`LayoutEngine.mts:301`) — that's saturated, not the
->    > lever. *Worst fixtures* (wRatio, post-C3+D — re-measure first
->    > via `make factcheck` then the per-fixture loop in this file's
->    > git history): the `rel-parallel-duplicate`/`rel-bidirectional`/
->    > `rel-tech-vs-notech` parallel/antiparallel set + the
->    > description-light topology-* . *Gate (BLOCKING):* `make
->    > factcheck` CLEAN 26/26 with `ratioBad` RATCHETING TOWARD parity
->    > (wRatio improves on the fan fixtures, NO ratioBad regression
->    > elsewhere — over-inflation trips `nodeOverlap`/`attachMerge`,
->    > the real risk); then **re-baseline the ratchet** (ratchet only
->    > tightens), `make gallery`, commit, byte-scope worktree-diff,
->    > and `render-compare rel-parallel-duplicate`. Then **C1** (try
->    > `nodePlacement=BRANDES_KOEPF`+`bk.fixedAlignment=BALANCED`
->    > ONLY if the Phase-4 crossing count — see
->    > `LayoutEngine.mts:399-408` — does NOT regress; C1 may be
->    > DECLINED, a valid ADR-sanctioned outcome).
+> 0. **ADR 0011 layout-aspect — CLOSED (fact-check, this session).**
+>    The "0.19–0.67× WIDTH on 14/20" premise was substantially a
+>    **comparator artefact**: `factcheck-geometry.mjs` compared
+>    catalyst **node-extent** vs PlantUML **full viewBox** (title
+>    banner + margins + label spread). Fixed `parsePlantumlSvg` to
+>    node-vs-node (like-for-like); honest corpus is **0.73–1.05** —
+>    catalyst layout is already faithful to `dot`. **C2** (synthetic
+>    fan-width node) was implemented + measured under the corrected
+>    metric: it does NOT move the sole real residual
+>    `rel-tech-vs-notech` (0.732→0.732 — pads canvas not node-extent)
+>    and REGRESSES `c4-all-rel-variants` (0.916→1.121) ⇒ **reverted /
+>    DECLINED on evidence; C1 declined by extension** (its premise is
+>    the artefact). Accepted residual: `rel-tech-vs-notech ≈ 0.73`
+>    (one fixture, modest `dot`-antiparallel-vnode spread; held by the
+>    ratchet). Net deliverable: the comparator false-positive-class
+>    fix + locking unit test + honest re-baseline (catalyst emit
+>    byte-identical to `origin/main`). See ADR 0011 §"Status — premise
+>    CORRECTED" + memory `factcheck-harness-gate`. **No further
+>    layout-aspect work — the gap was the gate, not the product.**
 > 1. **Sequence diagrams** (#12, ADR 0007) — phased. **Phase (a)
 >    `SeqParser` ✅ DONE 2026-05-17** (`src/seq/`, 29-test matrix,
 >    net-new). Phase (b) WIP parked on branch
@@ -261,26 +227,34 @@ Completed-work root-cause prose lives in git history + ADRs +
 > **DONE & pruned** (detail in git history + ADRs + memories per the
 > convention at the top of BACKLOG — NOT re-dumped): P12, P2 (#85),
 > P4b+cause-D (ADR 0010 + ADR 0011 §Status), #15, #17, ADR 0011
-> step 0/C3/D. **P13** = SHIPPED then REVERTED same-day (uniform
+> step 0/C3/D, **ADR 0011 CLOSED** (wRatio comparator-artefact fix +
+> C2/C1 declined on evidence — see item 0). **P13** = SHIPPED then
+> REVERTED same-day (uniform
 > `width=420` magnified the item-0 layout-aspect gap → reverted to
 > `height=360`; idea ABANDONED, superseded by item-0;
 > `docs/research/p13-gallery-uniformity.md` "REVERTED" + memory
 > `md-image-embedding`). `GALLERY_MD_ONLY`/`GALLERY_DRAWIO_ONLY`
 > infra + the #93 drift gate are kept.
 >
-> **OPEN (priority): (0) ADR 0011 C2 then C1 — see item 0 + the
-> "▶ C2 RESUME" note above. (1) Sequence diagrams #12 phase (b)+ —
-> WIP parked, see item 1. (2) C4 surface true residuals. Plus the
-> open gallery-visual residuals below (mostly subsumed by C2).**
+> **OPEN (priority): (1) Sequence diagrams #12 phase (b)+ — WIP
+> parked on branch `feat/seq-phase-b-layout-emit` @ `c18a403`, see
+> item 1 (now the TOP priority — ADR 0011 closed). (2) C4 surface
+> true residuals. Plus the open gallery-visual residuals below —
+> RE-JUDGE each via the corrected `make factcheck` numbers (the C2
+> "subsumes these" note is void; they were never the artefact, but
+> they ARE now measured honestly node-vs-node).**
 
 ### ▶▶ GALLERY VISUAL OPEN RESIDUALS (P2/P4/P6 DONE — pruned)
 
 Audit basis: `docs/gallery/img/<stem>.{puml,drawio}.png` pairs
 (regen `make gallery`). Aesthetic fidelity to PlantUML is
-first-class. **Re-judge ALL of these post-ADR-0011-C2** — most are
-manifestations of cause B (ELK reserves no edge-label/fan rank
-width) and should be largely resolved by C2; confirm via factcheck
-and the pair images before any separate spike.
+first-class. **The earlier "cause B / subsumed by C2" framing is
+VOID** — ADR 0011 found the wRatio gap was a comparator artefact
+(node-extent vs title-inflated viewBox), now fixed; C2 declined.
+Re-judge each below against the **corrected** `make factcheck`
+node-vs-node numbers + the pair images; do NOT assume a width
+defect exists without a corrected-metric number citing it (memory
+`factcheck-harness-gate`: distrust the gate, cite a number).
 
 - **P1 — multi-edge lane separation** (`rel-parallel-duplicate`,
   `rel-tech-vs-notech`, `rel-bidirectional`): same-pair fan

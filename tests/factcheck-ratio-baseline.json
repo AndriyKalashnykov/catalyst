@@ -1,106 +1,106 @@
 {
   "c4-all-entity-variants": {
-    "w": 3.52,
-    "h": 0.2
+    "w": 3.87,
+    "h": 0.31
   },
   "c4-all-rel-variants": {
-    "w": 0.42,
-    "h": 1.9
+    "w": 0.92,
+    "h": 2.11
   },
   "c4-container": {
-    "w": 0.92,
-    "h": 0.91
+    "w": 0.93,
+    "h": 1.05
   },
   "c4-context": {
-    "w": 0.65,
-    "h": 0.99
+    "w": 0.67,
+    "h": 1.29
   },
   "c4-deployment": {
-    "w": 0.55,
-    "h": 1.14
+    "w": 0.57,
+    "h": 1.22
   },
   "c4-exhaustive": {
     "w": 0.72,
-    "h": 1.64
+    "h": 2.13
   },
   "edge-empty-descriptions": {
-    "w": 0.23,
-    "h": 0.89
-  },
-  "edge-large-graph": {
-    "w": 2.17,
-    "h": 0.99
-  },
-  "edge-multiline-labels": {
-    "w": 0.51,
-    "h": 0.88
-  },
-  "edge-tags-styling": {
-    "w": 0.34,
-    "h": 0.92
-  },
-  "edge-unicode-specialchars": {
-    "w": 0.74,
-    "h": 0.86
-  },
-  "level-component": {
-    "w": 0.84,
-    "h": 0.81
-  },
-  "level-dynamic": {
-    "w": 0.29,
-    "h": 0.9
-  },
-  "level-system-landscape": {
-    "w": 0.6,
-    "h": 0.96
-  },
-  "rel-bidirectional": {
-    "w": 0.89,
-    "h": 0.84
-  },
-  "rel-directional": {
-    "w": 0.71,
-    "h": 1.04
-  },
-  "rel-layout-constraints": {
-    "w": 0.47,
-    "h": 0.55
-  },
-  "rel-long-labels": {
-    "w": 0.59,
-    "h": 0.78
-  },
-  "rel-parallel-duplicate": {
-    "w": 0.19,
-    "h": 0.84
-  },
-  "rel-tech-vs-notech": {
-    "w": 0.45,
-    "h": 0.88
-  },
-  "topology-cyclic": {
-    "w": 0.48,
-    "h": 0.93
-  },
-  "topology-deep-nesting": {
-    "w": 0.53,
-    "h": 0.72
-  },
-  "topology-disconnected": {
     "w": 1.01,
-    "h": 0.84
-  },
-  "topology-hub-spoke": {
-    "w": 1,
-    "h": 0.94
-  },
-  "topology-linear-chain": {
-    "w": 0.56,
     "h": 0.98
   },
+  "edge-large-graph": {
+    "w": 2.24,
+    "h": 1.01
+  },
+  "edge-multiline-labels": {
+    "w": 0.98,
+    "h": 1.65
+  },
+  "edge-tags-styling": {
+    "w": 0.96,
+    "h": 1.05
+  },
+  "edge-unicode-specialchars": {
+    "w": 0.99,
+    "h": 0.95
+  },
+  "level-component": {
+    "w": 0.87,
+    "h": 0.88
+  },
+  "level-dynamic": {
+    "w": 1.02,
+    "h": 1.42
+  },
+  "level-system-landscape": {
+    "w": 0.61,
+    "h": 1.04
+  },
+  "rel-bidirectional": {
+    "w": 0.97,
+    "h": 1.05
+  },
+  "rel-directional": {
+    "w": 0.76,
+    "h": 1.21
+  },
+  "rel-layout-constraints": {
+    "w": 1.28,
+    "h": 0.61
+  },
+  "rel-long-labels": {
+    "w": 0.98,
+    "h": 0.91
+  },
+  "rel-parallel-duplicate": {
+    "w": 1.01,
+    "h": 1.05
+  },
+  "rel-tech-vs-notech": {
+    "w": 0.73,
+    "h": 1.1
+  },
+  "topology-cyclic": {
+    "w": 0.73,
+    "h": 1.08
+  },
+  "topology-deep-nesting": {
+    "w": 0.61,
+    "h": 0.76
+  },
+  "topology-disconnected": {
+    "w": 1.04,
+    "h": 1.07
+  },
+  "topology-hub-spoke": {
+    "w": 1.05,
+    "h": 1.07
+  },
+  "topology-linear-chain": {
+    "w": 0.94,
+    "h": 1.04
+  },
   "topology-wide-rank": {
-    "w": 1.06,
-    "h": 0.9
+    "w": 1.07,
+    "h": 1.14
   }
 }

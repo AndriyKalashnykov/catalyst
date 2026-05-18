@@ -25,15 +25,20 @@ A fixture is **clean** iff all **eight contract metrics are 0**
 | `attachMerge` | same-pair edges whose BOTH endpoint attach points are within `ATTACH_SEP_MIN` in the **2-D** plane (Euclidean, P12 fix) | parallel edges visually distinct |
 | `labelHit` | an edge-label rect lands over a NON-endpoint leaf | no label on an unrelated box |
 | `nodeOverlap` | a PARTIAL node–node overlap (containment = legit nesting, excluded) | no box collision |
-| `ratioBad` | (ADR 0011) the parity distance `abs(1−wRatio)` **or** `abs(1−hRatio)` grew > one quantisation quantum (0.01) vs the committed per-fixture baseline (`tests/factcheck-ratio-baseline.json`; ratchet, regen via `UPDATE_FACTCHECK_BASELINE=1`; predicate `scripts/factcheck-ratio.mjs`, unit-tested) | no bbox-aspect fidelity regression vs PlantUML on either axis |
+| `ratioBad` | (ADR 0011) the parity distance `abs(1−wRatio)` **or** `abs(1−hRatio)` grew > one quantisation quantum (0.01) vs the committed per-fixture baseline (`tests/factcheck-ratio-baseline.json`; ratchet, regen via `UPDATE_FACTCHECK_BASELINE=1`; predicate `scripts/factcheck-ratio.mjs`, unit-tested). **wRatio/hRatio = catalyst node-extent ÷ PlantUML node-extent — like-for-like** (NOT PlantUML's title-inflated SVG viewBox; 2026-05-17 fix, locked by `tests/factcheck-geometry.test.mts`) | no node-extent-aspect fidelity regression vs PlantUML on either axis |
 
 **Advisory** diagnostics — reported, NOT clean-disqualifying (ELK
 `layered` and PlantUML `dot` legitimately differ in same-rank order):
 `rankOrder`, `boundaryBands`. (`wRatio`/`hRatio` themselves are still
 reported raw, but a *regression* in them is now the **contract**
-`ratioBad` — ADR 0011 promoted this axis advisory→contract because 14
-fixtures at wRatio 0.19–0.67 had shipped "CLEAN" while it was advisory;
-memory `derived-artifact-enforcement-gate`.)
+`ratioBad` — ADR 0011 promoted this axis advisory→contract. NOTE: the
+"14 fixtures at wRatio 0.19–0.67" that motivated the promotion was
+later (2026-05-17) found to be a **comparator artefact** — catalyst
+node-extent vs PlantUML *title-inflated viewBox*; the like-for-like
+fix shows the honest corpus is 0.73–1.05. The ratchet is still a valid
+no-regression contract; its baseline was regenerated against the
+corrected metric. Memories `factcheck-harness-gate` (FP class #7),
+`derived-artifact-enforcement-gate`.)
 
 ## Path → guarding metric matrix
 
