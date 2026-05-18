@@ -76,7 +76,7 @@ readability ask), **effort** 0.15 (low = better). Score 1–5; weighted
 
 | Candidate | fid | det | val | eff | Σ | Verdict |
 |---|----|----|----|----|----|---|
-| **B1 Edge-straightening / bend-reduction post-pass** (collapse interior bends within ε of the chord; never move endpoints) | 5 | 5 | 5 | 3 | **4.70** | **Top — pursue first.** Ware 2002: continuity is the most-neglected high-impact comprehension factor; Purchase 1997: bends rank #2 after crossings. Caveat: catalyst edges are `orthogonalEdgeStyle` (draw.io re-routes) — a post-pass on emitted waypoints may be a render no-op (the #107 lesson); validate against the drawio-export SVG, not emitted points. |
+| **B1 Edge-straightening / bend-reduction post-pass** (collapse interior bends within ε of the chord; never move endpoints) | 5 | 5 | 5 | 3 | **4.70** | ⚠️ **DECLINED on evidence 2026-05-18 — see Post-spike conclusion.** The matrix score assumed the bends were in catalyst's emit; the spike proved they are draw.io-router-owned (`collapseCollinearBends` = full no-op, 20/20 `.drawio` byte-identical). The `orthogonalEdgeStyle`-render-no-op caveat (the #107 lesson) materialised exactly as flagged. Not pursued. |
 | B2 Whitespace-trim (crop to content bbox + uniform ~50px margin) | 5 | 5 | 3 | 4 | 4.50 | Pursue. Deterministic, no C4 conflict; addresses R1 left-whitespace without touching layout topology. Verify it does not fight the title band. |
 | B3 New factcheck metrics: path-continuity (ratcheted contract, like `ratioBad`) + edge-length-uniformity (**advisory** — two valid layouts legitimately differ) | 5 | 5 | 3 | 3 | 4.30 | Pursue alongside B1 (it is B1's gate — instrument before/with the fix, per the build-the-instrument rule). |
 | B4 `contentAlignment=[H_CENTER,V_TOP]` on boundary compounds | 4 | 5 | 2 | 5 | 4.15 | Low-risk nesting polish for R3; spike-gated. |
@@ -111,6 +111,34 @@ code — ADR 0009).
    (#93 drift gate). Visual review corroborative only — cite factcheck
    numbers, never a PNG eyeball.
 6. One coherent change = one PR; no auto-merge (explicit squash).
+
+## Post-spike conclusion (2026-05-18) — the backlog dissolves under fact-check
+
+Each candidate was fact-checked against the **real drawio-export
+render** (the #107 discipline) and/or the code. Net: catalyst's layout
+is already faithful to its design target (Graphviz `dot`, ADR
+0008/0011); the "crammed/unprofessional" complaint is largely already
+met or would require abandoning `dot`-fidelity. Honest outcomes:
+
+| Item | Verdict (evidence) |
+|---|---|
+| **B1** edge-straightening / bend-collapse | **DECLINED — proven render no-op.** New instrument `scripts/bendcount-svg.mjs` measures redundant (≤1.5 px off-chord) bends on the real SVG: 48/225 corpus-wide, concentrated in `edge-large-graph` (35). A `collapseCollinearBends` post-pass removed **0** emitted points (all 20 `.drawio` byte-identical to `origin/main`): the redundant bends are **not in catalyst's emit** — draw.io's universal `orthogonalEdgeStyle` router *generates* them on re-route (exactly the #107 class). They are also ≤1.5 px sub-pixel jogs, not the user's complaint. Not shipped (a no-op is not a feature). Instrument kept as the reproducible evidence + a future routing-change probe. |
+| **B2** whitespace-trim | **Not applicable.** catalyst's canvas bbox already tracks the content node-extent (ADR 0011: `wRatio/hRatio` 0.73–1.05 vs `dot`). The perceived `edge-large-graph` whitespace is ELK's layout *spread*, which IS the `dot`-faithful target — cropping would not change it; there is no "tiny diagram in a huge sheet" defect. |
+| **B5** `measureNode` text padding | **Already correct — verified.** Width is `widest line + 2·INSET`, `INSET` = the **measured PlantUML inset** (`PUML_LEAF_BOX.INSET`, category-1 metric). Not zero; and substituting the community's generic "≥15 px" would *regress* `dot`-fidelity. No change. |
+| **B3** continuity / edge-length factcheck metrics | **Low value given B1.** A continuity metric is measurable (`bendcount-svg.mjs`) but the bends are router-owned with no emitted-side fix (B1) — an advisory with no actionable lever. Defer. |
+| **B4** `contentAlignment` on boundary compounds | Open, minor. Untouched; small nesting polish, low priority (only if a deep-nesting fixture's label-on-border is later judged worth it). |
+| **B6** explicit `aspectRatio` | Open, low priority, soft (ELK honest caveat); ADR 0011 says node-extent already `dot`-faithful, so aesthetic-only. |
+
+**Overarching finding (surface, don't force):** the measurable
+readability levers are either already satisfied (spacing — the ELK
+sweep's "bare defaults" premise was false; padding — B5; aspect — ADR
+0011) or are draw.io-router-owned and not addressable from catalyst's
+emit without abandoning `orthogonalEdgeStyle` (B1) — a change whose
+blast radius includes the #111 arrowhead-clearance fix and `dot`
+fidelity. Recommended: **no further layout-readability implementation**
+beyond the optional low-priority B4/B6; the design target (`dot`
+fidelity) is met. Re-open only with a *render-measured* defect a user
+can point to, not a metric in isolation.
 
 ## Primary sources (for the implementer)
 

@@ -297,25 +297,22 @@ Completed-work root-cause prose lives in git history + ADRs +
 >    untouched (different geometry — re-spike if a future fixture
 >    flags it on the gate). No further arrowhead work unless
 >    `make arrowskew` reports a regression.
-> 1. **Layout readability ("not crammed / professional") — DECISION
->    BASE COMMITTED, NOT yet implemented.** See
->    `docs/research/layout-readability.md` (research-grounded, 2
->    primary-sourced sweeps + gallery review, weighted matrix, spike
->    protocol). Key fact-checks: the ELK sweep's "spacing runs on
->    bare ELK defaults" premise is **FALSE** (catalyst sets
->    `nodesep:50`/`ranksep:36` at `src/catalyst.mts:501,515`); the
->    "tall ribbon" (`edge-large-graph`, `topology-deep-nesting`) is
->    **PlantUML-faithful** (the `.puml.png` is equally tall — ADR
->    0011/0008 fidelity target is `dot`, met). Ranked backlog:
->    **B1 edge-straightening/bend-reduction post-pass** (Ware 2002
->    continuity; top) ·
->    B2 whitespace-trim · B3 new factcheck metrics (path-continuity
->    ratchet + edge-length-uniformity advisory) · B4 `contentAlignment`
->    nesting · B5 verify `measureNode` text padding ≥15px · B6
->    explicit `aspectRatio` (low priority, soft target). Declined &
->    recorded: compaction / mergeEdges / wrapping / Structurizr-300px /
->    global uniform sizing. Implement per the doc's spike protocol
->    (factcheck CLEAN 26/26 + byte-scope + unit test + gallery-in-PR).
+> 1. **Layout readability — BACKLOG DISSOLVED under fact-check (see
+>    `docs/research/layout-readability.md` "Post-spike conclusion").**
+>    B1 (bend-reduction) DECLINED on evidence: `collapseCollinearBends`
+>    was a proven full render no-op (20/20 `.drawio` byte-identical;
+>    the redundant ≤1.5 px bends are draw.io `orthogonalEdgeStyle`
+>    router-owned, not in catalyst's emit — the #111/#107 lesson
+>    again). B2 not-applicable (canvas already tracks content bbox).
+>    B5 already-correct (measured PlantUML `INSET`, not 0). Spacing
+>    premise was FALSE (`nodesep:50`/`ranksep:36`); tall-ribbon is
+>    `dot`-faithful (ADR 0011). Net: the `dot`-fidelity design target
+>    is met; **no further layout-readability work** beyond optional
+>    low-priority B4 (`contentAlignment` nesting) / B6 (`aspectRatio`,
+>    soft). Instrument `scripts/bendcount-svg.mjs` kept as the
+>    reproducible evidence + future routing-change probe. Re-open only
+>    with a render-measured defect a user can point to, not a metric
+>    in isolation.
 >    (ADR 0011 layout-**aspect** remains CLOSED — that was the gate,
 >    not the product; this is the distinct readability/aesthetic axis.)
 > 2. **Sequence diagrams** (#12, ADR 0007) — **phases (a)+(b)+(c)
