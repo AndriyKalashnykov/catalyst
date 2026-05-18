@@ -1,6 +1,26 @@
 # mise — portfolio-mandatory cross-language version manager.
-# Node is the only toolchain catalyst needs (TypeScript build + vitest).
-# Tracks the latest Node 26.x, mirroring CI's `node-version: 'latest' +
-# check-latest: true` so local and CI run the same major.
+# Single source of truth for every tool the Makefile drives: local dev
+# and CI (jdx/mise-action) read this same file. Versions verified to
+# exist via `mise ls-remote` before pinning (no guessed tags).
+#
+# Renovate tracks this file via its NATIVE `mise` manager (renovate.json
+# `enabledManagers` includes "mise") — it understands aqua/core pins
+# directly, so NO `# renovate:` inline comments belong here (those are
+# only for the Makefile custom.regex manager).
 [tools]
+# Node — the only language toolchain catalyst needs (TypeScript build +
+# vitest). Tracks the latest Node 26.x, mirroring CI's mise-action so
+# local and CI run the same major.
 node = "26"
+
+# act — runs the real ci.yml locally (`make ci-run`). Was previously
+# claimed "mise-managed" by the Makefile but never declared here, so a
+# fresh checkout hit `act: command not found`. aqua backend = precompiled
+# release binary (faster than cargo/go install).
+"aqua:nektos/act" = "0.2.88"
+
+# gitleaks — `make secrets` (leaked-credential scan; static-check gate).
+"aqua:gitleaks/gitleaks" = "8.30.1"
+
+# trivy — `make trivy-fs` (vuln/secret/misconfig scan; static-check gate).
+"aqua:aquasecurity/trivy" = "0.70.0"
