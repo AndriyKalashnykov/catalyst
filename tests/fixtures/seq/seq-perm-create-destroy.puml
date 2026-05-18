@@ -1,0 +1,15 @@
+@startuml seq-perm-create-destroy
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Sequence.puml
+title Permutation — create / destroy lifespans
+participant "Mgr" as m
+m -> m : start
+create participant "Worker 1" as w1
+m -> w1 : spawn
+w1 --> m : ready
+destroy w1
+create participant "Worker 2" as w2
+m -> w2 : spawn again
+w2 --> m : ready
+destroy w2
+m -> m : done
+@enduml

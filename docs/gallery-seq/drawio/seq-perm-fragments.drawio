@@ -1,0 +1,130 @@
+<mxfile version="20.1.4" type="atlas">
+  <diagram id="catalyst-diagram" name="Page-1">
+    <mxGraphModel pageHeight="922" pageWidth="270">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="seq-title-0" value="Permutation — every fragment kind" style="text;html=1;align=center;verticalAlign=middle;fontSize=16;fontStyle=1;fontColor=#333333" vertex="1" parent="1">
+          <mxGeometry x="0" y="0" width="270" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="ll-a" value="A" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;fillColor=#FFFFFF;strokeColor=#666666;fontColor=#333333;fontStyle=1;verticalAlign=top" vertex="1" parent="1">
+          <mxGeometry x="48" y="60" width="32" height="861" as="geometry"/>
+        </mxCell>
+        <mxCell id="ll-b" value="B" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;fillColor=#FFFFFF;strokeColor=#666666;fontColor=#333333;fontStyle=1;verticalAlign=top" vertex="1" parent="1">
+          <mxGeometry x="178" y="60" width="32" height="861" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-frag-1" style="rounded=0;html=1;fillColor=none;strokeColor=#666666;verticalAlign=top;align=left" vertex="1" parent="1">
+          <mxGeometry x="36" y="113" width="186" height="166" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-frag-else-2" value="fail" style="html=1;endArrow=none;startArrow=none;dashed=1;strokeColor=#666666;fontColor=#333333;verticalAlign=bottom;align=left" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="36" y="191" as="sourcePoint"/>
+            <mxPoint x="222" y="191" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="seq-frag-tab-3" value="alt" style="rounded=0;html=1;fillColor=#FFFFFF;strokeColor=#666666;fontColor=#333333;fontStyle=1;align=center;verticalAlign=middle" vertex="1" parent="1">
+          <mxGeometry x="36" y="113" width="33" height="34" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-frag-guard-4" value="ok" style="text;html=1;align=left;verticalAlign=middle;fontColor=#333333;whiteSpace=wrap" vertex="1" parent="1">
+          <mxGeometry x="69" y="113" width="153" height="34" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-frag-5" style="rounded=0;html=1;fillColor=none;strokeColor=#666666;verticalAlign=top;align=left" vertex="1" parent="1">
+          <mxGeometry x="36" y="293" width="186" height="88" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-frag-tab-6" value="opt" style="rounded=0;html=1;fillColor=#FFFFFF;strokeColor=#666666;fontColor=#333333;fontStyle=1;align=center;verticalAlign=middle" vertex="1" parent="1">
+          <mxGeometry x="36" y="293" width="38" height="34" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-frag-guard-7" value="maybe" style="text;html=1;align=left;verticalAlign=middle;fontColor=#333333;whiteSpace=wrap" vertex="1" parent="1">
+          <mxGeometry x="74" y="293" width="148" height="34" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-frag-8" style="rounded=0;html=1;fillColor=none;strokeColor=#666666;verticalAlign=top;align=left" vertex="1" parent="1">
+          <mxGeometry x="36" y="394" width="186" height="88" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-frag-tab-9" value="loop" style="rounded=0;html=1;fillColor=#FFFFFF;strokeColor=#666666;fontColor=#333333;fontStyle=1;align=center;verticalAlign=middle" vertex="1" parent="1">
+          <mxGeometry x="36" y="394" width="44" height="34" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-frag-guard-10" value="3 times" style="text;html=1;align=left;verticalAlign=middle;fontColor=#333333;whiteSpace=wrap" vertex="1" parent="1">
+          <mxGeometry x="80" y="394" width="142" height="34" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-frag-11" style="rounded=0;html=1;fillColor=none;strokeColor=#666666;verticalAlign=top;align=left" vertex="1" parent="1">
+          <mxGeometry x="36" y="496" width="186" height="88" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-frag-tab-12" value="par" style="rounded=0;html=1;fillColor=#FFFFFF;strokeColor=#666666;fontColor=#333333;fontStyle=1;align=center;verticalAlign=middle" vertex="1" parent="1">
+          <mxGeometry x="36" y="496" width="38" height="34" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-frag-13" style="rounded=0;html=1;fillColor=none;strokeColor=#666666;verticalAlign=top;align=left" vertex="1" parent="1">
+          <mxGeometry x="36" y="597" width="186" height="88" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-frag-tab-14" value="critical" style="rounded=0;html=1;fillColor=#FFFFFF;strokeColor=#666666;fontColor=#333333;fontStyle=1;align=center;verticalAlign=middle" vertex="1" parent="1">
+          <mxGeometry x="36" y="597" width="56" height="34" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-frag-15" style="rounded=0;html=1;fillColor=none;strokeColor=#666666;verticalAlign=top;align=left" vertex="1" parent="1">
+          <mxGeometry x="36" y="698" width="186" height="88" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-frag-tab-16" value="group" style="rounded=0;html=1;fillColor=#FFFFFF;strokeColor=#666666;fontColor=#333333;fontStyle=1;align=center;verticalAlign=middle" vertex="1" parent="1">
+          <mxGeometry x="36" y="698" width="52" height="34" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-frag-guard-17" value="custom group" style="text;html=1;align=left;verticalAlign=middle;fontColor=#333333;whiteSpace=wrap" vertex="1" parent="1">
+          <mxGeometry x="88" y="698" width="134" height="34" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-frag-18" style="rounded=0;html=1;fillColor=none;strokeColor=#666666;verticalAlign=top;align=left" vertex="1" parent="1">
+          <mxGeometry x="36" y="800" width="186" height="88" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-frag-tab-19" value="break" style="rounded=0;html=1;fillColor=#FFFFFF;strokeColor=#666666;fontColor=#333333;fontStyle=1;align=center;verticalAlign=middle" vertex="1" parent="1">
+          <mxGeometry x="36" y="800" width="50" height="34" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-frag-guard-20" value="on error" style="text;html=1;align=left;verticalAlign=middle;fontColor=#333333;whiteSpace=wrap" vertex="1" parent="1">
+          <mxGeometry x="86" y="800" width="136" height="34" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-msg-21" value="success path" style="html=1;rounded=0;endArrow=block;endFill=1;startArrow=none;endSize=14;startSize=14;strokeColor=#828282;fontColor=#404040;verticalAlign=bottom;endFill=1" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="64" y="164" as="sourcePoint"/>
+            <mxPoint x="194" y="164" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="seq-msg-22" value="retry" style="html=1;rounded=0;endArrow=block;endFill=1;startArrow=none;endSize=14;startSize=14;strokeColor=#828282;fontColor=#404040;verticalAlign=bottom;endFill=1" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="64" y="242" as="sourcePoint"/>
+            <mxPoint x="194" y="242" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="seq-msg-23" value="optional" style="html=1;rounded=0;endArrow=block;endFill=1;startArrow=none;endSize=14;startSize=14;strokeColor=#828282;fontColor=#404040;verticalAlign=bottom;endFill=1" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="64" y="344" as="sourcePoint"/>
+            <mxPoint x="194" y="344" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="seq-msg-24" value="repeat" style="html=1;rounded=0;endArrow=block;endFill=1;startArrow=none;endSize=14;startSize=14;strokeColor=#828282;fontColor=#404040;verticalAlign=bottom;endFill=1" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="64" y="445" as="sourcePoint"/>
+            <mxPoint x="194" y="445" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="seq-msg-25" value="parallel one" style="html=1;rounded=0;endArrow=block;endFill=1;startArrow=none;endSize=14;startSize=14;strokeColor=#828282;fontColor=#404040;verticalAlign=bottom;endFill=1" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="64" y="547" as="sourcePoint"/>
+            <mxPoint x="194" y="547" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="seq-msg-26" value="critical section" style="html=1;rounded=0;endArrow=block;endFill=1;startArrow=none;endSize=14;startSize=14;strokeColor=#828282;fontColor=#404040;verticalAlign=bottom;endFill=1" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="64" y="648" as="sourcePoint"/>
+            <mxPoint x="194" y="648" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="seq-msg-27" value="grouped" style="html=1;rounded=0;endArrow=block;endFill=1;startArrow=none;endSize=14;startSize=14;strokeColor=#828282;fontColor=#404040;verticalAlign=bottom;endFill=1" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="64" y="749" as="sourcePoint"/>
+            <mxPoint x="194" y="749" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="seq-msg-28" value="break out" style="html=1;rounded=0;endArrow=block;endFill=1;startArrow=none;endSize=14;startSize=14;strokeColor=#828282;fontColor=#404040;verticalAlign=bottom;endFill=1" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="64" y="851" as="sourcePoint"/>
+            <mxPoint x="194" y="851" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

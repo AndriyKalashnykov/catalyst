@@ -1,0 +1,139 @@
+<mxfile version="20.1.4" type="atlas">
+  <diagram id="catalyst-diagram" name="Page-1">
+    <mxGraphModel pageHeight="832" pageWidth="948">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="seq-title-0" value="Permutation — combined stress (all constructs)" style="text;html=1;align=center;verticalAlign=middle;fontSize=16;fontStyle=1;fontColor=#333333" vertex="1" parent="1">
+          <mxGeometry x="0" y="0" width="948" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-box-1" style="rounded=0;html=1;fillColor=none;strokeColor=#666666;verticalAlign=top;align=center" vertex="1" parent="1">
+          <mxGeometry x="233" y="60" width="292" height="771" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-box-title-2" value="control plane" style="text;html=1;align=center;verticalAlign=middle;fontStyle=1;fillColor=#FFFFFF;strokeColor=#666666;fontColor=#333333;whiteSpace=wrap" vertex="1" parent="1">
+          <mxGeometry x="233" y="60" width="292" height="34" as="geometry"/>
+        </mxCell>
+        <mxCell id="ll-op" value="Operator" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;fillColor=#FFFFFF;strokeColor=#666666;fontColor=#333333;fontStyle=1;verticalAlign=top" vertex="1" parent="1">
+          <mxGeometry x="48" y="94" width="88" height="737" as="geometry"/>
+        </mxCell>
+        <mxCell id="ll-ctl" value="Controller" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;fillColor=#FFFFFF;strokeColor=#666666;fontColor=#333333;fontStyle=1;verticalAlign=top" vertex="1" parent="1">
+          <mxGeometry x="243" y="94" width="97" height="737" as="geometry"/>
+        </mxCell>
+        <mxCell id="ll-iss" value="Issuer" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;fillColor=#FFFFFF;strokeColor=#666666;fontColor=#333333;fontStyle=1;verticalAlign=top" vertex="1" parent="1">
+          <mxGeometry x="447" y="94" width="68" height="737" as="geometry"/>
+        </mxCell>
+        <mxCell id="ll-v" value="Vault" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;fillColor=#FFFFFF;strokeColor=#666666;fontColor=#333333;fontStyle=1;verticalAlign=top" vertex="1" parent="1">
+          <mxGeometry x="622" y="94" width="59" height="737" as="geometry"/>
+        </mxCell>
+        <mxCell id="ll-job" value="Signing Job" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;fillColor=#FFFFFF;strokeColor=#666666;fontColor=#333333;fontStyle=1;verticalAlign=top" vertex="1" parent="1">
+          <mxGeometry x="788" y="364" width="112" height="177" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-act-3" style="html=1;fillColor=#FFFFFF;strokeColor=#666666" vertex="1" parent="1">
+          <mxGeometry x="837" y="408" width="14" height="133" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-act-4" style="html=1;fillColor=#FFFFFF;strokeColor=#666666" vertex="1" parent="1">
+          <mxGeometry x="285" y="191" width="14" height="542" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-destroy-5" style="html=1;endArrow=none;startArrow=none;strokeColor=#666666" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="830" y="527" as="sourcePoint"/>
+            <mxPoint x="858" y="555" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="seq-destroy-6" style="html=1;endArrow=none;startArrow=none;strokeColor=#666666" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="858" y="527" as="sourcePoint"/>
+            <mxPoint x="830" y="555" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="seq-frag-7" style="rounded=0;html=1;fillColor=none;strokeColor=#666666;verticalAlign=top;align=left" vertex="1" parent="1">
+          <mxGeometry x="64" y="286" width="808" height="343" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-frag-else-8" value="issuer missing" style="html=1;endArrow=none;startArrow=none;dashed=1;strokeColor=#666666;fontColor=#333333;verticalAlign=bottom;align=left" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="64" y="541" as="sourcePoint"/>
+            <mxPoint x="872" y="541" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="seq-frag-tab-9" value="alt" style="rounded=0;html=1;fillColor=#FFFFFF;strokeColor=#666666;fontColor=#333333;fontStyle=1;align=center;verticalAlign=middle" vertex="1" parent="1">
+          <mxGeometry x="64" y="286" width="33" height="34" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-frag-guard-10" value="issuer ready" style="text;html=1;align=left;verticalAlign=middle;fontColor=#333333;whiteSpace=wrap" vertex="1" parent="1">
+          <mxGeometry x="97" y="286" width="775" height="34" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-msg-11" value="reconcile" style="html=1;rounded=0;endArrow=block;endFill=1;startArrow=none;endSize=14;startSize=14;strokeColor=#828282;fontColor=#404040;verticalAlign=bottom;endFill=1" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="92" y="164" as="sourcePoint"/>
+            <mxPoint x="292" y="164" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="seq-divider-12" value="Issuance" style="text;html=1;align=center;verticalAlign=middle;fontStyle=1;fillColor=#FFFFFF;strokeColor=#666666;fontColor=#333333;whiteSpace=wrap" vertex="1" parent="1">
+          <mxGeometry x="0" y="191" width="948" height="34" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-ref-13" value="standard handshake" style="rounded=0;html=1;fillColor=none;strokeColor=#666666;fontColor=#333333;whiteSpace=wrap;align=center;verticalAlign=middle" vertex="1" parent="1">
+          <mxGeometry x="264" y="239" width="245" height="34" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-ref-tab-14" value="ref" style="rounded=0;html=1;fillColor=#FFFFFF;strokeColor=#666666;fontColor=#333333;fontStyle=1;align=center;verticalAlign=middle" vertex="1" parent="1">
+          <mxGeometry x="264" y="239" width="35" height="34" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-msg-15" value="resolve" style="html=1;rounded=0;endArrow=block;endFill=1;startArrow=none;endSize=14;startSize=14;strokeColor=#828282;fontColor=#404040;verticalAlign=bottom;endFill=1" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="292" y="337" as="sourcePoint"/>
+            <mxPoint x="481" y="337" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="seq-msg-16" value="sign CSR" style="html=1;rounded=0;endArrow=block;endFill=1;startArrow=none;endSize=14;startSize=14;strokeColor=#828282;fontColor=#404040;verticalAlign=bottom;endFill=1" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="481" y="381" as="sourcePoint"/>
+            <mxPoint x="844" y="381" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="seq-msg-17" value="request material" style="html=1;rounded=0;endArrow=block;endFill=1;startArrow=none;endSize=14;startSize=14;strokeColor=#828282;fontColor=#404040;verticalAlign=bottom;endFill=1" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="844" y="425" as="sourcePoint"/>
+            <mxPoint x="652" y="425" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="seq-msg-18" value="key" style="html=1;rounded=0;endArrow=open;endFill=0;dashed=1;startArrow=none;endSize=14;startSize=14;strokeColor=#828282;fontColor=#404040;verticalAlign=bottom;endFill=0" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="652" y="469" as="sourcePoint"/>
+            <mxPoint x="844" y="469" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="seq-msg-19" value="signed cert" style="html=1;rounded=0;endArrow=open;endFill=0;dashed=1;startArrow=none;endSize=14;startSize=14;strokeColor=#828282;fontColor=#404040;verticalAlign=bottom;endFill=0" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="844" y="514" as="sourcePoint"/>
+            <mxPoint x="481" y="514" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="seq-msg-20" value="error" style="html=1;rounded=0;endArrow=block;endFill=1;startArrow=none;endSize=14;startSize=14;strokeColor=#828282;fontColor=#404040;verticalAlign=bottom;endFill=1" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="292" y="592" as="sourcePoint"/>
+            <mxPoint x="92" y="592" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="seq-note-21" value="update status" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFFFFF;strokeColor=#666666;fontColor=#333333;align=left;verticalAlign=top" vertex="1" parent="1">
+          <mxGeometry x="248" y="642" width="87" height="34" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-msg-22" value="cert + chain" style="html=1;rounded=0;endArrow=open;endFill=0;dashed=1;startArrow=none;endSize=14;startSize=14;strokeColor=#828282;fontColor=#404040;verticalAlign=bottom;endFill=0" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="481" y="706" as="sourcePoint"/>
+            <mxPoint x="292" y="706" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="seq-msg-23" value="status = Ready" style="html=1;rounded=0;endArrow=block;endFill=1;startArrow=none;endSize=14;startSize=14;strokeColor=#828282;fontColor=#404040;verticalAlign=bottom;endFill=1" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="292" y="751" as="sourcePoint"/>
+            <mxPoint x="92" y="751" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="seq-divider-24" style="html=1;endArrow=none;startArrow=none;strokeColor=#666666" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="0" y="788" as="sourcePoint"/>
+            <mxPoint x="948" y="788" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

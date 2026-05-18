@@ -1,0 +1,10 @@
+@startuml seq-perm-self-message
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Sequence.puml
+title Permutation — self-messages (short + long label)
+participant "Worker" as w
+participant "Queue" as q
+w -> w : tick
+w -> q : poll
+w -> w : reconcile until the desired state converges (long self label)
+q --> w : batch
+@enduml

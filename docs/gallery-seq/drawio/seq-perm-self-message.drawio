@@ -1,0 +1,51 @@
+<mxfile version="20.1.4" type="atlas">
+  <diagram id="catalyst-diagram" name="Page-1">
+    <mxGraphModel pageHeight="316" pageWidth="497">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="seq-title-0" value="Permutation — self-messages (short + long label)" style="text;html=1;align=center;verticalAlign=middle;fontSize=16;fontStyle=1;fontColor=#333333" vertex="1" parent="1">
+          <mxGeometry x="0" y="0" width="497" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="ll-w" value="Worker" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;fillColor=#FFFFFF;strokeColor=#666666;fontColor=#333333;fontStyle=1;verticalAlign=top" vertex="1" parent="1">
+          <mxGeometry x="20" y="60" width="75" height="256" as="geometry"/>
+        </mxCell>
+        <mxCell id="ll-q" value="Queue" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;fillColor=#FFFFFF;strokeColor=#666666;fontColor=#333333;fontStyle=1;verticalAlign=top" vertex="1" parent="1">
+          <mxGeometry x="407" y="60" width="70" height="256" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-msg-1" value="tick" style="html=1;rounded=0;endArrow=block;endFill=1;startArrow=none;endSize=14;startSize=14;strokeColor=#828282;fontColor=#404040;verticalAlign=bottom;endFill=1" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="58" y="113" as="sourcePoint"/>
+            <mxPoint x="58" y="147" as="targetPoint"/>
+            <Array as="points">
+              <mxPoint x="228" y="113"/>
+              <mxPoint x="228" y="147"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="seq-msg-2" value="poll" style="html=1;rounded=0;endArrow=block;endFill=1;startArrow=none;endSize=14;startSize=14;strokeColor=#828282;fontColor=#404040;verticalAlign=bottom;endFill=1" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="58" y="177" as="sourcePoint"/>
+            <mxPoint x="442" y="177" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="seq-msg-3" value="reconcile until the desired state converges (long self label)" style="html=1;rounded=0;endArrow=block;endFill=1;startArrow=none;endSize=14;startSize=14;strokeColor=#828282;fontColor=#404040;verticalAlign=bottom;endFill=1" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="58" y="205" as="sourcePoint"/>
+            <mxPoint x="58" y="239" as="targetPoint"/>
+            <Array as="points">
+              <mxPoint x="228" y="205"/>
+              <mxPoint x="228" y="239"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="seq-msg-4" value="batch" style="html=1;rounded=0;endArrow=open;endFill=0;dashed=1;startArrow=none;endSize=14;startSize=14;strokeColor=#828282;fontColor=#404040;verticalAlign=bottom;endFill=0" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="442" y="269" as="sourcePoint"/>
+            <mxPoint x="58" y="269" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

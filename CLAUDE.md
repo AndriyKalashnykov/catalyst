@@ -172,7 +172,33 @@ Everything below is researched, not speculative. Sizes are honest.
 Completed-work root-cause prose lives in git history + ADRs +
 `docs/UPGRADE-NOTES.md` + agent memories — not re-dumped here.
 
-> ▶ **RESUME HERE — session handoff #18, 2026-05-18 (cont.) —
+> ▶ **HANDOFF #20, 2026-05-18 (cont.) — seq permutation matrix +
+> a real dispatch-gate defect it caught.** 12 systematic
+> `seq-perm-*` fixtures (arrows/self-msg/activation/notes/fragments
+> [+nested]/dividers/ref/create-destroy/box/c4-kinds/combined) +
+> `tests/seq/seq-corpus-sanity.test.mts` (the seq analogue of C4
+> corpus-sanity — globs all 18 seq fixtures, asserts convert + strict
+> XML + decl-order-X + source-order-Y + no tofu). It immediately
+> caught a REAL product defect: `src/catalyst.mts` dispatched to
+> `SeqConverter` only when `elements===0 && relations===0`, so a
+> C4-macro-form sequence (`Rel()`/`Person()`/`*_Boundary()` — valid
+> C4_Sequence) mis-routed to static-C4/ELK → crash/0-lifelines.
+> Fixed: `C4_Sequence` include / `participant` line is authoritative,
+> dispatch FIRST ungated. Zero C4 risk PROVEN (gallery-verify +
+> arrowskew 22/22 + 538 vitest byte-identical). seq-gallery now 18
+> fixtures (committed SVG, seq-gallery-verify CI-gated). C4 gallery
+> eyeball-swept 21/22 this session (all content-faithful, curved
+> splines clean, dense fixtures = inherent dot-faithful topology not
+> defect-crosswiring; `edge-empty-descriptions` not yet eyeballed —
+> factcheck+arrowskew CLEAN); P8 confirmed DONE (stale backlog).
+> **Still TODO (task 16): C4 gallery committed-SVG parity** (C4 is
+> PNG-only; seq got SVG #132) + C4 residuals (note/sketch/
+> HIDE_STEREOTYPE/legend/AddProperty; `$sprite`/`_SPRITE` genuinely
+> not implementable — no drawio sprite registry) + seq self-message
+> short-label re-spike (task 13; the `seq-perm-self-message` fixture
+> now has BOTH a short and a long self-label for it).
+>
+> ▶ **session handoff #18, 2026-05-18 (cont.) —
 > ADR 0007 phase (d2) sequence fragments LANDED.** Branch
 > `feat/seq-d2-fragments` (PR pending): `alt/else/opt/loop/par/
 > critical/group/break` (nested) now convert — paired

@@ -153,6 +153,378 @@ ctl -> op : status = Ready
 
 </details>
 
+## `seq-perm-activation.puml`
+
+| Source PlantUML | catalyst → draw.io |
+|---|---|
+| <img src="svg/seq-perm-activation.puml.svg" alt="seq-perm-activation puml" height="360"> | <img src="svg/seq-perm-activation.drawio.svg" alt="seq-perm-activation drawio" height="360"> |
+
+<details><summary>PlantUML source</summary>
+
+```plantuml
+@startuml seq-perm-activation
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Sequence.puml
+title Permutation — nested activation
+participant "Op" as op
+participant "Ctl" as ctl
+participant "DB" as db
+op -> ctl : request
+activate ctl
+ctl -> db : query
+activate db
+db --> ctl : rows
+deactivate db
+ctl --> op : response
+deactivate ctl
+op -> ctl ++ : shorthand activate
+ctl -> op -- : shorthand deactivate
+@enduml
+```
+
+</details>
+
+## `seq-perm-arrows.puml`
+
+| Source PlantUML | catalyst → draw.io |
+|---|---|
+| <img src="svg/seq-perm-arrows.puml.svg" alt="seq-perm-arrows puml" height="360"> | <img src="svg/seq-perm-arrows.drawio.svg" alt="seq-perm-arrows drawio" height="360"> |
+
+<details><summary>PlantUML source</summary>
+
+```plantuml
+@startuml seq-perm-arrows
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Sequence.puml
+title Permutation — all arrow kinds
+participant "A" as a
+participant "B" as b
+a -> b : sync request
+a --> b : dashed return
+a ->> b : async
+a <- b : reverse sync
+a <-> b : bidirectional
+Rel(a, b, "C4 Rel", "gRPC")
+Rel_Back(a, b, "C4 Rel_Back")
+BiRel(a, b, "C4 BiRel")
+@enduml
+```
+
+</details>
+
+## `seq-perm-box.puml`
+
+| Source PlantUML | catalyst → draw.io |
+|---|---|
+| <img src="svg/seq-perm-box.puml.svg" alt="seq-perm-box puml" height="360"> | <img src="svg/seq-perm-box.drawio.svg" alt="seq-perm-box drawio" height="360"> |
+
+<details><summary>PlantUML source</summary>
+
+```plantuml
+@startuml seq-perm-box
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Sequence.puml
+title Permutation — box + Boundary groupings
+participant "Client" as cl
+box "service mesh"
+participant "Gateway" as gw
+participant "Auth" as au
+end box
+System_Boundary(data, "data tier")
+participant "Cache" as ca
+participant "DB" as db
+Boundary_End()
+cl -> gw : request
+gw -> au : authenticate
+au --> gw : token
+gw -> ca : lookup
+ca -> db : miss -> load
+db --> cl : result
+@enduml
+```
+
+</details>
+
+## `seq-perm-c4-kinds.puml`
+
+| Source PlantUML | catalyst → draw.io |
+|---|---|
+| <img src="svg/seq-perm-c4-kinds.puml.svg" alt="seq-perm-c4-kinds puml" height="360"> | <img src="svg/seq-perm-c4-kinds.drawio.svg" alt="seq-perm-c4-kinds drawio" height="360"> |
+
+<details><summary>PlantUML source</summary>
+
+```plantuml
+@startuml seq-perm-c4-kinds
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Sequence.puml
+title Permutation — C4 lifeline kinds
+Person(op, "Operator")
+System(sys, "Legacy System")
+System_Ext(ext, "External SaaS")
+Container(api, "API", "Go")
+ContainerDb(cdb, "State Store", "Postgres")
+ContainerQueue(cq, "Events", "Kafka")
+Component(svc, "Service", "module")
+ComponentDb_Ext(edb, "Vendor DB")
+Rel(op, api, "uses", "HTTPS")
+Rel(api, cdb, "reads/writes", "SQL")
+Rel(api, cq, "publishes", "events")
+Rel(api, svc, "calls")
+Rel(svc, edb, "queries")
+Rel(api, sys, "integrates")
+Rel(sys, ext, "federates")
+@enduml
+```
+
+</details>
+
+## `seq-perm-combined.puml`
+
+| Source PlantUML | catalyst → draw.io |
+|---|---|
+| <img src="svg/seq-perm-combined.puml.svg" alt="seq-perm-combined puml" height="360"> | <img src="svg/seq-perm-combined.drawio.svg" alt="seq-perm-combined drawio" height="360"> |
+
+<details><summary>PlantUML source</summary>
+
+```plantuml
+@startuml seq-perm-combined
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Sequence.puml
+title Permutation — combined stress (all constructs)
+Person(op, "Operator")
+box "control plane"
+participant "Controller" as ctl
+participant "Issuer" as iss
+end box
+participant "Vault" as v
+autonumber
+op -> ctl : reconcile
+activate ctl
+== Issuance ==
+ref over ctl, iss : standard handshake
+alt issuer ready
+ctl -> iss : resolve
+create participant "Signing Job" as job
+iss -> job : sign CSR
+activate job
+job -> v : request material
+v --> job : key
+job --> iss : signed cert
+deactivate job
+destroy job
+else issuer missing
+ctl -> op : error
+end
+note over ctl : update status
+iss --> ctl : cert + chain
+deactivate ctl
+ctl -> op : status = Ready
+====
+@enduml
+```
+
+</details>
+
+## `seq-perm-create-destroy.puml`
+
+| Source PlantUML | catalyst → draw.io |
+|---|---|
+| <img src="svg/seq-perm-create-destroy.puml.svg" alt="seq-perm-create-destroy puml" height="360"> | <img src="svg/seq-perm-create-destroy.drawio.svg" alt="seq-perm-create-destroy drawio" height="360"> |
+
+<details><summary>PlantUML source</summary>
+
+```plantuml
+@startuml seq-perm-create-destroy
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Sequence.puml
+title Permutation — create / destroy lifespans
+participant "Mgr" as m
+m -> m : start
+create participant "Worker 1" as w1
+m -> w1 : spawn
+w1 --> m : ready
+destroy w1
+create participant "Worker 2" as w2
+m -> w2 : spawn again
+w2 --> m : ready
+destroy w2
+m -> m : done
+@enduml
+```
+
+</details>
+
+## `seq-perm-dividers.puml`
+
+| Source PlantUML | catalyst → draw.io |
+|---|---|
+| <img src="svg/seq-perm-dividers.puml.svg" alt="seq-perm-dividers puml" height="360"> | <img src="svg/seq-perm-dividers.drawio.svg" alt="seq-perm-dividers drawio" height="360"> |
+
+<details><summary>PlantUML source</summary>
+
+```plantuml
+@startuml seq-perm-dividers
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Sequence.puml
+title Permutation — divider variants
+participant "A" as a
+participant "B" as b
+== Phase 1 ==
+a -> b : one
+==  spaced label  ==
+b --> a : two
+====
+a -> b : after empty divider
+@enduml
+```
+
+</details>
+
+## `seq-perm-fragments-nested.puml`
+
+| Source PlantUML | catalyst → draw.io |
+|---|---|
+| <img src="svg/seq-perm-fragments-nested.puml.svg" alt="seq-perm-fragments-nested puml" height="360"> | <img src="svg/seq-perm-fragments-nested.drawio.svg" alt="seq-perm-fragments-nested drawio" height="360"> |
+
+<details><summary>PlantUML source</summary>
+
+```plantuml
+@startuml seq-perm-fragments-nested
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Sequence.puml
+title Permutation — deeply nested fragments
+participant "A" as a
+participant "B" as b
+participant "C" as c
+alt outer
+loop inner loop
+opt deepest
+a -> b : deep call
+b -> c : deeper
+end
+end
+else outer-else
+a -> c : alternative
+end
+@enduml
+```
+
+</details>
+
+## `seq-perm-fragments.puml`
+
+| Source PlantUML | catalyst → draw.io |
+|---|---|
+| <img src="svg/seq-perm-fragments.puml.svg" alt="seq-perm-fragments puml" height="360"> | <img src="svg/seq-perm-fragments.drawio.svg" alt="seq-perm-fragments drawio" height="360"> |
+
+<details><summary>PlantUML source</summary>
+
+```plantuml
+@startuml seq-perm-fragments
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Sequence.puml
+title Permutation — every fragment kind
+participant "A" as a
+participant "B" as b
+alt ok
+a -> b : success path
+else fail
+a -> b : retry
+end
+opt maybe
+a -> b : optional
+end
+loop 3 times
+a -> b : repeat
+end
+par
+a -> b : parallel one
+end
+critical
+a -> b : critical section
+end
+group custom group
+a -> b : grouped
+end
+break on error
+a -> b : break out
+end
+@enduml
+```
+
+</details>
+
+## `seq-perm-notes.puml`
+
+| Source PlantUML | catalyst → draw.io |
+|---|---|
+| <img src="svg/seq-perm-notes.puml.svg" alt="seq-perm-notes puml" height="360"> | <img src="svg/seq-perm-notes.drawio.svg" alt="seq-perm-notes drawio" height="360"> |
+
+<details><summary>PlantUML source</summary>
+
+```plantuml
+@startuml seq-perm-notes
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Sequence.puml
+title Permutation — note positions
+participant "A" as a
+participant "B" as b
+note over a : single over A
+a -> b : go
+note left of a : left of A
+note right of b : right of B
+note over a,b : over A and B (span)
+b --> a : done
+note over a
+  multi-line
+  block note
+end note
+@enduml
+```
+
+</details>
+
+## `seq-perm-ref.puml`
+
+| Source PlantUML | catalyst → draw.io |
+|---|---|
+| <img src="svg/seq-perm-ref.puml.svg" alt="seq-perm-ref puml" height="360"> | <img src="svg/seq-perm-ref.drawio.svg" alt="seq-perm-ref drawio" height="360"> |
+
+<details><summary>PlantUML source</summary>
+
+```plantuml
+@startuml seq-perm-ref
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Sequence.puml
+title Permutation — ref frames
+participant "A" as a
+participant "B" as b
+participant "C" as c
+a -> b : start
+ref over b, c : see external ADR
+b -> c : continue
+ref over a, b
+  multi-line
+  reference block
+end ref
+c --> a : done
+@enduml
+```
+
+</details>
+
+## `seq-perm-self-message.puml`
+
+| Source PlantUML | catalyst → draw.io |
+|---|---|
+| <img src="svg/seq-perm-self-message.puml.svg" alt="seq-perm-self-message puml" height="360"> | <img src="svg/seq-perm-self-message.drawio.svg" alt="seq-perm-self-message drawio" height="360"> |
+
+<details><summary>PlantUML source</summary>
+
+```plantuml
+@startuml seq-perm-self-message
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Sequence.puml
+title Permutation — self-messages (short + long label)
+participant "Worker" as w
+participant "Queue" as q
+w -> w : tick
+w -> q : poll
+w -> w : reconcile until the desired state converges (long self label)
+q --> w : batch
+@enduml
+```
+
+</details>
+
 ## `seq-v1-cert-lifecycle.puml`
 
 | Source PlantUML | catalyst → draw.io |

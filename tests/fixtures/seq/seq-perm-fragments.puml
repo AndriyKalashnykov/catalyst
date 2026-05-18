@@ -1,0 +1,29 @@
+@startuml seq-perm-fragments
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Sequence.puml
+title Permutation — every fragment kind
+participant "A" as a
+participant "B" as b
+alt ok
+a -> b : success path
+else fail
+a -> b : retry
+end
+opt maybe
+a -> b : optional
+end
+loop 3 times
+a -> b : repeat
+end
+par
+a -> b : parallel one
+end
+critical
+a -> b : critical section
+end
+group custom group
+a -> b : grouped
+end
+break on error
+a -> b : break out
+end
+@enduml

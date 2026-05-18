@@ -1,0 +1,14 @@
+@startuml seq-perm-arrows
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Sequence.puml
+title Permutation — all arrow kinds
+participant "A" as a
+participant "B" as b
+a -> b : sync request
+a --> b : dashed return
+a ->> b : async
+a <- b : reverse sync
+a <-> b : bidirectional
+Rel(a, b, "C4 Rel", "gRPC")
+Rel_Back(a, b, "C4 Rel_Back")
+BiRel(a, b, "C4 BiRel")
+@enduml

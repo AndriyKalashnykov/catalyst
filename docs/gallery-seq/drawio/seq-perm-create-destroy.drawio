@@ -1,0 +1,90 @@
+<mxfile version="20.1.4" type="atlas">
+  <diagram id="catalyst-diagram" name="Page-1">
+    <mxGraphModel pageHeight="405" pageWidth="448">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="seq-title-0" value="Permutation — create / destroy lifespans" style="text;html=1;align=center;verticalAlign=middle;fontSize=16;fontStyle=1;fontColor=#333333" vertex="1" parent="1">
+          <mxGeometry x="0" y="0" width="448" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="ll-m" value="Mgr" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;fillColor=#FFFFFF;strokeColor=#666666;fontColor=#333333;fontStyle=1;verticalAlign=top" vertex="1" parent="1">
+          <mxGeometry x="20" y="60" width="50" height="344" as="geometry"/>
+        </mxCell>
+        <mxCell id="ll-w1" value="Worker 1" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;fillColor=#FFFFFF;strokeColor=#666666;fontColor=#333333;fontStyle=1;verticalAlign=top" vertex="1" parent="1">
+          <mxGeometry x="160" y="160" width="89" height="88" as="geometry"/>
+        </mxCell>
+        <mxCell id="ll-w2" value="Worker 2" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;fillColor=#FFFFFF;strokeColor=#666666;fontColor=#333333;fontStyle=1;verticalAlign=top" vertex="1" parent="1">
+          <mxGeometry x="339" y="249" width="89" height="88" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-destroy-1" style="html=1;endArrow=none;startArrow=none;strokeColor=#666666" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="191" y="235" as="sourcePoint"/>
+            <mxPoint x="219" y="263" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="seq-destroy-2" style="html=1;endArrow=none;startArrow=none;strokeColor=#666666" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="219" y="235" as="sourcePoint"/>
+            <mxPoint x="191" y="263" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="seq-destroy-3" style="html=1;endArrow=none;startArrow=none;strokeColor=#666666" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="370" y="323" as="sourcePoint"/>
+            <mxPoint x="398" y="351" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="seq-destroy-4" style="html=1;endArrow=none;startArrow=none;strokeColor=#666666" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="398" y="323" as="sourcePoint"/>
+            <mxPoint x="370" y="351" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="seq-msg-5" value="start" style="html=1;rounded=0;endArrow=block;endFill=1;startArrow=none;endSize=14;startSize=14;strokeColor=#828282;fontColor=#404040;verticalAlign=bottom;endFill=1" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="45" y="113" as="sourcePoint"/>
+            <mxPoint x="45" y="147" as="targetPoint"/>
+            <Array as="points">
+              <mxPoint x="104" y="113"/>
+              <mxPoint x="104" y="147"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="seq-msg-6" value="spawn" style="html=1;rounded=0;endArrow=block;endFill=1;startArrow=none;endSize=14;startSize=14;strokeColor=#828282;fontColor=#404040;verticalAlign=bottom;endFill=1" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="45" y="177" as="sourcePoint"/>
+            <mxPoint x="205" y="177" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="seq-msg-7" value="ready" style="html=1;rounded=0;endArrow=open;endFill=0;dashed=1;startArrow=none;endSize=14;startSize=14;strokeColor=#828282;fontColor=#404040;verticalAlign=bottom;endFill=0" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="205" y="222" as="sourcePoint"/>
+            <mxPoint x="45" y="222" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="seq-msg-8" value="spawn again" style="html=1;rounded=0;endArrow=block;endFill=1;startArrow=none;endSize=14;startSize=14;strokeColor=#828282;fontColor=#404040;verticalAlign=bottom;endFill=1" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="45" y="266" as="sourcePoint"/>
+            <mxPoint x="384" y="266" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="seq-msg-9" value="ready" style="html=1;rounded=0;endArrow=open;endFill=0;dashed=1;startArrow=none;endSize=14;startSize=14;strokeColor=#828282;fontColor=#404040;verticalAlign=bottom;endFill=0" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="384" y="310" as="sourcePoint"/>
+            <mxPoint x="45" y="310" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="seq-msg-10" value="done" style="html=1;rounded=0;endArrow=block;endFill=1;startArrow=none;endSize=14;startSize=14;strokeColor=#828282;fontColor=#404040;verticalAlign=bottom;endFill=1" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="45" y="337" as="sourcePoint"/>
+            <mxPoint x="45" y="371" as="targetPoint"/>
+            <Array as="points">
+              <mxPoint x="104" y="337"/>
+              <mxPoint x="104" y="371"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

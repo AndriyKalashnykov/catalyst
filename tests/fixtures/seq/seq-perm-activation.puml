@@ -1,0 +1,17 @@
+@startuml seq-perm-activation
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Sequence.puml
+title Permutation — nested activation
+participant "Op" as op
+participant "Ctl" as ctl
+participant "DB" as db
+op -> ctl : request
+activate ctl
+ctl -> db : query
+activate db
+db --> ctl : rows
+deactivate db
+ctl --> op : response
+deactivate ctl
+op -> ctl ++ : shorthand activate
+ctl -> op -- : shorthand deactivate
+@enduml

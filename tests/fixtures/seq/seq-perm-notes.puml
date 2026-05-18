@@ -1,0 +1,16 @@
+@startuml seq-perm-notes
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Sequence.puml
+title Permutation — note positions
+participant "A" as a
+participant "B" as b
+note over a : single over A
+a -> b : go
+note left of a : left of A
+note right of b : right of B
+note over a,b : over A and B (span)
+b --> a : done
+note over a
+  multi-line
+  block note
+end note
+@enduml

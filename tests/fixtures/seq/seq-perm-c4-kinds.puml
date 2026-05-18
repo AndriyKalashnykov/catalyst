@@ -1,0 +1,19 @@
+@startuml seq-perm-c4-kinds
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Sequence.puml
+title Permutation — C4 lifeline kinds
+Person(op, "Operator")
+System(sys, "Legacy System")
+System_Ext(ext, "External SaaS")
+Container(api, "API", "Go")
+ContainerDb(cdb, "State Store", "Postgres")
+ContainerQueue(cq, "Events", "Kafka")
+Component(svc, "Service", "module")
+ComponentDb_Ext(edb, "Vendor DB")
+Rel(op, api, "uses", "HTTPS")
+Rel(api, cdb, "reads/writes", "SQL")
+Rel(api, cq, "publishes", "events")
+Rel(api, svc, "calls")
+Rel(svc, edb, "queries")
+Rel(api, sys, "integrates")
+Rel(sys, ext, "federates")
+@enduml
