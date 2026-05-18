@@ -95,6 +95,43 @@ b --> a : done`))
     await expect(xml2js.parseStringPromise(xml)).resolves.toBeDefined()
   })
 
+  // phase d1 v1.x polish (ADR 0007 "Known v1 imperfections"): an EMPTY
+  // `====` is PlantUML's thin separator RULE, NOT a filled band. The
+  // labelled `== X ==` band must be unchanged (regression guard).
+  it('empty ==== emits a thin full-width rule (edge), not a filled band', async () => {
+    const xml = await Catalyst.convert(seqDoc(`participant "A" as a
+participant "B" as b
+== Setup ==
+a -> b : go
+====`))
+    // two divider cells: the labelled band + the empty rule
+    const cells = [...xml.matchAll(
+      /<mxCell id="seq-divider-\d+"([^>]*)>([\s\S]*?)<\/mxCell>/g)]
+    expect(cells.length).toBe(2)
+    const pw = +(/pageWidth="(\d+)"/.exec(xml) ?? [])[1]
+
+    // labelled "Setup" — still a filled vertex band, full width
+    const band = cells.find((c) => / value="Setup"/.test(c[1]))!
+    expect(band[1]).toContain('vertex="1"')
+    expect(band[1]).toContain('fillColor=')
+    expect(/<mxGeometry x="0" y="\d+" width="(\d+)"/.exec(band[2])![1]).toBe(String(pw))
+
+    // empty `====` — an EDGE line: no fill, no arrowheads, no value;
+    // spans x=0 → pageWidth at a single Y (a horizontal rule)
+    const rule = cells.find((c) => c[1].includes('edge="1"'))!
+    expect(rule).toBeDefined()
+    expect(rule[1]).not.toContain('value=')
+    expect(rule[1]).not.toContain('vertex="1"')
+    expect(rule[1]).toContain('endArrow=none')          // style is an attr
+    expect(rule[1]).not.toContain('fillColor=')
+    const sp = /<mxPoint x="(\d+)" y="(\d+)" as="sourcePoint"/.exec(rule[2])!
+    const tp = /<mxPoint x="(\d+)" y="(\d+)" as="targetPoint"/.exec(rule[2])!
+    expect(+sp[1]).toBe(0)
+    expect(+tp[1]).toBe(pw)
+    expect(+sp[2]).toBe(+tp[2])                                // horizontal
+    await expect(xml2js.parseStringPromise(xml)).resolves.toBeDefined()
+  })
+
   // phase d2: combined fragments. Whole-path contract — real convert(),
   // assert the frame box, kind tab, else separator, nesting containment,
   // BEHIND-messages z-order, and that message source-order is unchanged.

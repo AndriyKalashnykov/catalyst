@@ -237,9 +237,14 @@ Completed-work root-cause prose lives in git history + ADRs +
 >    arrowskew 20/20 (separate seq pipeline ⇒ zero C4 risk, but
 >    VERIFY; factcheck `ratioBad` is host-noise here — see #18 — do
 >    NOT regenerate the baseline for a seq-only change).
-> 2. **Sequence v1.x polish** (ADR 0007 "Known v1 imperfections"):
->    note↔activation row overlap; empty `====` → thin rule not a full
->    band. Self-message-loop-width = MEASURED no-op for long labels —
+> 2. **Sequence v1.x polish** (ADR 0007 "Known v1 imperfections") —
+>    empty `====` → thin rule **✅ DONE** (this session: line-edge
+>    rule not a filled band; render-compare verified; emit-contract
+>    tested + labelled-band regression guard). note↔activation row
+>    overlap **DECLINED on evidence** (overlap is X-axis; the ADR's
+>    "reserve row height" fix is mis-targeted; catalyst already draws
+>    note-on-top = PlantUML behaviour — see ADR 0007). Remaining:
+>    self-message-loop-width = MEASURED no-op for long labels —
 >    re-spike ONLY with a SHORT-self-label fixture, else leave it.
 > 3. **Downstream release — ✅ DONE (handoff #19).** catalyst v1.7.0
 >    → puml2drawio v1.5.5 → ibm-wm SHA-pin `991065e0…` (PR #13

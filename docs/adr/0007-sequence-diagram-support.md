@@ -186,16 +186,29 @@ intact:
   correct (it IS a self-message); a v1.x polish candidate (tighten the
   `loopW`/use a smaller return-style head).
 - **`note over` slightly overlaps** the activation bar / self-loop
-  when both land on the same lifeline row. No occlusion of message
-  text; a v1.x layout-nudge candidate (reserve the note's row height
-  against the activation extent).
+  when both land on the same lifeline row. **v1.x re-examined against
+  the real render (2026-05-18) — DECLINED on evidence.** The suggested
+  remediation ("reserve the note's row *height* against the activation
+  extent") is mis-targeted: the overlap is on **X** (a `note over L` is
+  centred on `L`'s `cx`, the same `cx` the activation bar sits on), not
+  on Y, so reserving row height cannot address it. Catalyst already
+  emits notes AFTER activations in document order ⇒ the note draws
+  ON TOP of the bar with the bar continuing above/below — which is
+  exactly PlantUML's own behaviour for `note over` an active lifeline.
+  No data loss, no message-text occlusion, render is faithful; a true
+  fix would mean *moving* a semantically-centred `note over` off its
+  lifeline, which is less faithful, not more. Same B1-class lesson:
+  a backlog note's proposed fix is an untested hypothesis — verified
+  against the render, not applied.
 - Lifeline spacing is generous (measured `colGap`) — sparse, not
   crammed; acceptable, tunable later if a wide fixture needs it.
-- **(phase d1)** an EMPTY `====` divider renders as a blank
-  full-width band; PlantUML draws a thin hairline rule. A labelled
-  `== X ==` is faithful (centred bold band ≈ PlantUML's pill); only
-  the label-less separator differs. v1.x candidate: emit an empty
-  divider as a thin rule, not a full band. No data loss / mis-order.
+- **(phase d1) — FIXED 2026-05-18 (v1.x).** An EMPTY `====` divider
+  used to render as a blank full-width band; it now emits a thin
+  full-width separator RULE (a no-fill/no-arrow line edge centred in
+  a `2·INSET` footprint) matching PlantUML's hairline. The labelled
+  `== X ==` band is unchanged (regression-guarded by the same
+  whole-path emit-contract test). Verified by render-compare on
+  `seq-v1-dividers`.
 - **(phase d2)** a fragment's left border can graze the activation bar
   on its leftmost involved lifeline (same family as the note↔activation
   overlap above) — the box is anchored on `cx ± FRAG_PAD`, not on the
