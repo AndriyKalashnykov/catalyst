@@ -15,8 +15,19 @@ Standalone, independently-maintained library (no upstream; never add an
 - `npm run lint` (oxlint) + `npm run mdlint` (markdownlint; **MD007 wants
   4-space nested-list indent — never 2**, it bit the CHANGELOG repeatedly).
 - `npm run test:coverage` — CI gate, thresholds 85 % (currently ≈97 %).
-- `make ci` = build+lint+test+**gallery-verify**; `make ci-run` = the
-  real `.github/workflows/ci.yml` via mise-managed `act` (Docker needed).
+- `make ci` = build + lint + **static-check** + **coverage-check** +
+  **gallery-verify** (mirrors ci.yml's lint/static-check/test jobs;
+  `coverage-check` runs `test:coverage` — the real 85 % gate, NOT
+  `make test` which is the fast no-gate suite). `make ci-run` = the
+  real `.github/workflows/ci.yml` via mise-managed `act` (Docker
+  needed). CI jobs call `make` targets (single source of truth).
+- `make static-check` = `vulncheck`/`secrets`/`trivy-fs` (npm audit,
+  gitleaks, trivy fs) — all three mise-managed via `.mise.toml`
+  (`aqua:` pins; Renovate native `mise` manager tracks them). `make
+  clean` removes `dist/ build/ coverage/` (never sources/gallery).
+- Local render path needs system **graphviz** (PlantUML `-tsvg` = dot);
+  `./setup.sh` installs it cross-platform (apt/dnf/brew/pacman,
+  idempotent). NOT needed for CI lint/test/static-check.
 - **`make gallery-verify` — deterministic gallery drift gate** (also a
   `ci.yml` `test` step). Regenerates `docs/gallery/drawio/*.drawio`
   (`GALLERY_DRAWIO_ONLY=1`, pure node, no java/docker) and fails on any

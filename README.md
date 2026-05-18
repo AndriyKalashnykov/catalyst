@@ -86,20 +86,28 @@ registry). Pin a tag:
 npm install github:AndriyKalashnykov/catalyst#v1.6.1
 
 # development of catalyst itself
-make deps      # npm ci
+make deps      # mise install (node, act, gitleaks, trivy) + npm ci
 make build     # compile TypeScript -> dist/
-make test      # full vitest suite (unit + parity + golden + layout-quality)
+make test      # full vitest suite (fast; no coverage gate)
+make ci        # full local pipeline == CI (build + lint + static-check
+               #   + coverage-check[85%] + gallery-verify)
 ```
 
 ## Prerequisites
 
+`mise` provides node + the CLI tools (act/gitleaks/trivy) from
+`.mise.toml`; `make deps` bootstraps it. graphviz (system package, no
+mise backend) is needed only for the local render path — `./setup.sh`
+installs it cross-platform (apt/dnf/brew/pacman, idempotent).
+
 | Tool | Version | Purpose |
 |------|---------|---------|
-| [Node.js](https://nodejs.org/) | ES2024+ | Runtime and build |
+| [Node.js](https://nodejs.org/) | ES2024+ (via mise) | Runtime and build |
 | [GNU Make](https://www.gnu.org/software/make/) | 3.81+ | Build orchestration |
 | [Git](https://git-scm.com/) | latest | Dependency resolution (git install) |
-| [Docker](https://www.docker.com/) | latest | `make render-compare` only (drawio-export) |
-| [Java](https://adoptium.net/) | 17+ | `make render-compare` only (PlantUML render) |
+| [Docker](https://www.docker.com/) | latest | `make render-compare` / `gallery` / `ci-run` |
+| [Java](https://adoptium.net/) | 17+ | `make render-compare` / `gallery` / `factcheck` (PlantUML) |
+| [graphviz](https://graphviz.org/) | latest | PlantUML `-tsvg` layout — installed by `./setup.sh` |
 
 ```bash
 make deps
@@ -199,24 +207,36 @@ Run `make help` to list targets.
 
 | Target | Description |
 |--------|-------------|
-| `make deps` | Install dependencies (`npm ci`) |
+| `make deps` | `mise install` (node, act, gitleaks, trivy) + `npm ci` |
+| `make clean` | Remove `dist/ build/ coverage/` (never sources/gallery) |
 | `make build` | Compile TypeScript → `dist/` |
 | `make lint` | `oxlint src/` + `markdownlint` (parity with CI's lint job) |
-| `make test` | Full Vitest suite (unit + parity + golden + layout-quality + corpus sanity) |
+| `make test` | Full Vitest suite, fast (no coverage gate) |
+| `make coverage-check` | Vitest with the 85 % coverage gate (mirrors CI's test job) |
+| `make vulncheck` | `npm audit --audit-level=moderate` |
+| `make secrets` | `gitleaks` leaked-credential scan |
+| `make trivy-fs` | `trivy fs` vuln/secret/misconfig scan (CRITICAL,HIGH) |
+| `make static-check` | Composite security gate: `vulncheck` + `secrets` + `trivy-fs` |
 | `make golden-update` | Regenerate draw.io structural snapshots after an intentional change |
-| `make render-compare` | Visual proof: render one source `.puml` and the catalyst `.drawio` side by side (requires Java + Docker) |
-| `make gallery` | Dual-render the whole use-case corpus into `docs/gallery/` (requires Java + Docker) |
-| `make ci` | Local CI pipeline — build + lint (oxlint + markdownlint) + test |
+| `make render-compare` | Visual proof: render one `.puml` + catalyst `.drawio` side by side (Java + Docker) |
+| `make gallery` | Dual-render the whole corpus into `docs/gallery/` (Java + Docker) |
+| `make factcheck` | Numeric PlantUML→drawio fidelity audit of all conversions (Java) |
+| `make gallery-verify` | Fail if committed gallery `.drawio` drifted from current emit |
+| `make ci` | Local pipeline == CI: build + lint + static-check + coverage-check + gallery-verify |
+| `make ci-run` | Run the real `.github/workflows/ci.yml` locally via `act` (Docker) |
 
 ## CI/CD
 
 GitHub Actions (`🔨CI`, `.github/workflows/ci.yml`) runs on every push,
-pull request, and `workflow_dispatch`:
+pull request, and `workflow_dispatch`. **Every job calls a Makefile
+target** — the Makefile is the single source of truth, so `make ci`
+and CI cannot drift:
 
-| Job | Steps |
-|-----|-------|
-| **lint** | `oxlint` + `markdownlint` |
-| **test** | Full Vitest suite with coverage (85% thresholds) |
+| Job | Make target | What it runs |
+|-----|-------------|--------------|
+| **lint** | `make lint` | `oxlint` + `markdownlint` |
+| **static-check** | `make static-check` | `npm audit` + `gitleaks` + `trivy fs` |
+| **test** | `make gallery-verify coverage-check` | gallery drift gate + Vitest with 85 % coverage |
 
 No repository secrets or variables are required (`GITHUB_TOKEN` only).
 Releases are **git tags only** (`vX.Y.Z`) — no formal GitHub Releases;

@@ -8,26 +8,40 @@ on:
       - '**'
   workflow_dispatch:
 
+# Every job calls a Makefile target — the Makefile is the single source
+# of truth for what each check runs, so `make ci` locally and CI cannot
+# drift (the portfolio "workflow must use Makefile targets" rule). Each
+# `make <target>` chains its `deps` prerequisite (idempotent `mise
+# install` — mise-action already populated it — + `npm ci`); one make
+# invocation per job dedups `deps`.
+
 jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-      # Node comes from .mise.toml (node 26) — pinned local↔CI parity,
-      # not the moving `node-version: latest`. SHA matches the
-      # portfolio-canonical pin (puml2drawio / ibm-wm).
+      # Node + act/gitleaks/trivy all come from .mise.toml — pinned
+      # local↔CI parity, not a moving `node-version: latest`. SHA is
+      # the portfolio-canonical pin (puml2drawio / ibm-wm).
       - uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
         with:
           install: true
           cache: true
-      - name: Install dependencies
-        run: |
-          ./setup.sh
-          npm ci
-      - name: Lint
-        run: |
-          npm run lint
-          npm run mdlint
+      - name: Lint (oxlint + markdownlint)
+        run: make lint
+
+  static-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      # mise-action installs gitleaks + trivy from .mise.toml (the
+      # single source of truth) — same versions local `make` uses.
+      - uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
+        with:
+          install: true
+          cache: true
+      - name: Security/quality gate (npm audit + gitleaks + trivy-fs)
+        run: make static-check
 
   test:
     runs-on: ubuntu-latest
@@ -40,24 +54,15 @@ jobs:
         with:
           install: true
           cache: true
-      - name: Install dependencies
-        run: |
-          ./setup.sh
-          npm ci
-      # Deterministic gallery drift gate (no java/docker): the .drawio
-      # XML IS catalyst's emit output; if it differs from the committed
-      # docs/gallery copies an emit/template change shipped without
-      # refreshing the gallery (the P4b-class stale-artifact defect —
-      # the converter was fixed but the public gallery still advertised
-      # the old output). Failure ⇒ run `make gallery` and commit.
-      - name: Gallery drift gate
-        run: |
-          npm run build
-          GALLERY_DRAWIO_ONLY=1 node scripts/gallery.mjs
-          git diff --exit-code -- docs/gallery/drawio \
-            || { echo "::error::docs/gallery is STALE vs the current emit — run 'make gallery' and commit the refresh"; exit 1; }
-      - name: Run tests with coverage
-        run: npm run test:coverage
+      # gallery-verify = deterministic gallery drift gate (no java/
+      # docker): the .drawio XML IS catalyst's emit output; if it
+      # differs from the committed docs/gallery copies an emit/template
+      # change shipped without refreshing the gallery (the P4b-class
+      # stale-artifact defect). Failure ⇒ run `make gallery` + commit.
+      # coverage-check = vitest with the 85% threshold (vitest.config.ts).
+      # One make invocation so the shared `deps`/`build` prereq runs once.
+      - name: Gallery drift gate + tests with coverage
+        run: make gallery-verify coverage-check
       - name: Report Coverage
         uses: davelosert/vitest-coverage-report-action@02f3c2e641286b7fa308cd3e430783103ce6103b # v2
         if: always()
