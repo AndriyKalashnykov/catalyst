@@ -10,6 +10,11 @@ This project adheres to [Keep a CHANGELOG](http://keepachangelog.com/).
 
 ### Added
 
+- **`cleanup-runs.yml` workflow** — portfolio-standard weekly
+  (`cron` + `workflow_dispatch`) housekeeping that prunes old workflow
+  runs (7 days / keep ≥ 5) and caches from deleted branches via the
+  native `gh` CLI (no third-party actions). catalyst previously had
+  only `ci.yml`.
 - **CI render-truth gate (`render-gate` job).** `.github/workflows/ci.yml`
   gains a path-filtered Docker job (new `render` `dorny/paths-filter`
   group over `src/** scripts/** tests/fixtures/** docs/gallery/**
