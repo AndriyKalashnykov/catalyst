@@ -71,17 +71,24 @@ Standalone, independently-maintained library (no upstream; never add an
   factcheck number, never a PNG eyeball** (the harness was built by
   fact-checking and fixing each of its own false-positives — offset-
   aware label anchor, mxGraph last-key style, `<br/>`/`\n`/XML-escape
-  normalisation). Needs java; `make factcheck` now auto-fetches the
-  Renovate-pinned jar via `make deps-plantuml` (no prior `make gallery`
-  required). **NOT a CI job** — its PlantUML ground-truth renders on the
-  host JVM and text-width geometry is host-font-dependent, so the
-  `ratioBad` ratchet is non-portable across machines/runners (a clean
-  fetch on a fresh machine shows 24/26 vs the #99-captured baseline's
-  26/26 — same pinned jar, different host fonts). Stays a **mandatory
-  manual gate** for any emit/geometry change until the PlantUML render
-  is Docker-pinned (BACKLOG item below). The deterministic half —
-  `make arrowskew` — IS the CI render-truth contract (draw.io renders
-  inside a pinned image, byte-portable).
+  normalisation). Needs **java** + a one-time `make gallery` (fetches
+  the jar). **MANUAL gate, NOT CI** — PlantUML text geometry is
+  host-font-dependent, so the `ratioBad` ratchet and ADR 0010's
+  `PUML_LEAF_BOX` are reproducible only against the calibration host.
+  Docker-pinning it to make it CI-portable was attempted 2026-05-18
+  and **empirically closed (negative result)**: the only freely
+  portable image (`plantuml/plantuml`, DejaVu-only) renders a
+  *noisier, multi-modal* oracle than the ADR-0010 host (inset
+  10/11/14 with 20/124 outliers vs a clean exact-10; pitch 12→16
+  bimodal `[18,69]` vs a clean 20.62) — adopting it would degrade a
+  clean category-1 metric to noise, so it is NOT the canonical
+  oracle. `make factcheck` stays the host-JVM manual gate; run it for
+  any emit/geometry change. The deterministic render-truth **CI**
+  contract is `make arrowskew` (draw.io in a pinned image,
+  byte-portable — #117). One real fix DID land from the attempt:
+  `factcheck-geometry.mjs` now exits non-zero on any non-clean
+  fixture (it previously only printed `CLEAN N/26` and a human had
+  to read it — a latent fake-gate even for the manual flow).
 - Visual proof (corroborative only): `PLANTUML_VERSION=1.2026.2
   RENDER_SRC=<puml> RENDER_OUT=<dir> make render-compare` (java+docker;
   PlantUML PNG + catalyst→drawio PNG side by side). `make gallery`
@@ -158,36 +165,41 @@ Completed-work root-cause prose lives in git history + ADRs +
 >
 > **▶▶ NEXT SESSION — pick up here (priority order):**
 >
-> 1. **INFRA — arrowskew CI enforcement: DONE (this PR). factcheck
->    Docker-pinned portability: the carried-forward follow-up.**
->    A path-filtered `render-gate` ci.yml job (new `render`
->    `dorny/paths-filter` group: `src/** scripts/** tests/fixtures/**
->    docs/gallery/** Makefile ci.yml`) now runs `make arrowskew` as a
->    hard `ci-pass` contract — deterministic (draw.io renders inside
->    the pinned `rlespinasse/drawio-export` image, byte-portable), so
->    it closes the exact #107 false-green class on every code PR.
->    `make factcheck` is **deliberately NOT** in CI: its PlantUML
->    ground-truth renders on the host JVM and text-width geometry is
->    host-font-dependent, so the `ratioBad` ratchet is non-portable
->    (clean-fetch on a fresh machine = 24/26 vs the #99-captured
->    baseline's 26/26 with the *same pinned jar* — host fonts differ;
->    a GH runner = a third set). Per the BLOCKING no-fake-green rule
->    this was NOT masked (no baseline regen, no advisory demotion);
->    factcheck stays a documented mandatory MANUAL gate.
->    **▶ FOLLOW-UP (HIGH, do before relying on factcheck in CI or the
->    downstream release): Docker-pin the factcheck PlantUML render.**
->    Add a Renovate-pinned PlantUML Docker image (datasource already
->    declared: `maven net.sourceforge.plantuml:plantuml`; pick the
->    matching `plantuml/plantuml:<ver>` image, Renovate `docker`
->    datasource), rework the `factcheck` target's
->    `java -jar … -tsvg` step to render ground-truth in-container
->    (mirrors how `arrowskew` already pins draw.io), regenerate
->    `tests/factcheck-ratio-baseline.json` ONCE against that pinned
->    environment (legitimate — it re-anchors to a portable renderer,
->    NOT a mask; commit with the rationale), then add `make factcheck`
->    to the `render-gate` job. Until then the ratchet is correct but
->    only reproducible on the baseline-author's host. A
->    `/ci-workflow` + `/makefile`-skill task.
+> 1. **INFRA — render-truth CI enforcement: DONE (arrowskew). factcheck
+>    CI-portability: EMPIRICALLY CLOSED (negative result) — do NOT
+>    reopen without new evidence.** #117 shipped the path-filtered
+>    `render-gate` ci.yml job (new `render` `dorny/paths-filter`
+>    group: `src/** scripts/** tests/fixtures/** docs/gallery/**
+>    Makefile ci.yml`) running `make arrowskew` as a hard `ci-pass`
+>    contract — deterministic (draw.io in the pinned
+>    `rlespinasse/drawio-export` image, byte-portable) — plus a
+>    bind-mount-EACCES fix the gate's own first CI run flushed out.
+>    That is the real anti-#107 net and it is enforced. The
+>    factcheck-Docker-pin follow-up was attempted 2026-05-18 and
+>    **empirically disproved**: PlantUML text geometry is irreducibly
+>    host-font-dependent and the whole oracle (ADR 0010
+>    `PUML_LEAF_BOX`, embedded contract-lock fixtures, golden, ratio
+>    baseline) was calibrated to one unreproducible host JVM. The only
+>    freely-portable image (`plantuml/plantuml`, DejaVu-only) renders
+>    a *noisier, multi-modal* oracle (measured via
+>    `scripts/p4b-box-metrics.mjs` on its render: inset 10/11/14, 20/124
+>    outliers vs a clean exact-10; pitch 12→16 bimodal `[18,69]` vs a
+>    clean 20.62) — `p4b-svg-geom.test.mts`'s live-oracle gate
+>    correctly flags the divergence. Adopting it as THE oracle would
+>    degrade a clean category-1 metric to noise + force an ADR-0010
+>    re-derivation bottoming out in that noise. Per BLOCKING
+>    no-fake-green / surface-don't-force, the Docker-pin was REVERTED;
+>    `make factcheck` stays the host-JVM **manual** gate (run for any
+>    emit/geometry change). **Two real wins kept from the attempt:**
+>    (a) `factcheck-geometry.mjs` now `process.exitCode = 1` on any
+>    non-clean fixture (it previously only printed `CLEAN N/26` +
+>    exited 0 — a latent fake-gate even for the manual flow; proven
+>    both directions); (b) `deps-plantuml`/`GALLERY_FETCH_JAR_ONLY`
+>    (#117 interim) removed as orphaned, `ensureJar()` kept (gallery
+>    PNG). Reopen ONLY with a portable image that reproduces the
+>    ADR-0010 host metrics cleanly (a font-identification spike that
+>    may not converge — not worth it for a secondary manual gate while
+>    arrowskew already covers the #107 class in CI).
 > 2. **ADR 0007 phase (d2): v2 sequence fragments** —
 >    `alt/opt/loop/par/critical`, `box`/`Boundary` grouping, `ref`,
 >    create/destroy. Currently fail-loud with token+line (the

@@ -573,6 +573,13 @@ if (isMain) {
     console.log(`factcheck ratio baseline written: ${RATIO_BASELINE_FILE} (${Object.keys(sorted).length} fixtures)`)
   } else {
     console.log(`CLEAN ${cleanCount}/${all.length}`)
+    // Hard gate: a non-clean fixture (any contract metric ≠ 0) MUST
+    // fail the process so `make factcheck` — and the CI render-gate —
+    // go red. Without this the "gate" only ever printed a number and
+    // exited 0 (enforced solely by a human reading it): a regression
+    // would have shipped green. Per-fixture/UPDATE modes stay exit-0
+    // (they are queries, not the gate).
+    if (cleanCount < all.length) process.exitCode = 1
   }
  }
 }

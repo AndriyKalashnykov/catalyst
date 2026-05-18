@@ -213,9 +213,8 @@ Run `make help` to list targets.
 | `make golden-update` | Regenerate draw.io structural snapshots after an intentional change |
 | `make render-compare` | Visual proof: render one `.puml` + catalyst `.drawio` side by side (Java + Docker) |
 | `make gallery` | Dual-render the whole corpus into `docs/gallery/` (Java + Docker) |
-| `make deps-plantuml` | Fetch the Renovate-pinned PlantUML jar (idempotent; no Java/Docker) |
-| `make factcheck` | Numeric PlantUML→drawio fidelity audit of all conversions (Java; auto-fetches the jar) |
-| `make arrowskew` | Arrowhead-skew gate on draw.io's REAL render (Docker; the CI render-truth contract) |
+| `make factcheck` | Numeric PlantUML→drawio fidelity audit of all conversions (host-JVM PlantUML; the no-eyeballing **manual** gate — not CI-portable) |
+| `make arrowskew` | Arrowhead-skew gate on draw.io's REAL render (Docker-pinned; the CI render-truth contract) |
 | `make gallery-verify` | Fail if committed gallery `.drawio` drifted from current emit |
 | `make ci` | Local pipeline == CI: static-check (lint+sec) + build + coverage-check + gallery-verify |
 | `make ci-run` | Run the real `.github/workflows/ci.yml` locally via `act` (Docker) |
@@ -237,16 +236,19 @@ gates the Docker-based `render-gate` job so fast PRs stay fast.
 | **static-check** | `make static-check` | `oxlint` + `markdownlint` + `npm audit` + `gitleaks` + `trivy fs` |
 | **build** | `make build` | `tsc` → `dist/` |
 | **test** | `make gallery-verify coverage-check` | gallery drift gate + Vitest (85 % `thresholds.global`) |
-| **render-gate** | `make arrowskew` | draw.io render-truth contract: pinned `drawio-export` renders every gallery `.drawio` → SVG; asserts no arrowhead skew / feeder occlusion (the deterministic anti-#107 net) |
+| **render-gate** | `make arrowskew` | draw.io render-truth contract: pinned `rlespinasse/drawio-export` renders every gallery `.drawio` → SVG; asserts no arrowhead skew / feeder occlusion (the deterministic anti-#107 net) |
 | **ci-pass** | — | aggregator; the single required check for branch protection |
 
-`make factcheck` is intentionally **not** a CI job: its PlantUML
-ground-truth is rendered on the host JVM and its text-width geometry is
-host-font-dependent, so the `ratioBad` ratchet is not portable across
-runners. It stays a **mandatory manual gate** for any emit/geometry
-change until the PlantUML render is Docker-pinned (tracked in
-`CLAUDE.md` backlog). `arrowskew` has no such issue — draw.io renders
-inside a pinned image, byte-portable everywhere.
+`make arrowskew` renders inside a Renovate-pinned Docker image so its
+geometry is byte-portable across machines and runners — it is the CI
+render-truth contract. `make factcheck` (numeric PlantUML→drawio
+fidelity over all 26 conversions) is **not** CI: PlantUML text
+geometry is host-font-dependent, so its `ratioBad` ratchet is
+reproducible only against the calibration host. It is a **mandatory
+manual gate** for any emit/geometry change. (Docker-pinning it was
+attempted and empirically closed — the only portable PlantUML image
+renders a noisier oracle than the host calibration; see `CLAUDE.md`.)
+Both gates exit non-zero on any contract regression.
 
 A second workflow, `cleanup-runs.yml` (weekly cron +
 `workflow_dispatch`), prunes old workflow runs (7 days / keep ≥ 5) and
