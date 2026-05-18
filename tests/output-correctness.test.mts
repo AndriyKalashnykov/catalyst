@@ -85,14 +85,18 @@ describe('Bug 2 — fail loudly, never a content-less stub', () => {
     await expect(xml2js.parseStringPromise(xml)).resolves.toBeDefined();
   });
 
-  // The no-silent-drop contract (ADR 0007): a v2-DEFERRED construct
-  // must fail-loud with a precise message naming the token + line —
-  // never a wrong/partial diagram.
-  it('fail-louds on a v2-deferred ==divider== (names token + line)', async () => {
-    await expect(Catalyst.convert(C4('C4_Sequence.puml',
-      'participant "A" as a\nparticipant "B" as b\n==phase==\na -> b : x')))
-      .rejects.toThrow(/`== divider ==` is not supported in v1.*Line \d+/s);
+  // ADR 0007 phase d1: `== divider ==` is now SUPPORTED (was
+  // v2-deferred). It converts to a full-width band cell.
+  it('converts a ==divider== to a full-width band cell (phase d1)', async () => {
+    const xml = await Catalyst.convert(C4('C4_Sequence.puml',
+      'participant "A" as a\nparticipant "B" as b\n==phase==\na -> b : x'));
+    expect((xml.match(/id="seq-divider-/g) ?? []).length).toBe(1);
+    expect(xml).toContain('value="phase"');                 // the divider label
+    await expect(xml2js.parseStringPromise(xml)).resolves.toBeDefined();
   });
+
+  // The no-silent-drop contract still holds for the STILL-deferred
+  // constructs (fragments/box/ref) — precise token+line fail-loud.
 
   it('fail-louds on a v2-deferred alt/opt/loop fragment', async () => {
     await expect(Catalyst.convert(C4('C4_Sequence.puml',

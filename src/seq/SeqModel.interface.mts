@@ -70,7 +70,17 @@ export interface SeqActivation {
   order: number
 }
 
-export type SeqEvent = SeqMessage | SeqNote | SeqActivation
+/** A PlantUML `== label ==` divider — a full-width labelled band that
+ *  segments the timeline (ADR 0007 phase d1). Spans all lifelines at
+ *  its source-order Y; carries no from/to. */
+export interface SeqDivider {
+  type: 'divider'
+  /** Text between the `==` fences (trimmed; may be empty). */
+  label: string
+  order: number
+}
+
+export type SeqEvent = SeqMessage | SeqNote | SeqActivation | SeqDivider
 
 export interface SeqModel {
   title?: string

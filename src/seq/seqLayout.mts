@@ -65,7 +65,17 @@ export interface LaidActivation {
   y1: number
   y2: number
 }
-export type LaidEvent = LaidMessage | LaidNote
+/** Full-width `== label ==` band at source-order Y (phase d1). `x`/`w`
+ *  are filled at emit time from the final canvas width (the band spans
+ *  every lifeline); layout only fixes its Y and height. */
+export interface LaidDivider {
+  type: 'divider'
+  y: number
+  h: number
+  label: string
+  order: number
+}
+export type LaidEvent = LaidMessage | LaidNote | LaidDivider
 
 export interface SeqLayout {
   width: number
@@ -133,6 +143,15 @@ export function layoutSeq(model: SeqModel): SeqLayout {
   const loopW = Math.ceil(colGap / 2 + ARROW)           // self-message loop
 
   for (const ev of model.events) {
+    if (ev.type === 'divider') {
+      // Full-width band at this source-order Y (phase d1). Height = a
+      // measured label line + insets (same metric basis as a note row);
+      // x/w are set at emit from the final canvas width.
+      const h = Math.ceil(blockH(ev.label, BODY_PX) + 2 * INSET)
+      laidEvents.push({ type: 'divider', y, h, label: ev.label, order: ev.order })
+      y += h + rowGap
+      continue
+    }
     if (ev.type === 'activate') {
       const st = actStack.get(ev.lifeline) ?? []
       st.push(y)
