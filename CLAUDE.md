@@ -15,16 +15,19 @@ Standalone, independently-maintained library (no upstream; never add an
 - `npm run lint` (oxlint) + `npm run mdlint` (markdownlint; **MD007 wants
   4-space nested-list indent — never 2**, it bit the CHANGELOG repeatedly).
 - `npm run test:coverage` — CI gate, thresholds 85 % (currently ≈97 %).
-- `make ci` = build + lint + **static-check** + **coverage-check** +
-  **gallery-verify** (mirrors ci.yml's lint/static-check/test jobs;
-  `coverage-check` runs `test:coverage` — the real 85 % gate, NOT
-  `make test` which is the fast no-gate suite). `make ci-run` = the
-  real `.github/workflows/ci.yml` via mise-managed `act` (Docker
-  needed). CI jobs call `make` targets (single source of truth).
-- `make static-check` = `vulncheck`/`secrets`/`trivy-fs` (npm audit,
-  gitleaks, trivy fs) — all three mise-managed via `.mise.toml`
-  (`aqua:` pins; Renovate native `mise` manager tracks them). `make
-  clean` removes `dist/ build/ coverage/` (never sources/gallery).
+- `make ci` = **static-check** + build + **coverage-check** +
+  **gallery-verify** (mirrors ci.yml's canonical graph: `changes` →
+  `static-check` → `build`+`test` → `ci-pass`). `coverage-check` runs
+  `test:coverage` — the real 85 % `thresholds.global` gate (NOTE:
+  `vitest.config.ts` `exclude:` omits `src/catalyst.mts` from the
+  gate — a `/test-coverage-analysis` follow-up, not a CI concern).
+  `make ci-run` = the real `ci.yml` via mise-managed `act`.
+- `make static-check` = `lint` (oxlint+markdownlint) + `vulncheck` +
+  `secrets` + `trivy-fs` — the single composite quality gate / CI job
+  (skill convention: no separate lint step). gitleaks/trivy/act/java
+  mise-managed via `.mise.toml` (`aqua:`/core pins; Renovate native
+  `mise` manager tracks them). `make clean` removes
+  `dist/ build/ coverage/` (never sources/gallery).
 - Local render path (`factcheck`/`gallery`/`render-compare`): **Java**
   is mise-managed (`.mise.toml` Temurin 21; `make deps` installs it),
   **graphviz** is the only system package (no mise backend) —

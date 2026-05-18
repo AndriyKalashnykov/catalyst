@@ -79,8 +79,8 @@ npm install github:AndriyKalashnykov/catalyst#v1.6.1
 make deps      # mise install (node, act, gitleaks, trivy) + npm ci
 make build     # compile TypeScript -> dist/
 make test      # full vitest suite (fast; no coverage gate)
-make ci        # full local pipeline == CI (build + lint + static-check
-               #   + coverage-check[85%] + gallery-verify)
+make ci        # full local pipeline == CI (static-check[lint+sec] +
+               #   build + coverage-check[85%] + gallery-verify)
 ```
 
 ## Prerequisites
@@ -209,27 +209,31 @@ Run `make help` to list targets.
 | `make vulncheck` | `npm audit --audit-level=moderate` |
 | `make secrets` | `gitleaks` leaked-credential scan |
 | `make trivy-fs` | `trivy fs` vuln/secret/misconfig scan (CRITICAL,HIGH) |
-| `make static-check` | Composite security gate: `vulncheck` + `secrets` + `trivy-fs` |
+| `make static-check` | Composite quality gate: `lint` + `vulncheck` + `secrets` + `trivy-fs` (the single CI quality job) |
 | `make golden-update` | Regenerate draw.io structural snapshots after an intentional change |
 | `make render-compare` | Visual proof: render one `.puml` + catalyst `.drawio` side by side (Java + Docker) |
 | `make gallery` | Dual-render the whole corpus into `docs/gallery/` (Java + Docker) |
 | `make factcheck` | Numeric PlantUML→drawio fidelity audit of all conversions (Java) |
 | `make gallery-verify` | Fail if committed gallery `.drawio` drifted from current emit |
-| `make ci` | Local pipeline == CI: build + lint + static-check + coverage-check + gallery-verify |
+| `make ci` | Local pipeline == CI: static-check (lint+sec) + build + coverage-check + gallery-verify |
 | `make ci-run` | Run the real `.github/workflows/ci.yml` locally via `act` (Docker) |
 
 ## CI/CD
 
-GitHub Actions (`🔨CI`, `.github/workflows/ci.yml`) runs on every push,
-pull request, and `workflow_dispatch`. **Every job calls a Makefile
-target** — the Makefile is the single source of truth, so `make ci`
-and CI cannot drift:
+GitHub Actions (`CI`, `.github/workflows/ci.yml`) runs on every push,
+PR, `v*` tag, `workflow_call`, and `workflow_dispatch`. **Every job
+calls a Makefile target** — the Makefile is the single source of truth,
+so `make ci` and CI cannot drift. A `changes` path-filter skips the
+heavy jobs on doc-only pushes/PRs (`ci-pass` still goes green because
+skipped ≠ failure); `v*` tags always run the full pipeline.
 
 | Job | Make target | What it runs |
 |-----|-------------|--------------|
-| **lint** | `make lint` | `oxlint` + `markdownlint` |
-| **static-check** | `make static-check` | `npm audit` + `gitleaks` + `trivy fs` |
-| **test** | `make gallery-verify coverage-check` | gallery drift gate + Vitest with 85 % coverage |
+| **changes** | — (`dorny/paths-filter`) | doc-only detection; gates the jobs below |
+| **static-check** | `make static-check` | `oxlint` + `markdownlint` + `npm audit` + `gitleaks` + `trivy fs` |
+| **build** | `make build` | `tsc` → `dist/` |
+| **test** | `make gallery-verify coverage-check` | gallery drift gate + Vitest (85 % `thresholds.global`) |
+| **ci-pass** | — | aggregator; the single required check for branch protection |
 
 No repository secrets or variables are required (`GITHUB_TOKEN` only).
 Releases are **git tags only** (`vX.Y.Z`) — no formal GitHub Releases;
