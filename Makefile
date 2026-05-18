@@ -141,6 +141,23 @@ arrowskew: build
 	@GALLERY_DRAWIO_ONLY=1 CORPUS_DIR=$(CORPUS_DIR) GALLERY_OUT=$(GALLERY_OUT) node scripts/gallery.mjs >/dev/null
 	@DRAWIO_EXPORT_IMAGE=$(DRAWIO_EXPORT_IMAGE) node scripts/arrowskew-svg.mjs
 
+#bendcount: @ Redundant-bend inventory on draw.io's REAL render (needs docker; B1 routing-change probe — ADR 0013 / docs/research/layout-readability.md)
+bendcount: build
+	@command -v docker >/dev/null 2>&1 || { echo "Error: docker required for drawio-export rendering."; exit 1; }
+	@# Measures interior + REDUNDANT (near-collinear) bends on draw.io's
+	@# actual rendered path — never the emitted points (the #107 lesson:
+	@# catalyst edges re-route, so the emitted polyline is not drawn).
+	@# Reuses build/arrowskew SVGs when present (one docker pass serves
+	@# both gates); else regenerates the .drawio (pure node) and renders.
+	@# Reproducible evidence for any edge-routing change; NOT a CI gate
+	@# (the deterministic CI render-truth contract is `make arrowskew`).
+	@if [ -d build/arrowskew ]; then \
+		ARROWSKEW_REUSE=1 node scripts/bendcount-svg.mjs; \
+	else \
+		GALLERY_DRAWIO_ONLY=1 CORPUS_DIR=$(CORPUS_DIR) GALLERY_OUT=$(GALLERY_OUT) node scripts/gallery.mjs >/dev/null; \
+		DRAWIO_EXPORT_IMAGE=$(DRAWIO_EXPORT_IMAGE) node scripts/bendcount-svg.mjs; \
+	fi
+
 #routefidelity: @ ADR-0013 decision gate: per-edge-style route-shape distance to PlantUML (needs java+jar+docker; manual, self-verifying)
 routefidelity: build
 	@command -v java >/dev/null 2>&1 || { echo "Error: java (Temurin) is mise-managed — run 'make deps'."; exit 1; }
