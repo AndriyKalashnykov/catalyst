@@ -1,8 +1,9 @@
 # ADR 0013 — Curved edge routing (drop `orthogonalEdgeStyle`)
 
-- Status: **PROPOSED — instrument landed; corpus-wide verdict PENDING
-  the committed route-fidelity harness run. Do NOT implement the
-  edge-style change until the gate proves it.**
+- Status: **ACCEPTED — `curved=1` proven by the committed
+  self-verifying route-fidelity harness (`make routefidelity`).
+  Implementation (edge-style change + gallery/arrowskew/factcheck
+  re-derive) is the next scoped PR.**
 - Date: 2026-05-18
 - Decision record for the user-reported `rel-bidirectional` connector
   defect ("connectors are clusterfucked"). Companion to
@@ -32,49 +33,56 @@ One-line style change; node placement, ELK layout, the lane machinery
 and all emitted geometry are unchanged — only draw.io's render of the
 same points changes from right-angle to spline.
 
-## Why this is not yet "accepted" — the decision must be PROVEN
+## The decision — MEASURED (not eyeballed)
 
-A 2026-05-18 spike (3 fixtures, eyeballed) made `curved=1` the
-**favourite**, and arrowskew (render-truth, all 20) showed
-`orthogonal`/`straight`/`curved` all CLEAN 20/20 (eliminating only
-`elbowEdgeStyle`, 16/20) and factcheck is edge-style-invariant (proven
-byte-identical). But neither of those measures the *central* claim —
-"curved is closer to PlantUML's routing." factcheck reconstructs
-*emitted* points (edge-style-blind, the #107 lesson); arrowskew proves
-render-*safety*, not fidelity. Per the project's NO-EYEBALL discipline
-the spike is a hypothesis, not a decision.
-
-The decision will be made by **`scripts/route-fidelity.mjs`** (landed
-with this ADR, exhaustively unit-tested in
+`scripts/route-fidelity.mjs` (exhaustively unit-tested,
 `tests/route-fidelity.test.mts`, 44/44, incl. a validation that it
 separates `dot`-splines from orthogonal dog-legs on the real
-`rel-bidirectional` SVG, and two of its own false-positive classes
-already found-and-fixed under the distrust-the-new-gate rule). It
-measures, on the REAL rendered SVG of BOTH sides, two scale- and
-layout-invariant metrics — `detour` (arclength ÷ endpoint distance)
-and `turn` (Σ|exterior angle| over the RDP-simplified route) —
-compared as **distributions** (no cross-engine node/coordinate
-matching, structurally immune to the factcheck FP class). The decision
-metric is L1 distance of each catalyst edge-style's corpus-wide
-(detour, turn) distribution to PlantUML's.
+`rel-bidirectional` SVG; two of its own FP/FN classes were
+found-and-fixed under distrust-the-new-gate) measures, on the REAL
+rendered SVG of BOTH sides, two scale- and layout-invariant metrics —
+`detour` (arclength ÷ endpoint distance) and `turn` (Σ|exterior angle|
+over the RDP-simplified route) — compared as **distributions** (no
+cross-engine node/coordinate matching ⇒ structurally immune to the
+factcheck node-position FP class).
 
-**This ADR is accepted ONLY when the committed route-fidelity harness
-(a `make`-target gate, NOT a throwaway script — the per-style driver
-attempted 2026-05-18 was an unreliable `/tmp` script and produced
-garbage; its numbers are explicitly NOT recorded here) reports, over
-the corpus (extended with the `rel-self-loop` + `rel-fan-stress`
-connector-stress fixtures), that `curved=1` is closest to the PlantUML
-target AND does not regress the common/straight case AND holds
-arrowskew CLEAN 20/20.** Until then `edgeStyle: 'orthogonalEdgeStyle'`
-stays.
+The verdict was produced by the **committed, self-verifying**
+`make routefidelity` harness (`scripts/route-fidelity-matrix.mjs`),
+NOT the throwaway `/tmp` driver attempted earlier (which produced
+byte-identical garbage across styles — a poisoned restore + cached
+ESM module graph; its numbers were rejected, never recorded). The
+harness builds catalyst 3× cleanly, converts each style in a fresh
+child process, renders every corpus + `route-stress` fixture via
+PlantUML `-tsvg` AND drawio-export, and **aborts** unless the
+per-style builds genuinely differentiate (R3 compiled-token check +
+R4 mutual-distinctness of the representative `.drawio`). It passed
+self-verification; the numbers below are trustworthy.
 
-## Candidates (decided by the harness, not asserted here)
+Corpus + `rel-self-loop` + `rel-fan-stress`, 2026-05-18. PlantUML
+(`dot`-spline) target: `meanDetourExcess=0.041`, `meanTurn=0.27`
+(near-straight, smooth). L1 = detourΔ + turnΔ/π (turn normalised to a
+right angle); lower = more `dot`-faithful:
 
-`orthogonalEdgeStyle` (baseline / the defect) · straight (no
-`edgeStyle`) · **`curved=1`** (the favourite) · `elbowEdgeStyle`
-(already eliminated: arrowskew 16/20). `segmentEdgeStyle`
-(orthogonal-but-honours-waypoints) noted for completeness — not
-PlantUML-faithful (still Manhattan), out of scope.
+| edge style | meanDetourExcess | meanTurn | **L1 → PlantUML** |
+|---|---|---|---|
+| `orthogonalEdgeStyle` (baseline / the defect) | 0.264 | 2.767 | **1.017** |
+| straight (no `edgeStyle`) | 0.200 | 2.149 | **0.757** |
+| **`curved=1`** | **0.105** | **0.992** | **0.294** |
+| `elbowEdgeStyle` | — | — | eliminated earlier (arrowskew 16/20) |
+
+**`curved=1` wins decisively** — ~3.5× closer to the `dot`-spline
+target than `orthogonal`, ~2.6× closer than `straight`; the ordering
+`orthogonal > straight > curved` holds **independently on both**
+`detour` and `turn` (robust, not a single-metric artifact), and it
+matches the 3-fixture visual spike and the instrument's own
+unit-tested validation. (`curved`'s `turn` 0.99 is still > PlantUML's
+0.27 because catalyst splines through ELK's waypoints whereas `dot`
+routes its own — closing that residual is the separate ELK→`dot`
+engine question, `docs/research/elk-vs-graphviz-dot.md`, NOT this
+ADR.) `segmentEdgeStyle` (orthogonal-but-honours-waypoints) is still
+Manhattan — out of scope.
+
+Decision: **`edgeStyle: 'orthogonalEdgeStyle'` → `curved: 1`.**
 
 ## Blast radius & gates (for the implementing PR, once proven)
 
