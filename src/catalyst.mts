@@ -3,7 +3,7 @@ import { Mx, MxGeometry } from './mx/Mx.mjs'
 import { MxPoint } from './mx/MxPoint.mjs'
 import { RelParser } from './puml/RelParser.mjs'
 import { LayoutEngine, LayoutResult } from './layout/LayoutEngine.mjs'
-import { assignEdgeLanes, resolveLabelOverlap, slideLabelAlongLane, polylineMidpoint, endpointAttachFraction, endpointStub, incidentAxis, type NodeCenter, type NodeRect } from './layout/edgeLanes.mjs'
+import { assignEdgeLanes, resolveLabelOverlap, slideLabelAlongLane, polylineMidpoint, type NodeCenter, type NodeRect } from './layout/edgeLanes.mjs'
 import { measureEdgeLabel } from './layout/measureNode.mjs'
 import { spaceAdvance, textWidth, renderedLineHeight, MX_DEFAULT_FONTSIZE } from './text/TextMetrics.mjs'
 import { RELATIONSHIP_LABEL_PX, DIAGRAM_TITLE_PX } from './mx/c4/theme.mjs'
@@ -166,9 +166,6 @@ async function layoutData2mx(layoutData: LayoutResult, pumlElements: EntityDescr
     g.$.relative = 1
     const lane = edgeLanes.get(i)
     const poly = layoutEdgeByRelIdx.get(i)
-    // Border attach for a non-laned multi-bend edge (set in that branch
-    // below): pins exit/entry so the arrowhead enters the box head-on.
-    let borderAttach: { exit: { x: number; y: number }; entry: { x: number; y: number } } | undefined
     if (lane) {
       // Collect the interior waypoints actually emitted so the label
       // anchor below is computed against the SAME polyline the renderer
@@ -190,38 +187,7 @@ async function layoutData2mx(layoutData: LayoutResult, pumlElements: EntityDescr
         // adjacent same-pair edges) — synthesize the lane midpoint waypoint.
         laneInterior.push({ x: lane.waypoint.x, y: lane.waypoint.y })
       }
-      // Perpendicular port-stub for the laned attach (see `endpointStub`).
-      // draw.io attaches a laned edge at the emitted `lane.exit`/
-      // `lane.entry` border fraction — but the lane is FANNED
-      // perpendicular off the box-to-box axis, so the border→first-lane-
-      // waypoint segment is a DIAGONAL into the arrowhead's side (the
-      // same-pair-fan `arrowSkew` defect: rel-bidirectional,
-      // c4-exhaustive `dev->api`×2). Inserting a stub that holds the
-      // attach's on-border coordinate and reaches the first lane
-      // waypoint's free coordinate makes that segment axis-aligned BY
-      // CONSTRUCTION. The border-normal axis is the box-to-box vector
-      // (`incidentAxis` of the two centres) — exactly the `|sdy|≥|sdx|`
-      // test `assignEdgeLanes` used to pick the attach border, so the
-      // stub is perpendicular to that border, never parallel.
-      const A = nodeCenter.get(rel.source)
-      const B = nodeCenter.get(rel.target)
-      let attachA: { x: number; y: number } | undefined
-      let attachB: { x: number; y: number } | undefined
-      let laneEmitted = laneInterior
-      if (A && B && laneInterior.length > 0) {
-        const attachAxis = incidentAxis({ x: A.cx, y: A.cy }, { x: B.cx, y: B.cy })
-        attachA = { x: (A.cx - A.hw) + lane.exit.x * A.hw * 2, y: (A.cy - A.hh) + lane.exit.y * A.hh * 2 }
-        attachB = { x: (B.cx - B.hw) + lane.entry.x * B.hw * 2, y: (B.cy - B.hh) + lane.entry.y * B.hh * 2 }
-        const rnd = (q: { x: number; y: number }) => ({ x: Math.round(q.x), y: Math.round(q.y) })
-        const eq = (u: { x: number; y: number }, v: { x: number; y: number }) => u.x === v.x && u.y === v.y
-        const first = laneInterior[0], last = laneInterior[laneInterior.length - 1]
-        const sA = rnd(endpointStub(attachAxis, attachA, first))
-        const sB = rnd(endpointStub(attachAxis, attachB, last))
-        const pre = eq(sA, rnd(attachA)) || eq(sA, first) ? [] : [sA]
-        const post = eq(sB, rnd(attachB)) || eq(sB, last) ? [] : [sB]
-        laneEmitted = [...pre, ...laneInterior, ...post]
-      }
-      for (const p of laneEmitted) g.addArrayPoint(new MxPoint(p.x, p.y))
+      for (const p of laneInterior) g.addArrayPoint(new MxPoint(p.x, p.y))
       // Fan the label off the shared midpoint via an absolute offset mxPoint
       // (drawio-export honors this; it ignores the geometry.x fraction).
       // P12: the lane offset alone (perpendicular spread) places the label
@@ -230,17 +196,14 @@ async function layoutData2mx(layoutData: LayoutResult, pumlElements: EntityDescr
       // c4-exhaustive `sys`). The perpendicular position is load-bearing
       // (it fans the group's labels), so de-collide by sliding ALONG the
       // lane line only. Anchor = the rendered route's midpoint + the lane
-      // offset, exactly what the factcheck `labelHit` gate computes. P12
-      // base-point: the route MUST be the one draw.io actually draws —
-      // `[attachA, …laneEmitted, attachB]` (the border attach + stubs),
-      // NOT the box centres (a latent mis-base that the comparator's
-      // attach-route reconstruction would otherwise diverge from once
-      // stubs change the emitted waypoints).
+      // offset, exactly what the factcheck `labelHit` gate computes, so
+      // the slide fires on precisely the gate's defect set and is inert
+      // (byte-identical) everywhere it already passes.
       let labelDx = lane.labelOffset.dx, labelDy = lane.labelOffset.dy
+      const A = nodeCenter.get(rel.source)
+      const B = nodeCenter.get(rel.target)
       if (A && B) {
-        const route = attachA && attachB
-          ? [attachA, ...laneEmitted, attachB]
-          : [{ x: A.cx, y: A.cy }, ...laneInterior, { x: B.cx, y: B.cy }]
+        const route = [{ x: A.cx, y: A.cy }, ...laneInterior, { x: B.cx, y: B.cy }]
         const m = polylineMidpoint(route)
         const centre = { x: m.x + labelDx, y: m.y + labelDy }
         const vx = B.cx - A.cx, vy = B.cy - A.cy
@@ -261,6 +224,9 @@ async function layoutData2mx(layoutData: LayoutResult, pumlElements: EntityDescr
       g.addPoint(new MxPoint(labelDx, labelDy, 'offset'))
     } else if (poly && poly.length > 2 && !clusterIds.has(rel.source) && !clusterIds.has(rel.target)) {
       const interior = poly.slice(1, -1).map((p) => ({ x: Math.round(p.x), y: Math.round(p.y) }))
+      for (const p of interior) {
+        g.addArrayPoint(new MxPoint(p.x, p.y))
+      }
       // #24-hier: a non-laned MULTI-BEND hierarchical edge. ELK already
       // reserved a non-overlapping label rect (layoutEdgeLabelByRelIdx),
       // but drawio auto-anchors the label at the routed polyline's
@@ -287,60 +253,8 @@ async function layoutData2mx(layoutData: LayoutResult, pumlElements: EntityDescr
       const lbl = layoutEdgeLabelByRelIdx.get(i)
       const A = nodeCenter.get(rel.source)
       const B = nodeCenter.get(rel.target)
-      // Perpendicular border-anchored arrowhead. ELK routed `poly`
-      // orthogonally; previously catalyst dropped poly[0]/poly[last]
-      // and let drawio re-attach to the box CENTRE, turning the last
-      // segment into a diagonal into the arrowhead's SIDE (the
-      // `topology-cyclic` `requeues` defect). Pin exit/entry at ELK's
-      // own attach points on the axis of the adjacent bend so the first
-      // and last segments stay perpendicular to the border — the head
-      // enters the triangle's base flush. Scoped to THIS branch only
-      // (laned / straight-2pt / cluster paths untouched ⇒ byte-stable
-      // there); fixtures with multi-bend edges change by design.
-      // drawio attaches the endpoint at the BORDER point given by the
-      // emitted exit/entry fraction — NOT ELK's raw pA/pB (which ELK
-      // placed against ITS node rects, off catalyst's emitted border).
-      // Derive the fraction, then the absolute attach point it yields,
-      // and use THOSE for the rendered route (P12 base-point rule: the
-      // label anchor must be the route drawio actually draws, else the
-      // offset is mis-based — the c4-container 186px-displacement /
-      // c4-exhaustive labelHit lesson).
-      //
-      // Perpendicular port-stub (see `endpointStub`): pinning the attach
-      // fraction alone leaves the first/last segment a DIAGONAL into the
-      // arrowhead's side whenever ELK's adjacent waypoint lies off the
-      // box's parallel extent (no border-clamped attach can be made
-      // perpendicular there — c4-exhaustive `dev->api`, the `arrowSkew`
-      // contract). A stub that shares the attach's on-border coord and
-      // the adjacent interior's free coord makes `attach→stub`
-      // axis-aligned BY CONSTRUCTION. Skip a stub coincident with the
-      // attach or its neighbour interior point ⇒ byte-inert on edges
-      // already entering head-on (only genuinely-skewed edges change).
-      let attachA: { x: number; y: number } | undefined
-      let attachB: { x: number; y: number } | undefined
-      let emitted = interior
-      if (A && B) {
-        const axisA = incidentAxis(poly[0], poly[1])
-        const axisB = incidentAxis(poly[poly.length - 1], poly[poly.length - 2])
-        const eFrac = endpointAttachFraction(poly[0], poly[1], A)
-        const nFrac = endpointAttachFraction(poly[poly.length - 1], poly[poly.length - 2], B)
-        borderAttach = { exit: eFrac, entry: nFrac }
-        attachA = { x: (A.cx - A.hw) + eFrac.x * A.hw * 2, y: (A.cy - A.hh) + eFrac.y * A.hh * 2 }
-        attachB = { x: (B.cx - B.hw) + nFrac.x * B.hw * 2, y: (B.cy - B.hh) + nFrac.y * B.hh * 2 }
-        const rnd = (q: { x: number; y: number }) => ({ x: Math.round(q.x), y: Math.round(q.y) })
-        const eq = (u: { x: number; y: number }, v: { x: number; y: number }) => u.x === v.x && u.y === v.y
-        const first = interior[0], last = interior[interior.length - 1]
-        const sA = rnd(endpointStub(axisA, attachA, first))
-        const sB = rnd(endpointStub(axisB, attachB, last))
-        const pre = eq(sA, rnd(attachA)) || eq(sA, first) ? [] : [sA]
-        const post = eq(sB, rnd(attachB)) || eq(sB, last) ? [] : [sB]
-        emitted = [...pre, ...interior, ...post]
-      }
-      for (const p of emitted) {
-        g.addArrayPoint(new MxPoint(p.x, p.y))
-      }
-      if (lbl && A && B && attachA && attachB) {
-        const route = [attachA, ...emitted, attachB]
+      if (lbl && A && B) {
+        const route = [{ x: A.cx, y: A.cy }, ...interior, { x: B.cx, y: B.cy }]
         const mid = polylineMidpoint(route)
         // The label renders at ELK's placed rect `lbl` (the offset
         // below re-anchors renderedMidpoint → lbl.centre). ELK places
@@ -404,7 +318,7 @@ async function layoutData2mx(layoutData: LayoutResult, pumlElements: EntityDescr
     // -> c4Technology). Passing rel.description as the `technology` arg fixes
     // the swapped-field bug where the verb landed in unused c4Name and the
     // template rendered the technology bold + an empty "[]".
-    await mx.addMxC4Relationship(g, rel.source, rel.target, 'Relationship', rel.label, rel.description, undefined, rel.bidirectional === true, Object.keys(relOvr).length ? relOvr : undefined, edgeLabelCap(rel.source, rel.target), rel.back === true, lane ? { exit: lane.exit, entry: lane.entry } : borderAttach)
+    await mx.addMxC4Relationship(g, rel.source, rel.target, 'Relationship', rel.label, rel.description, undefined, rel.bidirectional === true, Object.keys(relOvr).length ? relOvr : undefined, edgeLabelCap(rel.source, rel.target), rel.back === true, lane ? { exit: lane.exit, entry: lane.entry } : undefined)
     if (!emittedIds.has(rel.source) || !emittedIds.has(rel.target)) {
       // Not silently swallowed: an unresolved endpoint means the puml
       // referenced an alias that never produced a shape. Surface it so the

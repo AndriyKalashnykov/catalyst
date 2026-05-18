@@ -5,10 +5,16 @@
   No layout code changed by this doc (methodology: ship the decision
   base as a committed doc BEFORE implementing).
 - Date: 2026-05-17
-- Trigger: user request after PR #107 (perpendicular port-stub,
-  `arrowSkew` 26/26) — "regenerate gallery, review each pair, make it
-  not crammed / easy to read / visually appealing / professional;
+- Trigger: user request — "regenerate gallery, review each pair, make
+  it not crammed / easy to read / visually appealing / professional;
   research how the community improves automated layouts."
+- ⚠️ Correction (2026-05-18): this doc was authored alongside PR #107
+  (perpendicular port-stub), which was subsequently **REVERTED as a
+  false-green** (it changed emitted waypoints that draw.io's universal
+  `orthogonalEdgeStyle` router discards — a render no-op; the
+  arrowhead is still skewed). The #107-specific claims below are
+  struck/annotated. The **research findings (ELK / community / the
+  fact-checks) are independent of #107 and remain valid.**
 - Method: two parallel primary-sourced research sweeps (ELK option
   tuning; community craft + graph-drawing literature) + a gallery
   visual review, **each agent claim fact-checked against the code and
@@ -16,20 +22,21 @@
   `agents.md` "a research agent's recipe is scoped to its probe" and
   `factcheck-harness-gate` "distrust the gate, cite a number").
 
-## Gallery visual review (corroborative to `make factcheck` CLEAN 26/26)
+## Gallery visual review
 
-PR #107 produced **visible** improvement: arrowheads now enter boxes
-head-on (perpendicular) across `topology-hub-spoke`,
-`topology-wide-rank`, `topology-cyclic`, `rel-parallel-duplicate`,
-`rel-long-labels`, `topology-deep-nesting`. No contract metric
-regressed (`labelHit` held 0/26).
+⚠️ The earlier claim here ("PR #107 produced visible improvement:
+arrowheads now enter boxes head-on") was **FALSE** — it eyeballed a
+PNG that was a render no-op vs the pre-#107 output (pre/post/committed
+`topology-cyclic.drawio.png` byte-identical, `md5 1e061af…`). The
+arrowhead skew is **still open** (redo per CLAUDE.md ▶▶ item 0). The
+non-arrowhead readability residuals below stand on their own.
 
 Residuals (aesthetic, NOT contract failures — factcheck is CLEAN):
 
 | # | Fixture(s) | Observation | Faithful to PlantUML? |
 |---|---|---|---|
 | R1 | `edge-large-graph`, `topology-deep-nesting` | Tall, narrow single-column ribbon; left-side whitespace | **YES** — the `.puml.png` is equally tall (30-node mostly-linear chain). Per ADR 0008/0011 fidelity to `dot` is the target and is met. NOT a defect. |
-| R2 | `rel-parallel-duplicate` (laned fans) | Small "shepherd's-crook" hook where the PR #107 port-stub meets the lane line near boxes | n/a — introduced by #107; functionally correct (head-on), cosmetically improvable |
+| R2 | ~~`rel-parallel-duplicate` laned-fan "shepherd's-crook" hook~~ | **VOID** — was a #107 artefact; #107 reverted (render no-op, never shipped) | n/a |
 | R3 | `topology-deep-nesting` | Edge labels (`operates`/`delegates`) sit on boundary-container borders | partial — crowding, not overlap of a leaf |
 
 ## Fact-checks that changed the conclusion (load-bearing)
@@ -69,7 +76,7 @@ readability ask), **effort** 0.15 (low = better). Score 1–5; weighted
 
 | Candidate | fid | det | val | eff | Σ | Verdict |
 |---|----|----|----|----|----|---|
-| **B1 Edge-straightening / bend-reduction post-pass** (collapse interior bends within ε of the chord; never move endpoints) | 5 | 5 | 5 | 3 | **4.70** | **Top — pursue first.** Ware 2002: continuity is the most-neglected high-impact comprehension factor; Purchase 1997: bends rank #2 after crossings. Also fixes R2 (the #107 stub hook) and is endpoint-safe ⇒ `arrowSkew`-safe. |
+| **B1 Edge-straightening / bend-reduction post-pass** (collapse interior bends within ε of the chord; never move endpoints) | 5 | 5 | 5 | 3 | **4.70** | **Top — pursue first.** Ware 2002: continuity is the most-neglected high-impact comprehension factor; Purchase 1997: bends rank #2 after crossings. Caveat: catalyst edges are `orthogonalEdgeStyle` (draw.io re-routes) — a post-pass on emitted waypoints may be a render no-op (the #107 lesson); validate against the drawio-export SVG, not emitted points. |
 | B2 Whitespace-trim (crop to content bbox + uniform ~50px margin) | 5 | 5 | 3 | 4 | 4.50 | Pursue. Deterministic, no C4 conflict; addresses R1 left-whitespace without touching layout topology. Verify it does not fight the title band. |
 | B3 New factcheck metrics: path-continuity (ratcheted contract, like `ratioBad`) + edge-length-uniformity (**advisory** — two valid layouts legitimately differ) | 5 | 5 | 3 | 3 | 4.30 | Pursue alongside B1 (it is B1's gate — instrument before/with the fix, per the build-the-instrument rule). |
 | B4 `contentAlignment=[H_CENTER,V_TOP]` on boundary compounds | 4 | 5 | 2 | 5 | 4.15 | Low-risk nesting polish for R3; spike-gated. |

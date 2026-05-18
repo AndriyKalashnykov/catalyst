@@ -343,28 +343,9 @@ function factcheck(stem, dir = CORPUS) {
       return na && nb ? Math.min(na.w, nb.w) : Infinity
     }
     const ctr = (n) => ({ x: n.x + n.w / 2, y: n.y + n.h / 2 })
-    // Endpoint the edge ACTUALLY attaches to: the border point given by
-    // exitX/exitY (source) or entryX/entryY (target) when the style
-    // pins them, else the box centre. drawio anchors a routed edge's
-    // label at the path-length-midpoint of the RENDERED route, so the
-    // oracle MUST reconstruct that route the way drawio draws it. The
-    // perpendicular-arrowhead change pins exit/entry on non-laned
-    // multi-bend edges; reconstructing from centres (the old code)
-    // mis-bases the anchor → a FALSE labelHit (c4-deployment "SQL":
-    // centre-route says over `cache`, the real border-attach route
-    // clears it by 8px — verified independently). This matches what
-    // catalyst.mts itself uses as the offset base (P12 base-point
-    // rule: renderedMidpoint+offset === intended-centre by
-    // construction). Edges with no exit/entry (laned uses its own
-    // centre-based base; straight 2-pt) fall back to centre ⇒
-    // byte-identical verdict for every fixture already CLEAN.
-    const endpt = (n, fx, fy) =>
-      Number.isFinite(fx) && Number.isFinite(fy)
-        ? { x: n.x + fx * n.w, y: n.y + fy * n.h }
-        : ctr(n)
     // Iterate the EMITTED edges so the true rendered label position is
-    // used: anchor = polylineMidpoint([src-attach, …waypoints,
-    // tgt-attach]) + the emitted `as="offset"`. Matched to its relation
+    // used: anchor = polylineMidpoint([src-centre, …waypoints,
+    // tgt-centre]) + the emitted `as="offset"`. Matched to its relation
     // (by unordered endpoints) only for the label text/cap dims.
     const relUsed = new Set()
     for (const g of C.edges) {
@@ -377,7 +358,7 @@ function factcheck(stem, dir = CORPUS) {
       relUsed.add(ri)
       const r = relsP[ri]
       const d = measureEdgeLabel(r.label, r.description, cap(g.source, g.target))
-      const route = [endpt(A, g.exitX, g.exitY), ...g.wps, endpt(B, g.entryX, g.entryY)]
+      const route = [ctr(A), ...g.wps, ctr(B)]
       const mid = polylineMidpoint(route)
       const cx = mid.x + g.offset.x, cy = mid.y + g.offset.y
       const lr = { x: cx - d.width / 2, y: cy - d.height / 2, w: d.width, h: d.height }
@@ -392,33 +373,6 @@ function factcheck(stem, dir = CORPUS) {
               `over leaf ${n.alias} {x:${Math.round(n.x)},y:${Math.round(n.y)},w:${Math.round(n.w)},h:${Math.round(n.h)}} ` +
               `offset={${Math.round(g.offset.x)},${Math.round(g.offset.y)}}\n`)
         }
-      }
-    }
-    // --- arrowSkew: a routed / border-attached edge's segment incident
-    // to an endpoint MUST be axis-aligned (perpendicular to the attached
-    // border) so the arrowhead enters the box head-on — shaft into the
-    // triangle's BASE, not skew into its side (the topology-cyclic
-    // `requeues` defect). Contract for edges that are multi-bend OR pin
-    // exit/entry; a straight 2-point centre-attached hop is exempt (a
-    // direct diagonal connector is PlantUML-faithful, head along the
-    // line). EPS = 1px: segments are axis-aligned by construction, only
-    // integer-rounding slack is tolerated. ---
-    const SKEW_EPS = 1
-    let arrowSkew = 0
-    for (const g of C.edges) {
-      const A = C.byAlias.get(g.source), B = C.byAlias.get(g.target)
-      if (!A || !B) continue
-      const hasAttach = Number.isFinite(g.exitX) || Number.isFinite(g.entryX)
-      if (g.wps.length === 0 && !hasAttach) continue   // straight centre hop — exempt
-      const rt = [endpt(A, g.exitX, g.exitY), ...g.wps, endpt(B, g.entryX, g.entryY)]
-      const skew = (p, q) => Math.min(Math.abs(p.x - q.x), Math.abs(p.y - q.y)) > SKEW_EPS
-      const first = skew(rt[0], rt[1])
-      const last = skew(rt[rt.length - 2], rt[rt.length - 1])
-      if (first || last) {
-        arrowSkew++
-        if (process.env.FACTCHECK_DEBUG)
-          process.stderr.write(`  arrowSkew: (${g.source}->${g.target}) ` +
-            `first=${first} last=${last} rt=${JSON.stringify(rt.map(p => [Math.round(p.x), Math.round(p.y)]))}\n`)
       }
     }
     // --- nodeOverlap: PARTIAL overlaps only (containment = legit nesting) ---
@@ -556,11 +510,10 @@ function factcheck(stem, dir = CORPUS) {
     const titleMiss = srcHasTitle && !(C.catTitle && C.catTitle.trim()) ? 1 : 0
     const clean = entityMiss === 0 && relMiss === 0 && arrowBad === 0 &&
       labelDrop === 0 && attachMerge === 0 && labelHit === 0 &&
-      nodeOverlap === 0 && ratioBad === 0 && titleMiss === 0 &&
-      arrowSkew === 0
+      nodeOverlap === 0 && ratioBad === 0 && titleMiss === 0
     return { stem, clean, entityMiss, relMiss, arrowBad, labelDrop,
              attachMerge, rankOrder, wRatio, hRatio, ratioBad, ratioMissing,
-             labelHit, nodeOverlap, titleMiss, arrowSkew,
+             labelHit, nodeOverlap, titleMiss,
              boundaryBands: bands,
              pml: `${P.W}x${P.H}`, cat: `${Math.round(C.W)}x${Math.round(C.H)}` }
   })
@@ -611,7 +564,7 @@ if (isMain) {
     console.log(
       `${r.stem.padEnd(26)} arrowBad=${r.arrowBad} attachMerge=${r.attachMerge} ` +
       `labelHit=${r.labelHit} entityMiss=${r.entityMiss} relMiss=${r.relMiss} ` +
-      `labelDrop=${r.labelDrop} nodeOverlap=${r.nodeOverlap} titleMiss=${r.titleMiss} arrowSkew=${r.arrowSkew}${ratio}`)
+      `labelDrop=${r.labelDrop} nodeOverlap=${r.nodeOverlap} titleMiss=${r.titleMiss}${ratio}`)
   }
   if (UPDATE_BASELINE) {
     const sorted = Object.fromEntries(
