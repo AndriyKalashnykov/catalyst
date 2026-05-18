@@ -21,7 +21,10 @@ Standalone, independently-maintained library (no upstream; never add an
   `test:coverage` — the real 85 % `thresholds.global` gate (NOTE:
   `vitest.config.ts` `exclude:` omits `src/catalyst.mts` from the
   gate — a `/test-coverage-analysis` follow-up, not a CI concern).
-  `make ci-run` = the real `ci.yml` via mise-managed `act`.
+  `make ci-run` = the real `ci.yml` via mise-managed `act`. A second
+  workflow `cleanup-runs.yml` (weekly cron + dispatch, native `gh`
+  CLI, no third-party actions) prunes old runs + stale-branch caches
+  — the portfolio-standard cleanup, added 2026-05-18.
 - `make static-check` = `lint` (oxlint+markdownlint) + `vulncheck` +
   `secrets` + `trivy-fs` — the single composite quality gate / CI job
   (skill convention: no separate lint step). gitleaks/trivy/act/java

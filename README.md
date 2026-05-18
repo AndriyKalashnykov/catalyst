@@ -248,6 +248,11 @@ change until the PlantUML render is Docker-pinned (tracked in
 `CLAUDE.md` backlog). `arrowskew` has no such issue — draw.io renders
 inside a pinned image, byte-portable everywhere.
 
+A second workflow, `cleanup-runs.yml` (weekly cron +
+`workflow_dispatch`), prunes old workflow runs (7 days / keep ≥ 5) and
+caches from deleted branches using the native `gh` CLI — no
+third-party actions.
+
 No repository secrets or variables are required (`GITHUB_TOKEN` only).
 Releases are **git tags only** (`vX.Y.Z`) — no formal GitHub Releases;
 downstream consumers track tags via the `github-tags` datasource. The

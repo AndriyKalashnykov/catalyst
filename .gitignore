@@ -10,6 +10,11 @@ build
 docs/gallery/plantuml.jar
 docs/gallery/drawio/export/
 
+# Claude Code harness state (session-local; CLAUDE.md lives at the repo
+# root, NOT under .claude/, so it is unaffected). scheduled_tasks.lock
+# is a runtime lock and settings.local.json is per-machine — not source.
+.claude/
+
 # Editor-specific (do not track)
 .vscode/
 .idea/
