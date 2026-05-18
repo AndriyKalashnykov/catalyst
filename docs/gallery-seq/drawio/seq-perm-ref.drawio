@@ -1,0 +1,52 @@
+<mxfile version="20.1.4" type="atlas">
+  <diagram id="catalyst-diagram" name="Page-1">
+    <mxGraphModel pageHeight="374" pageWidth="288">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="seq-title-0" value="Permutation — ref frames" style="text;html=1;align=center;verticalAlign=middle;fontSize=16;fontStyle=1;fontColor=#333333" vertex="1" parent="1">
+          <mxGeometry x="0" y="0" width="288" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="ll-a" value="A" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;fillColor=#FFFFFF;strokeColor=#666666;fontColor=#333333;fontStyle=1;verticalAlign=top" vertex="1" parent="1">
+          <mxGeometry x="20" y="60" width="32" height="313" as="geometry"/>
+        </mxCell>
+        <mxCell id="ll-b" value="B" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;fillColor=#FFFFFF;strokeColor=#666666;fontColor=#333333;fontStyle=1;verticalAlign=top" vertex="1" parent="1">
+          <mxGeometry x="122" y="60" width="32" height="313" as="geometry"/>
+        </mxCell>
+        <mxCell id="ll-c" value="C" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;fillColor=#FFFFFF;strokeColor=#666666;fontColor=#333333;fontStyle=1;verticalAlign=top" vertex="1" parent="1">
+          <mxGeometry x="224" y="60" width="32" height="313" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-msg-1" value="start" style="html=1;rounded=0;endArrow=block;endFill=1;startArrow=none;endSize=14;startSize=14;strokeColor=#828282;fontColor=#404040;verticalAlign=bottom;endFill=1" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="36" y="130" as="sourcePoint"/>
+            <mxPoint x="138" y="130" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="seq-ref-2" value="see external ADR" style="rounded=0;html=1;fillColor=none;strokeColor=#666666;fontColor=#333333;whiteSpace=wrap;align=center;verticalAlign=middle" vertex="1" parent="1">
+          <mxGeometry x="110" y="157" width="158" height="34" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-ref-tab-3" value="ref" style="rounded=0;html=1;fillColor=#FFFFFF;strokeColor=#666666;fontColor=#333333;fontStyle=1;align=center;verticalAlign=middle" vertex="1" parent="1">
+          <mxGeometry x="110" y="157" width="35" height="34" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-msg-4" value="continue" style="html=1;rounded=0;endArrow=block;endFill=1;startArrow=none;endSize=14;startSize=14;strokeColor=#828282;fontColor=#404040;verticalAlign=bottom;endFill=1" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="138" y="222" as="sourcePoint"/>
+            <mxPoint x="240" y="222" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="seq-ref-5" value="multi-line&lt;br/&gt;reference block" style="rounded=0;html=1;fillColor=none;strokeColor=#666666;fontColor=#333333;whiteSpace=wrap;align=center;verticalAlign=middle" vertex="1" parent="1">
+          <mxGeometry x="8" y="249" width="158" height="47" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-ref-tab-6" value="ref" style="rounded=0;html=1;fillColor=#FFFFFF;strokeColor=#666666;fontColor=#333333;fontStyle=1;align=center;verticalAlign=middle" vertex="1" parent="1">
+          <mxGeometry x="8" y="249" width="35" height="34" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-msg-7" value="done" style="html=1;rounded=0;endArrow=open;endFill=0;dashed=1;startArrow=none;endSize=14;startSize=14;strokeColor=#828282;fontColor=#404040;verticalAlign=bottom;endFill=0" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="240" y="326" as="sourcePoint"/>
+            <mxPoint x="36" y="326" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

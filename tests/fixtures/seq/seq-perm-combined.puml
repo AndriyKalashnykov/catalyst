@@ -1,0 +1,33 @@
+@startuml seq-perm-combined
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Sequence.puml
+title Permutation — combined stress (all constructs)
+Person(op, "Operator")
+box "control plane"
+participant "Controller" as ctl
+participant "Issuer" as iss
+end box
+participant "Vault" as v
+autonumber
+op -> ctl : reconcile
+activate ctl
+== Issuance ==
+ref over ctl, iss : standard handshake
+alt issuer ready
+ctl -> iss : resolve
+create participant "Signing Job" as job
+iss -> job : sign CSR
+activate job
+job -> v : request material
+v --> job : key
+job --> iss : signed cert
+deactivate job
+destroy job
+else issuer missing
+ctl -> op : error
+end
+note over ctl : update status
+iss --> ctl : cert + chain
+deactivate ctl
+ctl -> op : status = Ready
+====
+@enduml

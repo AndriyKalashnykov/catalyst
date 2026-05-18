@@ -1,0 +1,12 @@
+@startuml seq-perm-dividers
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Sequence.puml
+title Permutation — divider variants
+participant "A" as a
+participant "B" as b
+== Phase 1 ==
+a -> b : one
+==  spaced label  ==
+b --> a : two
+====
+a -> b : after empty divider
+@enduml

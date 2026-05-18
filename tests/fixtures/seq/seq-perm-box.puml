@@ -1,0 +1,19 @@
+@startuml seq-perm-box
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Sequence.puml
+title Permutation — box + Boundary groupings
+participant "Client" as cl
+box "service mesh"
+participant "Gateway" as gw
+participant "Auth" as au
+end box
+System_Boundary(data, "data tier")
+participant "Cache" as ca
+participant "DB" as db
+Boundary_End()
+cl -> gw : request
+gw -> au : authenticate
+au --> gw : token
+gw -> ca : lookup
+ca -> db : miss -> load
+db --> cl : result
+@enduml

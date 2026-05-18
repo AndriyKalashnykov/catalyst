@@ -1,0 +1,17 @@
+@startuml seq-perm-fragments-nested
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Sequence.puml
+title Permutation — deeply nested fragments
+participant "A" as a
+participant "B" as b
+participant "C" as c
+alt outer
+loop inner loop
+opt deepest
+a -> b : deep call
+b -> c : deeper
+end
+end
+else outer-else
+a -> c : alternative
+end
+@enduml

@@ -1,0 +1,73 @@
+<mxfile version="20.1.4" type="atlas">
+  <diagram id="catalyst-diagram" name="Page-1">
+    <mxGraphModel pageHeight="472" pageWidth="362">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="seq-title-0" value="Permutation — deeply nested fragments" style="text;html=1;align=center;verticalAlign=middle;fontSize=16;fontStyle=1;fontColor=#333333" vertex="1" parent="1">
+          <mxGeometry x="0" y="0" width="362" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="ll-a" value="A" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;fillColor=#FFFFFF;strokeColor=#666666;fontColor=#333333;fontStyle=1;verticalAlign=top" vertex="1" parent="1">
+          <mxGeometry x="48" y="60" width="32" height="411" as="geometry"/>
+        </mxCell>
+        <mxCell id="ll-b" value="B" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;fillColor=#FFFFFF;strokeColor=#666666;fontColor=#333333;fontStyle=1;verticalAlign=top" vertex="1" parent="1">
+          <mxGeometry x="159" y="60" width="32" height="411" as="geometry"/>
+        </mxCell>
+        <mxCell id="ll-c" value="C" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;fillColor=#FFFFFF;strokeColor=#666666;fontColor=#333333;fontStyle=1;verticalAlign=top" vertex="1" parent="1">
+          <mxGeometry x="270" y="60" width="32" height="411" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-frag-1" style="rounded=0;html=1;fillColor=none;strokeColor=#666666;verticalAlign=top;align=left" vertex="1" parent="1">
+          <mxGeometry x="36" y="113" width="278" height="325" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-frag-else-2" value="outer-else" style="html=1;endArrow=none;startArrow=none;dashed=1;strokeColor=#666666;fontColor=#333333;verticalAlign=bottom;align=left" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="36" y="350" as="sourcePoint"/>
+            <mxPoint x="314" y="350" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="seq-frag-tab-3" value="alt" style="rounded=0;html=1;fillColor=#FFFFFF;strokeColor=#666666;fontColor=#333333;fontStyle=1;align=center;verticalAlign=middle" vertex="1" parent="1">
+          <mxGeometry x="36" y="113" width="33" height="34" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-frag-guard-4" value="outer" style="text;html=1;align=left;verticalAlign=middle;fontColor=#333333;whiteSpace=wrap" vertex="1" parent="1">
+          <mxGeometry x="69" y="113" width="245" height="34" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-frag-5" style="rounded=0;html=1;fillColor=none;strokeColor=#666666;verticalAlign=top;align=left" vertex="1" parent="1">
+          <mxGeometry x="50" y="147" width="250" height="190" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-frag-tab-6" value="loop" style="rounded=0;html=1;fillColor=#FFFFFF;strokeColor=#666666;fontColor=#333333;fontStyle=1;align=center;verticalAlign=middle" vertex="1" parent="1">
+          <mxGeometry x="50" y="147" width="44" height="34" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-frag-guard-7" value="inner loop" style="text;html=1;align=left;verticalAlign=middle;fontColor=#333333;whiteSpace=wrap" vertex="1" parent="1">
+          <mxGeometry x="94" y="147" width="206" height="34" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-frag-8" style="rounded=0;html=1;fillColor=none;strokeColor=#666666;verticalAlign=top;align=left" vertex="1" parent="1">
+          <mxGeometry x="64" y="181" width="222" height="132" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-frag-tab-9" value="opt" style="rounded=0;html=1;fillColor=#FFFFFF;strokeColor=#666666;fontColor=#333333;fontStyle=1;align=center;verticalAlign=middle" vertex="1" parent="1">
+          <mxGeometry x="64" y="181" width="38" height="34" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-frag-guard-10" value="deepest" style="text;html=1;align=left;verticalAlign=middle;fontColor=#333333;whiteSpace=wrap" vertex="1" parent="1">
+          <mxGeometry x="102" y="181" width="184" height="34" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-msg-11" value="deep call" style="html=1;rounded=0;endArrow=block;endFill=1;startArrow=none;endSize=14;startSize=14;strokeColor=#828282;fontColor=#404040;verticalAlign=bottom;endFill=1" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="64" y="232" as="sourcePoint"/>
+            <mxPoint x="175" y="232" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="seq-msg-12" value="deeper" style="html=1;rounded=0;endArrow=block;endFill=1;startArrow=none;endSize=14;startSize=14;strokeColor=#828282;fontColor=#404040;verticalAlign=bottom;endFill=1" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="175" y="276" as="sourcePoint"/>
+            <mxPoint x="286" y="276" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="seq-msg-13" value="alternative" style="html=1;rounded=0;endArrow=block;endFill=1;startArrow=none;endSize=14;startSize=14;strokeColor=#828282;fontColor=#404040;verticalAlign=bottom;endFill=1" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="64" y="401" as="sourcePoint"/>
+            <mxPoint x="286" y="401" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

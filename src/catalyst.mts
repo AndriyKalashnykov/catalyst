@@ -427,10 +427,23 @@ export class Catalyst {
     // non-sequence zero-element input still fail-louds below.
     const seq = /^\s*!include\b.*\bC4_Sequence(?:\.puml)?\b/m.test(pumlContent)
       || /^\s*participant\s+/m.test(pumlContent)
+    // Dispatch to the sequence pipeline FIRST — the `C4_Sequence`
+    // include (and a raw `participant` line) is authoritative: a
+    // sequence diagram is NOT static C4 even though C4_Sequence
+    // legitimately reuses the `Rel()`/`Person()`/`*_Boundary()`
+    // macros (ADR 0007 §Fact-check). Gating this on
+    // `elements===0 && relations===0` mis-routed every C4-macro-form
+    // sequence diagram into the static-C4/ELK path → ELK
+    // `Referenced shape does not exist` crash / 0 lifelines (caught
+    // by the seq-perm-* permutation matrix; the raw-arrow form
+    // happened to parse 0 relations so the old gate accidentally
+    // worked for it). Static C4 never includes C4_Sequence nor uses
+    // a `participant` line, so the static corpus is unaffected
+    // (gallery-verify/factcheck/arrowskew byte-identical — verified).
+    if (seq) {
+      return SeqConverter.convert(pumlContent)
+    }
     if (elements.length === 0 && relations.length === 0) {
-      if (seq) {
-        return SeqConverter.convert(pumlContent)
-      }
       throw new Error(
         'no convertible C4 elements found — catalyst parsed zero entities '
         + 'and zero relations from the input. Expected static C4-PlantUML '

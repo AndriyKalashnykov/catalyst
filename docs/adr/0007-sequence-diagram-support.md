@@ -144,6 +144,22 @@ fail-loud detector as the dispatch seam — when the detector matches,
 call the new converter instead of throwing. Keep it a separate module
 family; do NOT overload `Mx.addMxC4*` or the ELK path.
 
+> **Dispatch-gate fix (2026-05-18, the seq-perm-* matrix caught it).**
+> The seam originally dispatched to `SeqConverter` only inside
+> `if (elements.length === 0 && relations.length === 0)`. But
+> C4_Sequence legitimately reuses `Rel()`/`Person()`/`*_Boundary()`
+> (this §Fact-check), which `RelParser`/`EntityParser` parse as
+> relations/elements — so a C4-macro-form sequence diagram fell
+> through to the static-C4/ELK path → ELK `Referenced shape does not
+> exist` crash / 0 lifelines. The raw-arrow form parsed 0 relations
+> so the old gate accidentally worked, hiding the defect until the
+> permutation matrix exercised the macro form. Fix: a `C4_Sequence`
+> include (or a raw `participant` line) is **authoritative** —
+> dispatch to `SeqConverter` FIRST, ungated by element/relation
+> counts. Static C4 never includes `C4_Sequence` nor uses
+> `participant`, so the static corpus is byte-identical
+> (gallery-verify + arrowskew 22/22 + 538 vitest — verified).
+
 ### Architecture
 
 ```text
