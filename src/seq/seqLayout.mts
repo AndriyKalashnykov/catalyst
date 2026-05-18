@@ -31,6 +31,11 @@ const ARROW = SHAPE.REL_ARROW_SIZE          // cited draw.io arrow size
 // their borders stay visibly distinct from the enclosing frame.
 const FRAG_PAD = 2 * ARROW
 const FRAG_INSET = ARROW
+// The keyword PlantUML literally renders in a `ref` frame's corner tab
+// — the exact analogue of a fragment's `kind` string used as its tab
+// label (a rendered construct keyword, not a tunable). Named so the
+// literal is single-sourced between layout (tab metrics) and emit.
+export const REF_KIND = 'ref'
 
 export interface LaidLifeline {
   alias: string
@@ -83,7 +88,23 @@ export interface LaidDivider {
   label: string
   order: number
 }
-export type LaidEvent = LaidMessage | LaidNote | LaidDivider
+/** A `ref over A[,B…]` reference frame (phase d2b). A single
+ *  self-contained box at its source-order Y spanning the named
+ *  lifelines, with a top-left `ref` tab and centred body text — NOT a
+ *  Y-range frame (so it carries its own w/h, like a wide note). */
+export interface LaidRef {
+  type: 'ref'
+  x: number
+  y: number
+  w: number
+  h: number
+  /** measured top-left `ref` tab box (so emit needs no metrics). */
+  tabW: number
+  tabH: number
+  text: string
+  order: number
+}
+export type LaidEvent = LaidMessage | LaidNote | LaidDivider | LaidRef
 
 /** A combined/grouped fragment box (phase d2). Spans the involved
  *  lifelines over its source-order Y-range; `headerH` is the reserved
@@ -307,6 +328,31 @@ export function layoutSeq(model: SeqModel): SeqLayout {
       y += h + rowGap
       continue
     }
+    if (ev.type === 'ref') {
+      // Self-contained box spanning the named lifelines at this Y, with
+      // a top-left `ref` tab + centred body text. Every dimension a
+      // measured metric or cited constant (FRAG_PAD/INSET/font) — no
+      // magic. Degenerate (no resolvable lifeline) → span all.
+      const ls = ev.lifelines.map((a) => idxOf.get(a)).filter(
+        (v): v is number => v !== undefined)
+      ls.forEach(touch)
+      const lo = ls.length ? Math.min(...ls) : 0
+      const hi = ls.length ? Math.max(...ls) : model.lifelines.length - 1
+      const tabW = Math.ceil(blockW(REF_KIND, BODY_PX, true) + 2 * INSET)
+      const tabH = Math.ceil(renderedLineHeight(BODY_PX) + 2 * INSET)
+      const textW = blockW(ev.text, BODY_PX, false)
+      const textH = blockH(ev.text, BODY_PX)
+      const x1 = Math.round(cxs[lo] - FRAG_PAD)
+      const span = Math.round(cxs[hi] + FRAG_PAD) - x1
+      const w = Math.max(span, Math.ceil(tabW + textW + 2 * INSET))
+      const h = Math.max(tabH, Math.ceil(textH + 2 * INSET))
+      laidEvents.push({
+        type: 'ref', x: x1, y, w, h, tabW, tabH,
+        text: ev.text, order: ev.order,
+      })
+      y += h + rowGap
+      continue
+    }
     // message — explicit positive narrow (SeqActivation's discriminant
     // is the 2-value union 'activate'|'deactivate', which TS does not
     // fully eliminate via successive negative checks; assert it here).
@@ -357,10 +403,10 @@ export function layoutSeq(model: SeqModel): SeqLayout {
     bottomY,
   }))
 
-  // canvas extent (include a note OR a fragment box that overhangs the
-  // last lifeline — a fragment's FRAG_PAD pushes past the rightmost cx)
+  // canvas extent (include a note/ref OR a fragment box that overhangs
+  // the last lifeline — FRAG_PAD pushes past the rightmost cx)
   const noteRight = laidEvents.reduce(
-    (m, e) => e.type === 'note' ? Math.max(m, e.x + e.w) : m, 0)
+    (m, e) => (e.type === 'note' || e.type === 'ref') ? Math.max(m, e.x + e.w) : m, 0)
   const fragRight = fragments.reduce((m, f) => Math.max(m, f.x + f.w), 0)
   const llRight = lifelines.reduce((m, l) => Math.max(m, l.headX + l.headW), 0)
   const titleH = model.title

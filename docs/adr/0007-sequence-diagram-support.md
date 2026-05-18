@@ -1,7 +1,10 @@
 # ADR 0007 — Sequence-diagram support (design)
 
-- Status: accepted — v1 + d1 + d2 fragments implemented (phases a–d2 landed)
-- Date: 2026-05-16 (design); phase-a 2026-05-17; phase-b+c+d1+d2 2026-05-18
+- Status: accepted — v1 + d1 + d2 fragments + d2b `ref` implemented
+  (phases a–d2b landed; `box`/`Boundary`, `create`/`destroy` remain
+  the only fail-loud deferred constructs)
+- Date: 2026-05-16 (design); phase-a 2026-05-17; phase-b+c+d1+d2 2026-05-18;
+  phase-d2b `ref` 2026-05-18
 - Phases: **(a) `SeqParser` + ordering invariants — ✅ DONE
   2026-05-17** (`src/seq/SeqParser.mts` + `SeqModel.interface.mts`,
   29-test ordering+fail-loud matrix). **(b) linear `seqLayout` +
@@ -37,8 +40,21 @@
   pre-existing host-calibration noise (origin/main yields identical
   w/hRatio on this host — the documented host-font MANUAL-gate
   caveat; baseline correctly NOT regenerated).
+  **(d2b) `ref` reference frames — ✅ DONE 2026-05-18**
+  (`ref over A[,B…] : text` inline + `ref over A` … `end ref` block):
+  a `SeqRef` event, parsed before the deferred guard (`refBuf`
+  accumulator mirrors `noteBuf`; unterminated/empty-over fail-loud),
+  a `LaidRef` box in `seqLayout` spanning the named lifelines at its
+  source-order Y (NOT a paired Y-range — a self-contained framed box,
+  every dim a measured/cited metric), `umlFrame`-style emit (no-fill
+  border + filled `ref` kind tab — same shape as the d2 fragment tab;
+  `REF_KIND` single-sourced layout↔emit). 10 new parser+whole-path
+  tests (54 seq, 495 vitest); `tests/fixtures/seq/seq-d2b-ref.puml`
+  render-compare clean vs PlantUML. Zero C4 risk VERIFIED:
+  gallery-verify CLEAN (C4 `.drawio` byte-identical ⇒ arrowskew
+  input unchanged), separate seq pipeline.
   Still deferred (fail-loud, token+line, no silent drop):
-  **`box`/`Boundary` lifeline grouping, `ref`, `create`/`destroy`**.
+  **`box`/`Boundary` lifeline grouping, `create`/`destroy`**.
 
 ## Context
 
@@ -128,14 +144,16 @@ sync/async/return messages (`->`,`-->`,`->>`,`<-` incl. `Rel_Back`/
 `BiRel`), `title`, `autonumber`, `activate`/`deactivate`,
 `note left|right|over`.
 
-**Landed after v1:** `==dividers==` (phase d1) and the nested
+**Landed after v1:** `==dividers==` (phase d1), the nested
 `alt/else/opt/loop/par/critical/group/break` fragments (phase d2 —
 the "materially harder nested Y-ranges" are handled by a deterministic
 stack: a frame's lifeline span accumulates over ALL events seen while
-open, incl. nested children, so depth-inset boxes strictly nest).
+open, incl. nested children, so depth-inset boxes strictly nest), and
+`ref over` reference frames (phase d2b — a self-contained framed box
+spanning the named lifelines at its source-order Y, inline + block).
 
 **Still deferred (explicit out-of-scope):** `box`/`Boundary` lifeline
-grouping, `ref`, `create`/`destroy`. The pipeline must **fail-loud
+grouping, `create`/`destroy`. The pipeline must **fail-loud
 with a precise message** on a deferred construct (never silently drop
 — the contract-lock rule), naming the unsupported token, so downstream
 sees a clear error not a wrong diagram.

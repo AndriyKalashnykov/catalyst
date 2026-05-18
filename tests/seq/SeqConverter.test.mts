@@ -188,4 +188,49 @@ a -> b : after`)
     expect(ys.length).toBe(4)                              // ok, tick, retry, after
     expect(ys.every((v, i) => i === 0 || v >= ys[i - 1])).toBe(true)
   })
+
+  // phase d2b: `ref over` reference frames. Whole-path contract — a
+  // ref box spanning the named lifelines + a "ref" tab, at its
+  // source-order Y (inline and block forms, undeclared auto-register).
+  it('ref over A,B emits a frame box + ref tab spanning the lifelines', async () => {
+    const xml = await Catalyst.convert(seqDoc(`participant "A" as a
+participant "B" as b
+participant "C" as c
+a -> b : go
+ref over b, c : see ADR
+b -> c : next`))
+    const box = /<mxCell id="seq-ref-\d+"([^>]*)>([\s\S]*?)<\/mxCell>/.exec(xml)!
+    expect(box[1]).toContain('value="see ADR"')
+    expect(box[1]).toContain('vertex="1"')
+    expect(box[1]).toContain('fillColor=none')             // frame, not occluding
+    const tab = /<mxCell id="seq-ref-tab-\d+"([^>]*)>([\s\S]*?)<\/mxCell>/.exec(xml)!
+    expect(tab[1]).toContain('value="ref"')
+    // box spans b..c: its x is left of b's lifeline cx and right edge
+    // is past c's cx (the named-lifeline span + FRAG_PAD)
+    const bx = +/<mxGeometry x="(-?\d+)" y="\d+" width="(\d+)"/.exec(box[2])![1]
+    const bw = +/<mxGeometry x="-?\d+" y="\d+" width="(\d+)"/.exec(box[2])![1]
+    const cxB = +/id="ll-b"[\s\S]*?<mxGeometry x="(\d+)" y="\d+" width="(\d+)"/.exec(xml)![1]
+    const wB = +/id="ll-b"[\s\S]*?<mxGeometry x="\d+" y="\d+" width="(\d+)"/.exec(xml)![1]
+    expect(bx).toBeLessThan(cxB + wB / 2)                   // starts at/left of B
+    expect(bx + bw).toBeGreaterThan(cxB + wB)               // extends past B toward C
+    await expect(xml2js.parseStringPromise(xml)).resolves.toBeDefined()
+  })
+
+  it('block ref (multi-line, end ref) keeps source-order Y vs messages', async () => {
+    const xml = await Catalyst.convert(seqDoc(`participant "A" as a
+participant "B" as b
+a -> b : first
+ref over a, b
+  reconcile
+  until Ready
+end ref
+a -> b : last`))
+    const refY = +/id="seq-ref-\d+"[\s\S]*?<mxGeometry x="-?\d+" y="(\d+)"/.exec(xml)![1]
+    const msgYs = [...xml.matchAll(/id="seq-msg-\d+"[\s\S]*?y="(\d+)"[^>]*as="sourcePoint"/g)]
+      .map((m) => +m[1])
+    expect(msgYs.length).toBe(2)
+    expect(msgYs[0]).toBeLessThan(refY)                     // first → ref → last
+    expect(refY).toBeLessThan(msgYs[1])
+    await expect(xml2js.parseStringPromise(xml)).resolves.toBeDefined()
+  })
 })
