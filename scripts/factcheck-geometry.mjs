@@ -21,7 +21,10 @@
  *
  * LAYOUT fidelity (emitted draw.io ⟷ PlantUML `-tsvg` ground truth):
  *   - rankOrder  : same TOP-DOWN node y ordering as PlantUML
- *   - wRatio/hRatio : catalyst bbox vs PlantUML bbox
+ *   - wRatio/hRatio : catalyst node-extent vs PlantUML node-extent
+ *                     (BOTH = maxX−minX over entity/cluster rects —
+ *                      like-for-like; NOT PlantUML's title-inflated
+ *                      SVG viewBox. See parsePlantumlSvg's fix note.)
  *   - labelHit   : edge-label rect over a NON-endpoint LEAF (0 == pass)
  *   - nodeOverlap: PARTIAL node overlaps (containment = legit nesting)
  *   - boundaryBands: each container's title band before its first child
@@ -34,9 +37,12 @@
  * RATCHET (`tests/factcheck-ratio-baseline.json`, regen with
  * `UPDATE_FACTCHECK_BASELINE=1`; predicate in `factcheck-ratio.mjs`,
  * unit-tested): `|1−ratio|` may only DECREASE or hold vs baseline —
- * a fidelity regression on EITHER bbox axis now fails the gate (it
- * shipped silently while these were advisory — 14 fixtures at wRatio
- * 0.19–0.67; memory `derived-artifact-enforcement-gate`). `rankOrder`
+ * a fidelity regression on EITHER node-extent axis now fails the gate.
+ * (The pre-fix viewBox-based metric read "14 fixtures at wRatio
+ * 0.19–0.67"; the 2026-05-17 like-for-like fix in `parsePlantumlSvg`
+ * showed that was a title-inflated comparator artefact — node-vs-node
+ * is 0.73–1.05 corpus-wide; memory `derived-artifact-enforcement-gate`
+ * + `factcheck-harness-gate`.) `rankOrder`
  * and `boundaryBands` remain ADVISORY (ELK `layered` and PlantUML
  * `dot` legitimately differ in same-rank order / minor placement;
  * judged via the ratio ratchet, not strict order equality).
@@ -157,8 +163,6 @@ function norm(s) {
 
 /** Parse PlantUML SVG → { nodes:[{alias,x,y,w,h}], w, h }. */
 function parsePlantumlSvg(svg) {
-  const vb = /viewBox="0 0 ([\d.]+) ([\d.]+)"/.exec(svg)
-  const W = vb ? +vb[1] : NaN, H = vb ? +vb[2] : NaN
   const nodes = []
   // Each entity: `<!--entity ALIAS-->` then its <g id="elem_ALIAS"> with the
   // first <rect ...>. Person/Db shapes differ but all emit a bounding rect.
@@ -166,6 +170,36 @@ function parsePlantumlSvg(svg) {
   let m
   while ((m = re.exec(svg)) !== null) {
     nodes.push({ alias: m[1].trim(), x: +m[4], y: +m[5], w: +m[3], h: +m[2] })
+  }
+  // wRatio/hRatio false-positive FIX (fact-check, 2026-05-17 — the
+  // ADR-0011 C2 session). P.W/P.H must be the PlantUML **node-box
+  // extent** (maxX−minX over the entity/cluster rects) — IDENTICAL to
+  // how `factcheck()` derives catalyst's C.W/C.H — NOT the SVG
+  // `viewBox`. The viewBox spans the whole canvas: the `title` banner,
+  // outer page margins, and the fanned edge-label spread. Comparing
+  // catalyst's node-only extent against PlantUML's title-inflated
+  // viewBox is not a like-for-like measure — it made
+  // `rel-parallel-duplicate` read wRatio 0.19 although its PlantUML
+  // node column (a,b @ x=195, w=92) is 92px and catalyst's is 93px
+  // (true ratio 1.01); the 0.19 was the 464px title string, not a
+  // layout-aspect defect. This asymmetry is what made ADR 0011 read
+  // "14/20 fixtures at wRatio 0.19–0.67" (memory
+  // `factcheck-harness-gate`: distrust the gate before the product;
+  // measure the property in its FULL, like-for-like dimensionality).
+  // Node-vs-node is the correct measure of "does catalyst spread its
+  // nodes the way Graphviz `dot` does" — the actual ADR 0011 concern.
+  // Fallback to the viewBox only when a fixture has no parsed rects
+  // (keeps a sane number rather than NaN/−Infinity).
+  let W, H
+  if (nodes.length) {
+    const minX = Math.min(...nodes.map(n => n.x))
+    const minY = Math.min(...nodes.map(n => n.y))
+    W = Math.max(...nodes.map(n => n.x + n.w)) - minX
+    H = Math.max(...nodes.map(n => n.y + n.h)) - minY
+  } else {
+    const vb = /viewBox="0 0 ([\d.]+) ([\d.]+)"/.exec(svg)
+    W = vb ? +vb[1] : NaN
+    H = vb ? +vb[2] : NaN
   }
   return { nodes, W, H }
 }
@@ -481,8 +515,17 @@ const enumerate = () => FIXTURE_DIRS.flatMap((dir) =>
     .filter((f) => f.endsWith(PUML_EXT))
     .map((f) => ({ stem: f.slice(0, -PUML_EXT.length), dir })))
 
+// Pure parsers are exported for unit tests (factcheck-geometry.test.mts);
+// the CLI side-effects below run ONLY when this file is the entrypoint,
+// so importing it for a test never reads the SVG dir or writes baselines.
+export { parsePlantumlSvg }
+
+const { pathToFileURL } = await import('node:url')
+const isMain = import.meta.url === pathToFileURL(process.argv[1] ?? '').href
+
 const args = process.argv.slice(2)
-if (args.length > 0 && !UPDATE_BASELINE) {
+if (isMain) {
+ if (args.length > 0 && !UPDATE_BASELINE) {
   const all = enumerate()
   for (const s of args) {
     const e = all.find((x) => x.stem === s)
@@ -513,4 +556,5 @@ if (args.length > 0 && !UPDATE_BASELINE) {
   } else {
     console.log(`CLEAN ${cleanCount}/${all.length}`)
   }
+ }
 }

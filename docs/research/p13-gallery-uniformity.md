@@ -88,6 +88,17 @@ not silently contradict.
   was untouched).
 - Visual: regenerated README columns are uniform 420 px width.
 
+> **SUPERSEDING CORRECTION (2026-05-17, ADR 0011 close):** the
+> "`wRatio` 0.19–0.67 on 14/20 = a diagram-aspect defect" claim below
+> was itself substantially a **comparator artefact** — `factcheck`
+> compared catalyst node-extent vs PlantUML *title-inflated SVG
+> viewBox*. The like-for-like fix (node-vs-node) shows the honest
+> corpus is 0.73–1.05: catalyst's layout was already faithful. ADR
+> 0011's C2/C1 were declined on that evidence. The text below is kept
+> verbatim as the historical reasoning that led to the fact-check.
+> See `docs/adr/0011-layout-aspect-fidelity.md` §"Status — premise
+> CORRECTED" + memory `factcheck-harness-gate` (FP class #7).
+
 ## REVERTED 2026-05-17 (same day) — width=420 → height=360
 
 P13 shipped (#90), the post-P4b gallery was regenerated (#92) so the

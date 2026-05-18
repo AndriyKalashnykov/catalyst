@@ -1,7 +1,9 @@
 # ADR 0011 — Layout-aspect fidelity (ELK `layered` vs Graphviz `dot`)
 
-- Status: **accepted (decision base)** — implementation is separate,
-  per-candidate, each its own factcheck + byte + render-compare gated PR
+- Status: **closed** — step 0 + C3 + cause D shipped; the wRatio
+  premise was found to be a comparator artefact (fixed like-for-like),
+  C2/C1 declined on evidence. See "Status — premise CORRECTED" below.
+  (Was: accepted decision base — per-candidate factcheck+byte+render PRs.)
 - Date: 2026-05-17
 - Decision record for backlog **item-0** (the "narrow diagram /
   humongous fonts" complaint). Research base: 4 parallel
@@ -174,7 +176,71 @@ on a dense + sparse + parallel-fan fixture.
   follow-up (the gate-asymmetry that let this ship is the defect class
   in memory `derived-artifact-enforcement-gate`).
 
-## Status — step 0 + C3 + cause D shipped (2026-05-17)
+## Status — premise CORRECTED; C2/C1 DECLINED (2026-05-17, fact-check)
+
+> **The central premise of this ADR was substantially a comparator
+> artefact, found by fact-checking the gate during C2 implementation.**
+> Per the `factcheck-harness-gate` discipline ("distrust the gate
+> before the product; fact-check every flag against an independent
+> signal; measure the property in its FULL, like-for-like
+> dimensionality") and the rule that a written-down ADR remediation is
+> an *untested hypothesis* to re-derive and empirically verify — the
+> verification disproved the hypothesis and the root-cause claim was
+> corrected at the root, not laundered.
+
+**What was wrong:** `scripts/factcheck-geometry.mjs` computed
+`wRatio = C.W / P.W` with **C.W = catalyst node-box extent**
+(`maxX−minX` over entity rects) but **P.W = PlantUML full SVG
+`viewBox`** (title banner + page margins + fanned-label spread). Not
+like-for-like. `rel-parallel-duplicate`'s PlantUML node column is 92px
+(a,b @ x=195, w=92) — catalyst's is 93px — yet the 464px **title
+string** inflated the viewBox to 492, giving a false `wRatio 0.19`.
+The "14/20 fixtures at wRatio 0.19–0.67" that motivated this ADR was
+that asymmetry, not a layout-aspect defect.
+
+**The fix (this PR):** `parsePlantumlSvg` now derives P.W/P.H as the
+PlantUML **node-box extent** — the identical quantity `factcheck()`
+derives for catalyst (node-vs-node, the correct measure of "does
+catalyst spread its nodes the way `dot` does" — the actual ADR
+concern). The ratio ratchet baseline was regenerated against the
+honest metric (legitimate — the prior baseline was built on the
+proven-artefact viewBox metric; same "re-baseline justified, not
+laundered" pattern as C3+D below). `make factcheck` **CLEAN 26/26**;
+catalyst emit **byte-identical** to `origin/main` (0/26 fixtures
+changed — `src/` untouched); new unit test
+`tests/factcheck-geometry.test.mts` contract-locks the like-for-like
+parse so this false-positive class cannot silently return.
+
+**Honest corpus distribution (node-vs-node):** 0.73–1.05 — catalyst's
+node layout is already faithful to `dot`. Only **one** genuine
+residual: `rel-tech-vs-notech` `wRatio 0.732` (catalyst nodes 227 vs
+PlantUML 310 — `dot` spreads the antiparallel `{a,c}` pair wider via
+its label virtual nodes).
+
+**C2 empirically DECLINED.** The C2 synthetic fan-width dummy node was
+implemented and measured under the corrected metric: it does **not**
+move `rel-tech-vs-notech` (0.732 → 0.732 — it pads canvas, not
+node-extent, which the like-for-like metric correctly ignores) **and
+it regresses** `c4-all-rel-variants` (0.916 → 1.121 overshoot,
+`|1−w|` 0.084 → 0.121). It is the wrong lever for the only real
+residual. Reverted. **C1 declined by extension** — the width premise
+it addressed is the corrected artefact. The ADR explicitly sanctions
+declining C2/C1 as a valid outcome; that outcome is now taken on
+evidence.
+
+**Accepted residual:** `rel-tech-vs-notech` `wRatio ≈ 0.73` — one
+fixture, a modest ~27% node-spread gap from `dot`'s antiparallel
+label-vnode spreading; not worth re-tangling edges (the same
+cost/benefit the ADR gives for the C1 decline). Held by the ratchet
+at its current value; any future narrowing fails the gate.
+
+**Net deliverable of the C2 work:** the comparator correctness fix
+(a `factcheck-harness-gate` false-positive class closed + locked),
+re-baseline, and this evidence-based decline — NOT a layout change.
+ADR 0011 is **effectively closed** (C3+D + step 0 shipped; C2/C1
+declined on evidence).
+
+### Status — step 0 + C3 + cause D shipped (2026-05-17)
 
 - **Step 0** (ratio ratchet, PR #96) — merged.
 - **C3** (`WRAP_WIDTH = 200`, cited C4-PlantUML `$DEFAULT_WRAP_WIDTH`)
