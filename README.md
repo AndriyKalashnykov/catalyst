@@ -73,7 +73,7 @@ registry). Pin a tag:
 
 ```bash
 # add to a project (npm resolves it under the package name "catalyst")
-npm install github:AndriyKalashnykov/catalyst#v1.6.1
+npm install github:AndriyKalashnykov/catalyst#v1.7.0
 
 # development of catalyst itself
 make deps      # mise install (node, act, gitleaks, trivy) + npm ci

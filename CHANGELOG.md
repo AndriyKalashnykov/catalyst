@@ -6,9 +6,48 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 This project adheres to [Keep a CHANGELOG](http://keepachangelog.com/).
 
-## [Unreleased]
+## [1.7.0] - 2026-05-18
 
 ### Added
+
+- **Sequence-diagram support (C4-PlantUML `C4_Sequence.puml`, ADR
+  0007).** A parallel, deterministic non-ELK pipeline (`src/seq/`,
+  `src/mx/seq/`) dispatched via the `catalyst.mts` detector seam — the
+  static C4 ELK/box path is untouched and byte-identical by
+  construction. v1: `participant`/`actor` + every C4 lifeline macro
+  (declaration order → lifeline X), ordered messages
+  (`->`/`-->`/`->>` + `Rel`/`Rel_Back`/`BiRel`, source order → monotone
+  Y, sync/async/return/bi arrowheads), `activate`/`deactivate`
+  activation bars, `note left|right|over`, `title`, self-messages.
+  Phase **d1**: `== divider ==` full-width bands. Phase **d2**:
+  combined/grouped fragments `alt/else/opt/loop/par/critical/group/
+  break` with arbitrary nesting (`umlFrame`-style box behind messages,
+  kind tab + one-line `[guard]`, `else` compartment separators; nested
+  boxes strictly contain children by construction). Still fail-loud
+  (precise token+line, never a silent drop) on the remaining deferred
+  constructs: `box`/`Boundary` lifeline grouping, `ref`,
+  `create`/`destroy`.
+- **PlantUML `title` is now rendered on every diagram (ADR 0012).**
+  Previously dropped on 100 % of diagrams (nothing counted it). The
+  title is emitted as a top band on the static C4 path and the
+  sequence path, enforced by a completeness-invariant gate (every
+  source construct must trace to ≥1 target element).
+- **Element-tag stereotypes are now rendered.** An element whose
+  `$tags` match an `AddElementTag` declaration shows those tags as
+  `«tag»` stereotype segments before the `«type»` line, exactly as
+  C4-PlantUML does (e.g. `$tags="critical"` →
+  `«critical»«System»`; multiple tags chain in authored order). A new
+  `c4Stereotype` placeholder is spliced before `«c4Type»`; the
+  structural `c4Type` attribute (read by the golden/parity
+  fingerprint) is left untouched, and elements without a matching tag
+  emit no `c4Stereotype` — so all untagged output is byte-identical
+  (only `edge-tags-styling` changes in the corpus). Tag colour styling
+  was already applied; this adds the missing stereotype text.
+- **Faithful `$lineStyle`/`$borderStyle`/`$shadowing`/`$thickness`
+  relationship & element style mapping**, and external `_Ext` Db/Queue
+  elements now keep their cylinder/queue shape (C4-COVERAGE Tier-2).
+- **PlantUML boundary subtitle** (the lowercase tag, e.g.
+  `[Software System]`) is rendered instead of the raw macro name.
 
 - **`cleanup-runs.yml` workflow** — portfolio-standard weekly
   (`cron` + `workflow_dispatch`) housekeeping that prunes old workflow
@@ -38,6 +77,17 @@ This project adheres to [Keep a CHANGELOG](http://keepachangelog.com/).
 
 ### Changed
 
+- **Element boxes are content-fit and aspect-faithful to PlantUML on
+  BOTH axes (ADR 0011 + P4b).** The arbitrary `C4_MIN` minimum-size
+  floor is gone; box width/height are derived from measured PlantUML
+  font/leaf-box constants (`PUML_LEAF_BOX`), and `wRatio`/`hRatio`
+  were promoted from advisory to a contract ratchet
+  (`tests/factcheck-ratio-baseline.json`) so aspect can only improve
+  or hold toward PlantUML parity.
+- **`Rel_U/D/L/R` directional compass hints are honored (P2)** via
+  invisible co-rank constraint edges, so layout direction follows the
+  authored intent (factcheck CLEAN, byte-scoped to the directional
+  fixtures).
 - **Connectors are now curved (Graphviz-`dot`-spline-faithful), not
   Manhattan (ADR 0013).** Relationships emit `curved: 1` instead of
   `edgeStyle: 'orthogonalEdgeStyle'`, so draw.io splines through the
@@ -97,6 +147,18 @@ This project adheres to [Keep a CHANGELOG](http://keepachangelog.com/).
 
 ### Fixed
 
+- **`Rel_Back` arrowhead now points to the `$from` end** (C4-PlantUML
+  `<<--` semantics), not the `$to` end.
+- **Literal `<…>` in C4 names/descriptions is preserved** (correct
+  `escLt` escaping) instead of being mangled by XML encoding.
+- **C4 Dynamic `RelIndex` step numbers** (the `n:` prefix) are
+  preserved.
+- **`*Db` cylinder shapes reserve their elliptical-cap (cylinder3)
+  height**, so the label no longer overflows the curved top.
+- **Nested-compound / nested-boundary diagrams use `layered`**,
+  fixing the `#25` title-band collision.
+- **Multi-bend hierarchical edge labels are re-seated at the ELK
+  rect** (`#24-hier` base point) instead of drifting off the route.
 - **Bidirectional / 2-cycle relations no longer over-rank into a tall
   chain.** ELK's default `GREEDY` cycle-breaking reverses an arbitrary
   edge of an `a↔c` 2-cycle (`Rel(a,c)`+`Rel(c,a)`, or a `BiRel`),
