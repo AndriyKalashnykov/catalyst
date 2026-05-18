@@ -24,17 +24,17 @@
             <mxGeometry as="geometry" height="106" width="101" x="31" y="411"/>
           </mxCell>
         </object>
-        <object value="stateless; horizontally scaled" id="note-0">
+        <object label="stateless; horizontally scaled" id="note-0">
           <mxCell style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;align=left;verticalAlign=top" parent="1" vertex="1">
             <mxGeometry as="geometry" height="34" width="161" x="139" y="267"/>
           </mxCell>
         </object>
-        <object value="durable state&lt;br/&gt;daily backups" id="note-1">
+        <object label="durable state&lt;br/&gt;daily backups" id="note-1">
           <mxCell style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;align=left;verticalAlign=top" parent="1" vertex="1">
             <mxGeometry as="geometry" height="47" width="87" x="146" y="441"/>
           </mxCell>
         </object>
-        <object value="single source of truth" id="note-2">
+        <object label="single source of truth" id="note-2">
           <mxCell style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;align=left;verticalAlign=top" parent="1" vertex="1">
             <mxGeometry as="geometry" height="34" width="123" x="21" y="530"/>
           </mxCell>

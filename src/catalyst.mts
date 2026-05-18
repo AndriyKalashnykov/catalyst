@@ -3,6 +3,7 @@ import { Mx, MxGeometry } from './mx/Mx.mjs'
 import { MxPoint } from './mx/MxPoint.mjs'
 import { RelParser } from './puml/RelParser.mjs'
 import { parseNotes, type C4Note } from './puml/NoteParser.mjs'
+import { parseProperties, type C4PropertyTable } from './puml/PropertyParser.mjs'
 import { splitLabelLines } from './text/labelLines.mjs'
 import { ELEMENT_BODY_PX, PUML_LEAF_BOX } from './mx/c4/theme.mjs'
 import { LayoutEngine, LayoutResult } from './layout/LayoutEngine.mjs'
@@ -45,7 +46,7 @@ function overrideFor(type: string, tags: string | undefined, styles: ParsedStyle
   return Object.keys(merged).length ? merged : undefined
 }
 
-async function layoutData2mx(layoutData: LayoutResult, pumlElements: EntityDescriptor[], pumlRelations: { source: string, target: string, label: string, description: string, bidirectional?: boolean, back?: boolean, tags?: string }[], styles: ParsedStyles, title?: string, notes: C4Note[] = []): Promise<string> {
+async function layoutData2mx(layoutData: LayoutResult, pumlElements: EntityDescriptor[], pumlRelations: { source: string, target: string, label: string, description: string, bidirectional?: boolean, back?: boolean, tags?: string }[], styles: ParsedStyles, title?: string, notes: C4Note[] = [], props: Map<string, C4PropertyTable> = new Map()): Promise<string> {
   const mx = new Mx(layoutData.height || 600, layoutData.width || 800,
     { sketch: styles.sketch, hideStereotype: styles.hideStereotype })
   const parser = new EntityParser()
@@ -153,6 +154,57 @@ async function layoutData2mx(layoutData: LayoutResult, pumlElements: EntityDescr
       new MxGeometry(h, w, Math.max(0, Math.round(x)), Math.max(0, Math.round(y))),
       nt.text, `note-${i}`);
   });
+
+  // C4 `SHOW_LEGEND` — a tag-entry legend box placed POST-LAYOUT to
+  // the RIGHT of the content (PlantUML's "legend right"). Entries =
+  // the AddElementTag/AddRelTag/AddBoundaryTag stereotypes; swatch =
+  // each tag's fillColor. Overlay only ⇒ zero corpus risk (no corpus
+  // fixture uses SHOW_LEGEND). Sizes from font metrics — no magic.
+  if (styles.legend) {
+    const seen = new Set<string>();
+    const entries: { name: string; fill: string }[] = [];
+    for (const m of [styles.elementTags, styles.boundaryTags, styles.relTags]) {
+      for (const [name, ov] of m) {
+        if (seen.has(name)) continue;
+        seen.add(name);
+        entries.push({ name, fill: ov.fillColor ?? '#cccccc' });
+      }
+    }
+    if (entries.length) {
+      const lh = renderedLineHeight(NOTE_PX);
+      const SWATCH = Math.ceil(lh);                 // measured: a line-tall swatch
+      const lw = entries.reduce(
+        (m, e) => Math.max(m, textWidth(e.name, NOTE_PX, false)), textWidth('Legend', NOTE_PX, true));
+      const lW = Math.ceil(lw + SWATCH + 3 * NOTE_PAD);
+      const lH = Math.ceil((entries.length + 1) * lh + 2 * NOTE_PAD);
+      const lX = Math.round((layoutData.width || 800) + NOTE_GAP);
+      mx.addMxLegend(new MxGeometry(lH, lW, lX, 0), entries);
+    }
+  }
+
+  // C4 `AddProperty`/`SetPropertyHeader` — a property table rendered
+  // POST-LAYOUT just below its element (v1: an adjacent cell, not
+  // embedded — structurally faithful, properties SHOWN not dropped).
+  // Overlay only ⇒ zero corpus risk. Sizes from font metrics.
+  let pIdx = 0;
+  for (const [alias, tbl] of props) {
+    const c = nodeCenter.get(alias);
+    if (!c) continue;                               // unresolved → skip (v1)
+    const allRows = [...(tbl.header.length ? [tbl.header] : []), ...tbl.rows];
+    const cols = Math.max(...allRows.map((r) => r.length), 1);
+    const colW: number[] = [];
+    for (let ci = 0; ci < cols; ci++) {
+      colW[ci] = Math.ceil(allRows.reduce(
+        (m, r) => Math.max(m, textWidth(r[ci] ?? '', NOTE_PX, false)), 0) + 2 * NOTE_PAD);
+    }
+    const pW = colW.reduce((a, b) => a + b, 0);
+    const pH = Math.ceil(allRows.length * renderedLineHeight(NOTE_PX) + 2 * NOTE_PAD);
+    const pX = Math.round(c.cx - pW / 2);
+    const pY = Math.round(c.cy + c.hh + NOTE_GAP);
+    mx.addMxPropertyTable(
+      new MxGeometry(pH, pW, Math.max(0, pX), Math.max(0, pY)),
+      tbl.header, tbl.rows, `proptable-${pIdx++}`);
+  }
 
   // Emit ONE drawio edge per parsed relation — driven by pumlRelations, NOT by
   // the layout engine's edge set. The hard guarantee is "no relation is
@@ -531,7 +583,7 @@ export class Catalyst {
     // invariant (every source construct traces to a target element)
     // holds: the title is emitted as a drawio cell, not dropped.
     const title = (/^[ \t]*title[ \t]+(.+?)[ \t]*$/m.exec(pumlContent) ?? [])[1]
-    return await layoutData2mx(layoutData, elements, relations, styles, title, parseNotes(pumlContent))
+    return await layoutData2mx(layoutData, elements, relations, styles, title, parseNotes(pumlContent), parseProperties(pumlContent))
   }
 
   /**

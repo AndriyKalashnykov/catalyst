@@ -157,7 +157,7 @@ Handled by `src/puml/StyleParser.mts` (colour kwargs `$bgColor`/`$fontColor`/`$b
 
 | Primitive | State |
 |---|---|
-| `SHOW_LEGEND`, `SHOW_FLOATING_LEGEND`, `SHOW_DYNAMIC_LEGEND` | ✗ (skipped) |
+| `SHOW_LEGEND`, `SHOW_FLOATING_LEGEND`, `SHOW_DYNAMIC_LEGEND` | ✓ → synthesized tag-entry legend box (one row per AddElementTag/AddRelTag/AddBoundaryTag stereotype: fill swatch + name), placed POST-LAYOUT right of the content (PlantUML's "legend right"). Overlay only ⇒ static-C4 byte-identical. DYNAMIC = deprecated alias |
 | `HIDE_STEREOTYPE` | ✓ → drops the `«Type»` line from element labels (PlantUML `hide stereotype`); the `c4Type` structural attribute is KEPT so golden/parity stay byte-identical. v1: box keeps the reserved stereotype-line height (measureNode untouched ⇒ static-C4 layout provably unchanged). Off by default |
 | `SHOW_PERSON_OUTLINE` / `_PORTRAIT` / `_SPRITE` | ✗ |
 | PlantUML `note left\|right\|top\|bottom of X` / `note over X[,Y]` (single + `… end note` block) | ✓ → `shape=note` placed POST-LAYOUT from the target's laid-out box (`NoteParser` separate pass; ELK/EntityParser untouched ⇒ static-C4 byte-identical). v1: ELK is note-unaware (no reflow); clamped ≥0 so never off-canvas. Floating `note as <id>` not v1 |
@@ -166,7 +166,7 @@ Handled by `src/puml/StyleParser.mts` (colour kwargs `$bgColor`/`$fontColor`/`$b
 
 | Primitive | State |
 |---|---|
-| `AddProperty` / `SetPropertyHeader` / `WithoutPropertyHeader` | ✗ |
+| `AddProperty` / `SetPropertyHeader` / `WithoutPropertyHeader` | ✓ → up-to-4-col property table consumed by the NEXT element (fact-checked vs v2.13.0 `$getProps()` semantics), rendered POST-LAYOUT as an html grid just below that element. Overlay only ⇒ static-C4 byte-identical. v1: adjacent cell, not embedded in the element (ELK overlay-unaware — may overlap; structurally faithful, properties SHOWN not dropped) |
 
 ## Priority backlog
 
@@ -250,9 +250,19 @@ dagre 3.0.0 was replaced by **elkjs**: its documented option surface (wiki + spi
    **unchanged** (raw macro name) so golden/parity fingerprints are
    untouched; byte-scope = the 4 boundary fixtures, subtitle text
    only. render-compare confirmed all three match PlantUML exactly.
-3. `$sprite` → drawio shape decorator (no drawio sprite registry; parsing never breaks).
+3. `$sprite` / `SHOW_PERSON_SPRITE` — **NOT IMPLEMENTABLE (closed,
+   not deferred):** draw.io has no PlantUML sprite registry, so a
+   sprite glyph cannot be faithfully rendered. Parsing never breaks;
+   the attribute is captured and ignored. This is a fact, not a TODO.
 
-### Tier 3 — nice-to-have
+### Tier 3 — ✅ DONE (2026-05-18)
 
-1. `SHOW_LEGEND` → drawio legend box (currently skipped; structural parity unaffected).
-2. `AddProperty` / property tables rendered below element.
+1. ✅ `SHOW_LEGEND`/`_FLOATING`/`_DYNAMIC` → synthesized tag-entry
+   legend box (PR #140). 2. ✅ `AddProperty`/`SetPropertyHeader`/
+   `WithoutPropertyHeader` → POST-LAYOUT property-table grid (PR #140).
+   3. ✅ `HIDE_STEREOTYPE`, `LAYOUT_AS_SKETCH`/`SET_SKETCH_STYLE`
+   (PR #138). 4. ✅ static-C4 `note … of X` callouts (PR #139, note-
+   text-render regression fixed in #140). All overlay/style-only ⇒
+   static-C4 corpus byte-identical; each with a `c4-feat` fixture +
+   committed SVG + `c4feat-gallery-verify`. **Only `$sprite`/
+   `_SPRITE` remain — not implementable (above), not deferred.**

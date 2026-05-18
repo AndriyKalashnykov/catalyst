@@ -15,9 +15,11 @@
     "ent:Enterprise_Boundary",
     "extUser:Person_Ext",
     "gb:Boundary",
+    "legend:",
     "n1:Node",
     "n2:Node_L",
     "n3:Node_R",
+    "proptable-0:",
     "pub:ComponentQueue",
     "pubExt:ComponentQueue_Ext",
     "q:ContainerQueue",
@@ -61,7 +63,7 @@
     "sysQ->sysQExt",
     "zsys->sys"
   ],
-  "nodeCount": 31,
+  "nodeCount": 33,
   "edgeCount": 27,
   "links": 1,
   "hasDiagramId": true
