@@ -109,12 +109,13 @@ jobs:
         with:
           install: true
           cache: true
-      # gallery-verify = deterministic gallery drift gate (the .drawio
-      # XML IS catalyst's emit; drift ⇒ run `make gallery` + commit).
+      # gallery-verify + seq-gallery-verify = deterministic .drawio
+      # drift gates (the .drawio XML IS catalyst's C4 / seq emit; drift
+      # ⇒ run `make gallery` / `make seq-gallery` + commit).
       # coverage-check = vitest with the 85% threshold. One make
       # invocation so the shared deps/build prereq runs once.
-      - name: Gallery drift gate and coverage
-        run: make gallery-verify coverage-check
+      - name: Gallery drift gates and coverage
+        run: make gallery-verify seq-gallery-verify coverage-check
       - name: Report coverage
         uses: davelosert/vitest-coverage-report-action@02f3c2e641286b7fa308cd3e430783103ce6103b # v2
         if: always()

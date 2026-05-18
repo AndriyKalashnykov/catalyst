@@ -1,0 +1,77 @@
+<mxfile version="20.1.4" type="atlas">
+  <diagram id="catalyst-diagram" name="Page-1">
+    <mxGraphModel pageHeight="580" pageWidth="621">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="seq-title-0" value="Certificate lifecycle — phased (== divider ==, no fragments)" style="text;html=1;align=center;verticalAlign=middle;fontSize=16;fontStyle=1;fontColor=#333333" vertex="1" parent="1">
+          <mxGeometry x="0" y="0" width="621" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="ll-op" value="Operator" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;fillColor=#FFFFFF;strokeColor=#666666;fontColor=#333333;fontStyle=1;verticalAlign=top" vertex="1" parent="1">
+          <mxGeometry x="20" y="60" width="88" height="519" as="geometry"/>
+        </mxCell>
+        <mxCell id="ll-ctl" value="Controller" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;fillColor=#FFFFFF;strokeColor=#666666;fontColor=#333333;fontStyle=1;verticalAlign=top" vertex="1" parent="1">
+          <mxGeometry x="261" y="60" width="97" height="519" as="geometry"/>
+        </mxCell>
+        <mxCell id="ll-v" value="Vault PKI" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;fillColor=#FFFFFF;strokeColor=#666666;fontColor=#333333;fontStyle=1;verticalAlign=top" vertex="1" parent="1">
+          <mxGeometry x="511" y="60" width="90" height="519" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-act-1" style="html=1;fillColor=#FFFFFF;strokeColor=#666666" vertex="1" parent="1">
+          <mxGeometry x="303" y="205" width="14" height="321" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-divider-2" value="Request" style="text;html=1;align=center;verticalAlign=middle;fontStyle=1;fillColor=#FFFFFF;strokeColor=#666666;fontColor=#333333;whiteSpace=wrap" vertex="1" parent="1">
+          <mxGeometry x="0" y="113" width="621" height="34" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-msg-3" value="create CertificateRequest" style="html=1;rounded=0;endArrow=block;endFill=1;startArrow=none;endSize=14;startSize=14;strokeColor=#828282;fontColor=#404040;verticalAlign=bottom;endFill=1" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="64" y="177" as="sourcePoint"/>
+            <mxPoint x="310" y="177" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="seq-divider-4" value="Issuance" style="text;html=1;align=center;verticalAlign=middle;fontStyle=1;fillColor=#FFFFFF;strokeColor=#666666;fontColor=#333333;whiteSpace=wrap" vertex="1" parent="1">
+          <mxGeometry x="0" y="205" width="621" height="34" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-msg-5" value="issue leaf cert" style="html=1;rounded=0;endArrow=open;endFill=0;startArrow=none;endSize=14;startSize=14;strokeColor=#828282;fontColor=#404040;verticalAlign=bottom;endFill=1" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="310" y="269" as="sourcePoint"/>
+            <mxPoint x="556" y="269" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="seq-msg-6" value="signed cert + key" style="html=1;rounded=0;endArrow=open;endFill=0;dashed=1;startArrow=none;endSize=14;startSize=14;strokeColor=#828282;fontColor=#404040;verticalAlign=bottom;endFill=0" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="556" y="313" as="sourcePoint"/>
+            <mxPoint x="310" y="313" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="seq-divider-7" value="Reconcile" style="text;html=1;align=center;verticalAlign=middle;fontStyle=1;fillColor=#FFFFFF;strokeColor=#666666;fontColor=#333333;whiteSpace=wrap" vertex="1" parent="1">
+          <mxGeometry x="0" y="340" width="621" height="34" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-msg-8" value="validate chain" style="html=1;rounded=0;endArrow=block;endFill=1;startArrow=none;endSize=14;startSize=14;strokeColor=#828282;fontColor=#404040;verticalAlign=bottom;endFill=1" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="310" y="387" as="sourcePoint"/>
+            <mxPoint x="310" y="421" as="targetPoint"/>
+            <Array as="points">
+              <mxPoint x="401" y="387"/>
+              <mxPoint x="401" y="421"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="seq-note-9" value="reconcile loop" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFFFFF;strokeColor=#666666;fontColor=#333333;align=left;verticalAlign=top" vertex="1" parent="1">
+          <mxGeometry x="266" y="435" width="88" height="34" as="geometry"/>
+        </mxCell>
+        <mxCell id="seq-msg-10" value="status = Ready" style="html=1;rounded=0;endArrow=block;endFill=1;startArrow=none;endSize=14;startSize=14;strokeColor=#828282;fontColor=#404040;verticalAlign=bottom;endFill=1" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="310" y="499" as="sourcePoint"/>
+            <mxPoint x="64" y="499" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="seq-divider-11" style="html=1;endArrow=none;startArrow=none;strokeColor=#666666" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="0" y="536" as="sourcePoint"/>
+            <mxPoint x="621" y="536" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

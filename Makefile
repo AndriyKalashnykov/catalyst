@@ -27,6 +27,7 @@ RENDER_SRC          ?= tests/fixtures/c4-exhaustive.puml
 RENDER_OUT          ?= build/render-compare
 CORPUS_DIR          ?= tests/fixtures/corpus
 GALLERY_OUT         ?= docs/gallery
+SEQ_GALLERY_OUT     ?= docs/gallery-seq
 PLANTUML_JAR        ?= $(GALLERY_OUT)/plantuml.jar
 FACTCHECK_SVG_DIR   ?= build/factcheck-svg
 
@@ -186,8 +187,29 @@ gallery-verify: build
 		exit 1; }
 	@echo "gallery-verify: docs/gallery .drawio in sync with current emit ✓"
 
+#seq-gallery: @ Dual-render the sequence fixtures into docs/gallery-seq (SVG; needs java+docker)
+seq-gallery: deps-render build
+	@PLANTUML_VERSION=$(PLANTUML_VERSION) \
+		DRAWIO_EXPORT_IMAGE=$(DRAWIO_EXPORT_IMAGE) \
+		SEQ_GALLERY_OUT=$(SEQ_GALLERY_OUT) \
+		node scripts/seq-gallery.mjs
+
+#seq-gallery-verify: @ Fail if the committed seq gallery .drawio drifted from the current emit (deterministic; no java/docker)
+seq-gallery-verify: build
+	@# Seq analogue of gallery-verify: the seq .drawio IS catalyst's seq
+	@# emit output (pure node, deterministic). A seq emit/layout change
+	@# that didn't refresh docs/gallery-seq shows as a git diff here.
+	@# The SVG renders (java+docker) are committed evidence, NOT gated
+	@# (same split as the C4 gallery PNGs) — this guards the root cause.
+	@SEQ_DRAWIO_ONLY=1 SEQ_GALLERY_OUT=$(SEQ_GALLERY_OUT) node scripts/seq-gallery.mjs
+	@git diff --quiet -- $(SEQ_GALLERY_OUT)/drawio || { \
+		echo "ERROR: docs/gallery-seq is STALE vs the current seq emit — run 'make seq-gallery' and commit the refresh."; \
+		git --no-pager diff --stat -- $(SEQ_GALLERY_OUT)/drawio; \
+		exit 1; }
+	@echo "seq-gallery-verify: docs/gallery-seq .drawio in sync with current emit ✓"
+
 #ci: @ Local CI pipeline — mirrors ci.yml (static-check + build + test jobs)
-ci: static-check build coverage-check gallery-verify
+ci: static-check build coverage-check gallery-verify seq-gallery-verify
 	@echo "Local CI pipeline passed."
 
 #ci-run: @ Run the real .github/workflows/ci.yml locally via act (mise-managed act; needs Docker)
