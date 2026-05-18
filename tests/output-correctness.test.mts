@@ -95,13 +95,22 @@ describe('Bug 2 — fail loudly, never a content-less stub', () => {
     await expect(xml2js.parseStringPromise(xml)).resolves.toBeDefined();
   });
 
-  // The no-silent-drop contract still holds for the STILL-deferred
-  // constructs (fragments/box/ref) — precise token+line fail-loud.
+  // phase d2: `alt/opt/loop/par/critical/group/break` fragments are now
+  // SUPPORTED (convert, no throw). The no-silent-drop contract still
+  // holds for the STILL-deferred constructs (box/Boundary/ref/create/
+  // destroy) — precise token+line fail-loud.
 
-  it('fail-louds on a v2-deferred alt/opt/loop fragment', async () => {
+  it('converts a v1+d2 alt fragment (no longer fail-loud)', async () => {
+    const xml = await Catalyst.convert(C4('C4_Sequence.puml',
+      'participant "A" as a\nparticipant "B" as b\nalt ok\na -> b : x\nelse no\na -> b : y\nend'));
+    expect(xml).toContain('id="seq-frag-');
+    await expect(xml2js.parseStringPromise(xml)).resolves.toBeDefined();
+  });
+
+  it('still fail-louds on a STILL-deferred `box` lifeline grouping', async () => {
     await expect(Catalyst.convert(C4('C4_Sequence.puml',
-      'participant "A" as a\nparticipant "B" as b\nalt ok\na -> b : x\nend')))
-      .rejects.toThrow(/fragment \(`alt\/opt\/loop/);
+      'participant "A" as a\nparticipant "B" as b\nbox "Team"\na -> b : x\nend box')))
+      .rejects.toThrow(/`box` lifeline grouping/);
   });
 
   it('rejects any non-empty input that yields zero entities and zero relations', async () => {

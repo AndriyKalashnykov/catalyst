@@ -94,4 +94,61 @@ b --> a : done`))
     expect(ys[0]).toBeLessThan(ys[1])
     await expect(xml2js.parseStringPromise(xml)).resolves.toBeDefined()
   })
+
+  // phase d2: combined fragments. Whole-path contract — real convert(),
+  // assert the frame box, kind tab, else separator, nesting containment,
+  // BEHIND-messages z-order, and that message source-order is unchanged.
+  const FRAG = seqDoc(`participant "A" as a
+participant "B" as b
+alt success
+a -> b : ok
+loop 2 times
+b --> a : tick
+end
+else failure
+a -> b : retry
+end
+a -> b : after`)
+
+  it('fragments emit a frame box + kind tab + else separator', async () => {
+    const xml = await Catalyst.convert(FRAG)
+    expect((xml.match(/id="seq-frag-\d+"/g) ?? []).length).toBe(2)   // alt + loop
+    const tabs = [...xml.matchAll(/id="seq-frag-tab-\d+"[^>]*value="([^"]*)"/g)]
+      .map((m) => m[1])
+    expect(tabs.sort()).toEqual(['alt', 'loop'])
+    // else separator carries the alternative guard as its edge label
+    expect(xml).toMatch(/id="seq-frag-else-\d+"[^>]*value="failure"/)
+    expect(xml).toMatch(/id="seq-frag-guard-\d+"[^>]*value="success"/)
+    await expect(xml2js.parseStringPromise(xml)).resolves.toBeDefined()
+  })
+
+  it('fragment frames render BEHIND messages (document/z-order)', async () => {
+    const xml = await Catalyst.convert(FRAG)
+    const firstFrag = xml.indexOf('id="seq-frag-')
+    const firstMsg = xml.indexOf('id="seq-msg-')
+    expect(firstFrag).toBeGreaterThanOrEqual(0)
+    expect(firstFrag).toBeLessThan(firstMsg)
+  })
+
+  it('a nested fragment is strictly inside its enclosing frame', async () => {
+    const xml = await Catalyst.convert(FRAG)
+    const boxes = [...xml.matchAll(
+      /id="seq-frag-(\d+)"[\s\S]*?<mxGeometry x="(-?\d+)" y="(\d+)" width="(\d+)" height="(\d+)"/g)]
+      .map((m) => ({ x: +m[2], y: +m[3], w: +m[4], h: +m[5] }))
+    expect(boxes.length).toBe(2)
+    // outer (alt) emitted first (lower order) → boxes[0]; loop nested in it
+    const [outer, inner] = boxes
+    expect(inner.x).toBeGreaterThanOrEqual(outer.x)
+    expect(inner.x + inner.w).toBeLessThanOrEqual(outer.x + outer.w)
+    expect(inner.y).toBeGreaterThanOrEqual(outer.y)
+    expect(inner.y + inner.h).toBeLessThanOrEqual(outer.y + outer.h)
+  })
+
+  it('messages stay in SOURCE order with fragments present (no regression)', async () => {
+    const xml = await Catalyst.convert(FRAG)
+    const ys = [...xml.matchAll(/id="seq-msg-\d+"[\s\S]*?y="(\d+)"[^>]*as="sourcePoint"/g)]
+      .map((m) => +m[1])
+    expect(ys.length).toBe(4)                              // ok, tick, retry, after
+    expect(ys.every((v, i) => i === 0 || v >= ys[i - 1])).toBe(true)
+  })
 })

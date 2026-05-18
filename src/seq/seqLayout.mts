@@ -14,7 +14,9 @@
  * `renderedLineHeight` = mxGraph 1.2) — no magic constant, same bar as
  * the C4 path (`measureNode`).
  */
-import type { SeqModel, SeqMessage } from './SeqModel.interface.mjs'
+import type {
+  SeqModel, SeqMessage, SeqFragmentStart, SeqFragmentElse,
+} from './SeqModel.interface.mjs'
 import { textWidth, renderedLineHeight, spaceAdvance } from '../text/TextMetrics.mjs'
 import { splitLabelLines } from '../text/labelLines.mjs'
 import { ELEMENT_TITLE_PX, ELEMENT_BODY_PX, PUML_LEAF_BOX, SHAPE } from '../mx/c4/theme.mjs'
@@ -23,6 +25,12 @@ const NAME_PX = ELEMENT_TITLE_PX            // lifeline header name (cited)
 const BODY_PX = ELEMENT_BODY_PX             // message / note / techn (cited)
 const INSET = PUML_LEAF_BOX.INSET           // measured PlantUML text inset
 const ARROW = SHAPE.REL_ARROW_SIZE          // cited draw.io arrow size
+// Fragment border must clear the message arrowheads on the outermost
+// involved lifelines → 2·arrow each side (same cited-arrow basis as
+// `colGap`). Nested frames step inward one arrow size per level so
+// their borders stay visibly distinct from the enclosing frame.
+const FRAG_PAD = 2 * ARROW
+const FRAG_INSET = ARROW
 
 export interface LaidLifeline {
   alias: string
@@ -77,6 +85,27 @@ export interface LaidDivider {
 }
 export type LaidEvent = LaidMessage | LaidNote | LaidDivider
 
+/** A combined/grouped fragment box (phase d2). Spans the involved
+ *  lifelines over its source-order Y-range; `headerH` is the reserved
+ *  top band carrying the kind tab + guard; `elses` are the in-box
+ *  compartment separators (each a Y + its `[guard]`). Emitted BEHIND
+ *  the message edges (document order) so the border never occludes. */
+export interface LaidFragment {
+  type: 'fragment'
+  kind: string
+  label: string
+  x: number
+  y: number
+  w: number
+  h: number
+  headerH: number
+  /** Measured width of the top-left kind tab (so emit needs no metrics). */
+  tabW: number
+  elses: { y: number; label: string }[]
+  /** start order — emit ascending so an enclosing frame is behind. */
+  order: number
+}
+
 export interface SeqLayout {
   width: number
   height: number
@@ -85,6 +114,7 @@ export interface SeqLayout {
   lifelines: LaidLifeline[]
   events: LaidEvent[]
   activations: LaidActivation[]
+  fragments: LaidFragment[]
 }
 
 const lines = (s: string): string[] => {
@@ -97,7 +127,11 @@ const blockH = (s: string, px: number): number =>
   lines(s).length * renderedLineHeight(px)
 
 export function layoutSeq(model: SeqModel): SeqLayout {
-  const marginX = 2 * INSET
+  const hasFrag = model.events.some((e) => e.type === 'fragment-start')
+  // Reserve a left gutter when fragments exist so the outermost frame's
+  // `FRAG_PAD` border never clips off-canvas (depth-0 frame uses the
+  // full pad; deeper frames inset inward, so FRAG_PAD is sufficient).
+  const marginX = 2 * INSET + (hasFrag ? FRAG_PAD : 0)
   const marginY = 2 * INSET
   const rowGap = renderedLineHeight(BODY_PX)            // inter-event breathing
   const messages = model.events.filter(
@@ -142,7 +176,82 @@ export function layoutSeq(model: SeqModel): SeqLayout {
   const idxOf = new Map(model.lifelines.map((l, i) => [l.alias, i]))
   const loopW = Math.ceil(colGap / 2 + ARROW)           // self-message loop
 
+  // Open-fragment frames (LIFO). `min`/`max` accumulate the lifeline
+  // span of EVERY event seen while the frame is open (including events
+  // inside nested child frames) → an enclosing frame always spans ⊇ its
+  // children, so depth-inset boxes strictly nest.
+  const fragments: LaidFragment[] = []
+  const fragStack: {
+    fragId: number; kind: string; label: string
+    y1: number; depth: number; headerH: number
+    min: number; max: number
+    /** rightmost edge of any already-closed child (so a parent's box
+     *  always encloses its children's header-widened width). */
+    minChildRight: number
+    elses: { y: number; label: string }[]
+    order: number
+  }[] = []
+  const touch = (i: number | undefined): void => {
+    if (i === undefined) return
+    for (const f of fragStack) { f.min = Math.min(f.min, i); f.max = Math.max(f.max, i) }
+  }
+
   for (const ev of model.events) {
+    if (ev.type === 'fragment-start') {
+      const fs = ev as SeqFragmentStart
+      const headerH = Math.ceil(blockH(fs.label || fs.kind, BODY_PX) + 2 * INSET)
+      fragStack.push({
+        fragId: fs.fragId, kind: fs.kind, label: fs.label,
+        y1: y, depth: fragStack.length, headerH,
+        min: Number.POSITIVE_INFINITY, max: Number.NEGATIVE_INFINITY,
+        minChildRight: Number.NEGATIVE_INFINITY,
+        elses: [], order: fs.order,
+      })
+      y += headerH                                       // reserve the tab/guard band
+      continue
+    }
+    if (ev.type === 'fragment-else') {
+      const fe = ev as SeqFragmentElse
+      const top = fragStack[fragStack.length - 1]
+      if (top) {
+        top.elses.push({ y, label: fe.label })
+        y += Math.ceil(renderedLineHeight(BODY_PX) + 2 * INSET) // separator + guard row
+      }
+      continue
+    }
+    if (ev.type === 'fragment-end') {
+      const f = fragStack.pop()
+      if (f) {
+        // No involved lifeline (degenerate empty fragment) → span all.
+        const lo = f.min <= f.max ? f.min : 0
+        const hi = f.min <= f.max ? f.max : model.lifelines.length - 1
+        const x1 = Math.round(cxs[lo] - FRAG_PAD + f.depth * FRAG_INSET)
+        const tabW = Math.ceil(blockW(f.kind, BODY_PX, true) + 2 * INSET)
+        // Box must be wide enough to host (a) the lifeline span, (b) its
+        // own one-line header `tab + [guard]` (so the guard never wraps —
+        // PlantUML keeps it one line), and (c) every closed child's
+        // header-widened right edge (so a parent always encloses its
+        // children). All terms are measured metrics — no constant.
+        const guardW = f.label
+          ? Math.ceil(blockW(f.label, BODY_PX, false) + 2 * INSET) : 0
+        const x2 = Math.round(Math.max(
+          cxs[hi] + FRAG_PAD - f.depth * FRAG_INSET,
+          x1 + tabW + guardW,
+          f.minChildRight,
+        ))
+        y += INSET                                         // bottom in-box padding
+        const right = Math.max(x2, x1 + 1)
+        const parent = fragStack[fragStack.length - 1]
+        if (parent) parent.minChildRight = Math.max(parent.minChildRight, right)
+        fragments.push({
+          type: 'fragment', kind: f.kind, label: f.label,
+          x: x1, y: f.y1, w: Math.max(right - x1, 1), h: Math.max(y - f.y1, 1),
+          headerH: f.headerH, tabW, elses: f.elses, order: f.order,
+        })
+        y += rowGap                                        // breathing after the box
+      }
+      continue
+    }
     if (ev.type === 'divider') {
       // Full-width band at this source-order Y (phase d1). Height = a
       // measured label line + insets (same metric basis as a note row);
@@ -153,6 +262,7 @@ export function layoutSeq(model: SeqModel): SeqLayout {
       continue
     }
     if (ev.type === 'activate') {
+      touch(idxOf.get(ev.lifeline))
       const st = actStack.get(ev.lifeline) ?? []
       st.push(y)
       actStack.set(ev.lifeline, st)
@@ -161,6 +271,7 @@ export function layoutSeq(model: SeqModel): SeqLayout {
     if (ev.type === 'deactivate') {
       const st = actStack.get(ev.lifeline)
       const i = idxOf.get(ev.lifeline)
+      touch(i)
       if (st && st.length && i !== undefined)
         activations.push({ type: 'activation', cx: cxs[i], y1: st.pop()!, y2: y })
       continue
@@ -169,6 +280,7 @@ export function layoutSeq(model: SeqModel): SeqLayout {
       const ls = idxOf.has(ev.lifelines[0] ?? '')
         ? ev.lifelines.map((a) => idxOf.get(a)!).filter((v) => v !== undefined)
         : []
+      ls.forEach(touch)
       const w = Math.ceil(blockW(ev.text, BODY_PX, false) + 2 * INSET)
       const h = Math.ceil(blockH(ev.text, BODY_PX) + 2 * INSET)
       let x: number
@@ -193,6 +305,7 @@ export function layoutSeq(model: SeqModel): SeqLayout {
     const fi = idxOf.get(ev.from)
     const ti = idxOf.get(ev.to)
     if (fi === undefined || ti === undefined) continue   // unreachable: parser ensure()
+    touch(fi); touch(ti)
     const selfLoop = ev.from === ev.to
     const labelH = blockH(ev.label, BODY_PX)
     if (selfLoop) {
@@ -235,9 +348,11 @@ export function layoutSeq(model: SeqModel): SeqLayout {
     bottomY,
   }))
 
-  // canvas extent (include any note that overhangs the last lifeline)
+  // canvas extent (include a note OR a fragment box that overhangs the
+  // last lifeline — a fragment's FRAG_PAD pushes past the rightmost cx)
   const noteRight = laidEvents.reduce(
     (m, e) => e.type === 'note' ? Math.max(m, e.x + e.w) : m, 0)
+  const fragRight = fragments.reduce((m, f) => Math.max(m, f.x + f.w), 0)
   const llRight = lifelines.reduce((m, l) => Math.max(m, l.headX + l.headW), 0)
   const titleH = model.title
     ? Math.ceil(renderedLineHeight(NAME_PX) + 2 * INSET) : 0
@@ -246,15 +361,20 @@ export function layoutSeq(model: SeqModel): SeqLayout {
     for (const l of lifelines) { l.headY += titleH; l.bottomY += titleH }
     for (const e of laidEvents) e.y += titleH
     for (const a of activations) { a.y1 += titleH; a.y2 += titleH }
+    for (const f of fragments) {
+      f.y += titleH
+      for (const el of f.elses) el.y += titleH
+    }
   }
 
   return {
-    width: Math.ceil(Math.max(noteRight, llRight) + marginX),
+    width: Math.ceil(Math.max(noteRight, fragRight, llRight) + marginX),
     height: Math.ceil(bottomY + titleH),
     ...(model.title ? { title: model.title } : {}),
     titleH,
     lifelines,
     events: laidEvents,
     activations,
+    fragments,
   }
 }

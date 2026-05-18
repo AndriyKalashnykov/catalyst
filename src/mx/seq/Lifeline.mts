@@ -98,6 +98,66 @@ export function buildSeqDoc(L: SeqLayout): unknown {
     })
   }
 
+  // Fragments (phase d2): emitted BEFORE the event cells so the frame
+  // border sits BEHIND the messages it groups (draw.io z-order =
+  // document order). Ascending `order` ⇒ an enclosing frame is emitted
+  // before — behind — its nested children. Border has no fill so the
+  // grouped messages remain visible through it.
+  for (const f of [...L.fragments].sort((a, b) => a.order - b.order)) {
+    cells.push({
+      $: {
+        id: id('frag'),
+        style: `rounded=0;html=1;fillColor=none;strokeColor=${PALETTE.BOUNDARY_STROKE};`
+          + `verticalAlign=top;align=left`,
+        vertex: 1, parent: '1',
+      },
+      MxGeometry: geom(f.x, f.y, f.w, f.h),
+    })
+    // else compartment separators: a dashed full-width rule carrying the
+    // alternative's `[guard]` as its edge label (mirrors PlantUML).
+    for (const el of f.elses) {
+      cells.push({
+        $: {
+          id: id('frag-else'), value: seqText(el.label),
+          style: `html=1;endArrow=none;startArrow=none;dashed=1;`
+            + `strokeColor=${PALETTE.BOUNDARY_STROKE};fontColor=${PALETTE.BOUNDARY_FONT};`
+            + `verticalAlign=bottom;align=left`,
+          edge: 1, parent: '1',
+        },
+        MxGeometry: {
+          $: { relative: 1, as: 'geometry' },
+          mxPoint: [
+            { $: { x: Math.round(f.x), y: Math.round(el.y), as: 'sourcePoint' } },
+            { $: { x: Math.round(f.x + f.w), y: Math.round(el.y), as: 'targetPoint' } },
+          ],
+        },
+      })
+    }
+    // top-left kind tab (notched-corner look via a plain filled rect —
+    // a clean, deterministic v1 of PlantUML's pentagon label).
+    cells.push({
+      $: {
+        id: id('frag-tab'), value: seqText(f.kind),
+        style: `rounded=0;html=1;fillColor=${PALETTE.DEPLOYMENT_NODE_FILL};`
+          + `strokeColor=${PALETTE.BOUNDARY_STROKE};fontColor=${PALETTE.BOUNDARY_FONT};`
+          + `fontStyle=1;align=center;verticalAlign=middle`,
+        vertex: 1, parent: '1',
+      },
+      MxGeometry: geom(f.x, f.y, f.tabW, f.headerH),
+    })
+    if (f.label) {
+      cells.push({
+        $: {
+          id: id('frag-guard'), value: seqText(f.label),
+          style: `text;html=1;align=left;verticalAlign=middle;`
+            + `fontColor=${PALETTE.BOUNDARY_FONT};whiteSpace=wrap`,
+          vertex: 1, parent: '1',
+        },
+        MxGeometry: geom(f.x + f.tabW, f.y, Math.max(f.w - f.tabW, 1), f.headerH),
+      })
+    }
+  }
+
   // Events: messages (edges) + notes + dividers, in source order.
   for (const ev of L.events) {
     if (ev.type === 'divider') {

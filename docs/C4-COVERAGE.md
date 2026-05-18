@@ -103,7 +103,8 @@ notes + title; v2-deferred constructs **fail-loud** (no silent drop).
 | `title` | ✓ v1 (traced to a title cell — completeness invariant) |
 | Self-message (`a -> a`) | ✓ v1 (loop route; wide vs PlantUML's hook — v1.x polish) |
 | `== divider ==` | ✓ v1.x (phase d1 — full-width band at source-order Y; unblocks ibm-wm `==dividers==`) |
-| `alt/opt/loop/par/critical`, `box`/`Boundary` grouping, `ref`, create/destroy | ✗ v2 — **fail-loud** with token+line (`SeqParseError`; no silent drop) |
+| `alt/else/opt/loop/par/critical/group/break` fragments (nested) | ✓ d2 (phase d2 — `umlFrame`-style box behind messages, kind tab + one-line `[guard]`, `else` compartment separators; strict nesting by construction) |
+| `box`/`Boundary` lifeline grouping, `ref`, create/destroy | ✗ deferred — **fail-loud** with token+line (`SeqParseError`; no silent drop) |
 | `autonumber`, `SHOW_ELEMENT_DESCRIPTIONS`, `SHOW_FOOT_BOXES`/`SHOW_INDEX` | ✗ v2 (deferred) |
 
 ## Relationships

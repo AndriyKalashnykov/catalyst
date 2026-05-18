@@ -80,7 +80,42 @@ export interface SeqDivider {
   order: number
 }
 
-export type SeqEvent = SeqMessage | SeqNote | SeqActivation | SeqDivider
+/** ADR 0007 phase d2 — combined/grouped fragment.
+ *
+ * Fragments nest, so they enter the SOURCE-ordered stream as paired
+ * markers (`fragment-start` … optional `fragment-else` … `fragment-end`)
+ * rather than a sub-tree: the timeline IS the order, and the linear
+ * layout pass closes a stack frame on `fragment-end` exactly as the C4
+ * path never has to. `fragId` is a monotone counter pairing the three
+ * marker kinds of one fragment across arbitrary nesting depth. */
+export interface SeqFragmentStart {
+  type: 'fragment-start'
+  /** `alt|opt|loop|par|critical|group|break` (lower-cased). */
+  kind: string
+  /** Text after the keyword: an `alt [guard]`, a `loop` count, a
+   *  `group` title — verbatim, may be empty. */
+  label: string
+  fragId: number
+  order: number
+}
+/** A compartment separator inside an open fragment (`else [guard]`). */
+export interface SeqFragmentElse {
+  type: 'fragment-else'
+  fragId: number
+  /** The text after `else` (the alternative's guard); may be empty. */
+  label: string
+  order: number
+}
+/** The `end` that closes the most-recently-opened fragment. */
+export interface SeqFragmentEnd {
+  type: 'fragment-end'
+  fragId: number
+  order: number
+}
+
+export type SeqEvent =
+  | SeqMessage | SeqNote | SeqActivation | SeqDivider
+  | SeqFragmentStart | SeqFragmentElse | SeqFragmentEnd
 
 export interface SeqModel {
   title?: string
