@@ -17,6 +17,7 @@ import { RELATIONSHIP_LABEL_PX, DIAGRAM_TITLE_PX, SHAPE } from './mx/c4/theme.mj
  *  `docs/research/arrowhead-orthogonal-routing.md`. */
 const APPROACH_CLEARANCE_PX = 2 * SHAPE.REL_ARROW_SIZE + 0.5
 import { StyleParser } from './puml/StyleParser.mjs'
+import { SeqConverter } from './seq/SeqConverter.mjs'
 import { DECIMAL_RADIX } from "./constants.mjs"
 import type { ParsedStyles, StyleOverride } from './puml/StyleParser.mjs'
 
@@ -415,23 +416,20 @@ export class Catalyst {
     const layoutConstraints = RelParser.getLayoutConstraints(pumlContent)
     const styles = StyleParser.parse(pumlContent)
 
-    // Fail loudly instead of emitting a content-less stub. catalyst converts
-    // the STATIC C4 subset (Context/Container/Component/Deployment with
-    // Person/System/Container/Component/Node + Rel/BiRel/RelIndex). The
-    // C4-PlantUML *dynamic/sequence* flavor (C4_Sequence.puml, actor/
-    // participant + message arrows / ==stage== dividers) has no handler, so
-    // it would otherwise produce a valid-but-empty <mxGraphModel> that
-    // renders as a blank image downstream — a silent failure.
+    // catalyst converts the STATIC C4 subset (Context/Container/
+    // Component/Deployment). The C4-PlantUML *dynamic/sequence* flavor
+    // (C4_Sequence.puml, actor/participant + message arrows) is a
+    // SEPARATE pipeline (ADR 0007): this detector is the dispatch seam
+    // — when it matches, hand off to `SeqConverter` instead of throwing.
+    // `SeqParser` inside it still fail-louds (throws `SeqParseError`) on
+    // a v2-deferred construct (`==divider==`, `alt/opt/loop`, `box`),
+    // so the no-silent-drop contract is preserved end-to-end. A
+    // non-sequence zero-element input still fail-louds below.
     const seq = /^\s*!include\b.*\bC4_Sequence(?:\.puml)?\b/m.test(pumlContent)
       || /^\s*participant\s+/m.test(pumlContent)
     if (elements.length === 0 && relations.length === 0) {
       if (seq) {
-        throw new Error(
-          'unsupported C4-PlantUML diagram type: C4_Sequence — catalyst '
-          + 'converts the static C4 subset only (Context / Container / '
-          + 'Component / Deployment). Sequence/dynamic-message diagrams are '
-          + 'not supported.',
-        )
+        return SeqConverter.convert(pumlContent)
       }
       throw new Error(
         'no convertible C4 elements found — catalyst parsed zero entities '

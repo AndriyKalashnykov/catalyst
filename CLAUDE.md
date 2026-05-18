@@ -133,23 +133,25 @@ Everything below is researched, not speculative. Sizes are honest.
 Completed-work root-cause prose lives in git history + ADRs +
 `docs/UPGRADE-NOTES.md` + agent memories — not re-dumped here.
 
-> ▶ **RESUME HERE — session handoff 2026-05-18 (refreshed #14 —
-> #107 was a FALSE-GREEN, REVERTED (#109), then **REDONE PROPERLY**
-> this PR. Root cause (proven vs the real drawio-export SVG, not a
-> reconstruction): every catalyst edge is `edgeStyle=orthogonalEdge
-> Style` so draw.io re-routes; the skew is the orthogonal feeder
-> occluding the arrowhead when the endpoint-adjacent waypoint is
-> closer to the border than the arrowhead is long. Fix:
-> `enforceApproachClearance` (`2·REL_ARROW_SIZE+½-ULP` perpendicular
-> standoff) on the non-laned multi-bend AND laned multi-point emit
-> paths. NEW gate `make arrowskew` (`scripts/arrowskew-svg.mjs`)
-> renders every `.drawio` via drawio-export → SVG and measures
-> draw.io's REAL path: **CLEAN 20/20**; its own 2 false-positive
-> classes were fact-checked vs the SVG and fixed first. factcheck
-> CLEAN 26/26 (7 legit contracts un-regressed); 26 vitest
-> `enforceApproachClearance`; topology-cyclic + rel-tech-vs-notech
-> visually head-on. NEXT = **Sequence #12 phase (b)**, then the
-> `docs/research/layout-readability.md` B1–B6 backlog.)**
+> ▶ **RESUME HERE — session handoff 2026-05-18 (refreshed #15 —
+> two things landed: (1) arrowhead skew #107 false-green REVERTED
+> (#109) then REDONE PROPERLY (#111, MERGED): `enforceApproach
+> Clearance` + the `make arrowskew` drawio-export-SVG render-truth
+> gate, CLEAN 20/20. (2) **Sequence #12 phase (b)+(c) — this PR**:
+> the parked `feat/seq-phase-b-layout-emit` rebased + finished;
+> `catalyst.mts` detector `throw`→`SeqConverter.convert` (only
+> existing-path change, proven zero-risk: factcheck CLEAN 26/26 +
+> arrowskew 20/20 + 26 static byte-identical); v1 sequence pipeline
+> (`src/seq/`+`src/mx/seq/`) converts participants/messages/
+> activations/notes/title; v2-deferred (`==divider==`/fragments/
+> `box`) fail-loud with token+line. 417 vitest (new SeqConverter
+> emit-contract + rewritten output-correctness to the ADR-0007
+> contract); render-compare visual gate run
+> (`seq-v1-cert-lifecycle`) — structurally faithful, honest v1
+> imperfections recorded in ADR 0007 (self-loop clunk, note overlap
+> — non-blocking). NEXT = the `docs/research/layout-readability.md`
+> B1–B6 backlog (use `make arrowskew` to validate vs the real
+> render), then ADR 0007 phase (d) v2 fragments/dividers.)**
 >
 > **Process lesson (codified — `factcheck-harness-gate`):** a "visual"
 > contract MUST be measured from the renderer's ACTUAL output
@@ -316,26 +318,20 @@ Completed-work root-cause prose lives in git history + ADRs +
 >    (factcheck CLEAN 26/26 + byte-scope + unit test + gallery-in-PR).
 >    (ADR 0011 layout-**aspect** remains CLOSED — that was the gate,
 >    not the product; this is the distinct readability/aesthetic axis.)
-> 2. **Sequence diagrams** (#12, ADR 0007) — phased. **Phase (a)
->    `SeqParser` ✅ DONE 2026-05-17** (`src/seq/`, 29-test matrix,
->    net-new). Phase (b) WIP parked on branch
->    `feat/seq-phase-b-layout-emit` (`c18a403`: seqLayout +
->    Lifeline.mts emit + SeqConverter written; catalyst.mts dispatch,
->    emit-contract tests, and rebase remain). **NEXT = phase (b):** deterministic linear
->    `src/seq/seqLayout.mts` (lifelines evenly spaced on X by measured
->    header width — reuse `measureNode`/font metrics; events monotone
->    Y in source order; activations stacked rects) + `src/mx/seq/
->    Lifeline.mts` (`shape=umlLifeline;` + message edges reusing the
->    Rel/Rel_Back/BiRel arrowhead map + note shapes) + `src/seq/
->    SeqConverter.mts` orchestration. Phase (b) ALSO flips the
->    `src/catalyst.mts` detector `throw` → `SeqConverter.convert`
->    (first existing-path change in the chain — gate: all 26 static
->    fixtures still byte-identical + factcheck CLEAN; new render-compare
->    on a v1-scoped sequence fixture). Then (c) corpus fixture +
->    render-compare gate, (d) v2 fragments/dividers. v1 fails loud on
->    deferred constructs (the ibm-wm fixture uses `==dividers==` ⇒ it
->    is a phase-(d)/(c) fixture, NOT a v1 success fixture — phase (c)
->    needs a divider-free v1 sequence fixture).
+> 2. **Sequence diagrams** (#12, ADR 0007) — **phases (a)+(b)+(c)
+>    DONE** (a: SeqParser #91; b+c: this PR — dispatch flip + v1
+>    pipeline + render-compare visual gate + emit-contract tests;
+>    factcheck 26/26 + arrowskew 20/20 + 26 static byte-identical
+>    prove zero existing-path risk). **Only phase (d) remains: v2
+>    fragments/dividers** (`alt/opt/loop/par/critical`, `==divider==`,
+>    `box`/`Boundary` grouping, `ref`, create/destroy) — currently
+>    fail-loud with token+line (the no-silent-drop guard; ibm-wm's
+>    `==dividers==` fixture is a phase-(d) target). Plus the recorded
+>    v1.x polish (ADR 0007 "Known v1 imperfections": tighten the
+>    self-message loop; reserve note row vs activation extent).
+>    Coordinate the catalyst→puml2drawio→ibm-wm release when v1 ships
+>    (memory `release-chain-topology` — downstream `skip-unsupported`
+>    sequence fixture now converts).
 > 3. C4 surface TRUE residuals (`$sprite`, sketch, legend, dropped
 >    `note`) — low/opportunistic.
 > (P13 SHIPPED then REVERTED 2026-05-17 — uniform `width=420`

@@ -1,0 +1,21 @@
+@startuml seq-v1-cert-lifecycle
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Sequence.puml
+
+title Certificate issuance — v1 sequence (no dividers/fragments)
+
+participant "Operator / app" as op
+participant "Controller" as ctl
+participant "Vault PKI" as v
+participant "K8s Secret" as sec
+
+op -> ctl : create CertificateRequest
+activate ctl
+ctl ->> v : issue leaf cert
+v --> ctl : signed cert + key
+ctl -> ctl : validate chain
+note over ctl : reconcile loop
+ctl -> sec : write tls.crt / tls.key
+sec --> ctl : stored
+ctl -> op : status = Ready
+deactivate ctl
+@enduml
