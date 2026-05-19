@@ -57,11 +57,11 @@
   },
   "devDependencies": {
     "@types/fontkit": "2.0.9",
-    "@types/node": "25.8.0",
+    "@types/node": "^25.9.1",
     "@types/xml2js": "0.4.14",
     "@vitest/coverage-v8": "4.1.6",
     "markdownlint-cli": "0.48.0",
-    "oxlint": "1.65.0",
+    "oxlint": "^1.66.0",
     "typescript": "6.0.3",
     "unsplash-js": "7.0.20",
     "vitest": "4.1.6"

@@ -94,6 +94,14 @@
       "labels": ["dependencies", "c4-plantuml-stdlib"]
     },
     {
+      "description": "@hpcc-js/wasm-graphviz is the bundled Graphviz `dot` LAYOUT ENGINE (ADR 0014). Every byte-exact committed render baseline is coupled to its exact bundled graphviz version: gallery-verify / seq-gallery-verify / c4feat-gallery-verify .drawio drift gates, edgecross-baseline.json, factcheck-ratio-baseline.json, the arrowskew render-truth, AND the P0 determinism proof (scripts/p0-dot-spike.mjs) all assume this pinned wasm binary. A graphviz bump shifts layout coordinates → it is NOT automergeable: it requires the full `make gallery seq-gallery c4feat-gallery` regen + edgecross/factcheck-ratio re-baseline (the same human-driven sanctioned reset as a deliberate layout change), exactly like the C4-PlantUML stdlib gate above. Open the PR, never automerge.",
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["@hpcc-js/wasm-graphviz"],
+      "automerge": false,
+      "minimumReleaseAge": "3 days",
+      "labels": ["dependencies", "layout-engine"]
+    },
+    {
       "description": "Keep the Makefile drawio-export docker pin tag-only — config:best-practices transitively enables docker:pinDigests which would rewrite it to tag@sha256 and break the customManager regex (which expects a semver-shaped tag). The image is consumed via `docker run` at render time, which resolves the digest for the tag anyway. (GitHub Actions still get SHA-pinned via helpers:pinGitHubActionDigests in config:best-practices.)",
       "matchManagers": ["custom.regex"],
       "matchFileNames": ["Makefile"],
