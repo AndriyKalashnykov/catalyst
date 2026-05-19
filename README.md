@@ -3,14 +3,14 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen.svg)](LICENSE)
 [![Renovate enabled](https://img.shields.io/badge/renovate-enabled-brightgreen.svg)](https://app.renovatebot.com/dashboard#github/AndriyKalashnykov/catalyst)
 
-# Catalyst — PlantUML C4 → draw.io Converter
+# Catalyst — PlantUML C4 & Sequence → draw.io Converter
 
 <div align="center">
   <img src="logo.svg" width="100" height="100" alt="Catalyst Logo">
 </div>
 
-JavaScript/TypeScript library that converts C4 diagrams written in PlantUML
-C4 syntax (`.puml`) into [draw.io](https://draw.io) XML — no PlantUML runtime
+JavaScript/TypeScript library that converts C4 **and sequence** diagrams
+written in PlantUML (`.puml`) into [draw.io](https://draw.io) XML — no PlantUML runtime
 required. The **consumer surface** is a one-call API
 (`Catalyst.convert(puml, options)`) plus `parseEntities` / `parseRelations`,
 installed as a git dependency. The **engine surface** uses
