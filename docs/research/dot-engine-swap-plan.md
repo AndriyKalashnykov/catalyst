@@ -297,12 +297,15 @@ ELK-calibrated ratio ratchet flagging dot's legitimately-different
 
 ## Status / entry point
 
-Branch: `feat/dot-engine`. **P0–P5 COMPLETE (2026-05-19).** ELK
-default + full suite 628/628; `dot` path 639/639 + edgecross 30→0
-proven on the real render. **AWAITING P6 explicit sign-off** (flip
-default → `dot`; re-baseline now-default artifacts WITH the flip;
-deprecate ELK after ≥1 green release; update `puml2drawio` pin).
-NOTHING flips the default without approval.
+Branch: `feat/dot-engine`. **P0–P6 COMPLETE (2026-05-19, explicit
+P6 sign-off).** `dot` is the DEFAULT; ELK is the retained opt-out
+fallback (removed after ≥1 green release). Suite 639/639 under BOTH
+engines; **edgecross 30→0** in the committed dot render-truth;
+factcheck **CLEAN 28/28** (dot default); arrowskew CLEAN 22/22;
+`make ci` GREEN. Eyeball: `docs/gallery-compare/`. Follow-ups (not
+blocking): drop the ELK path + `elkjs` after ≥1 green dot release;
+flag the rendered-output change in the next `puml2drawio` bump.
+See ADR 0014.
 Reusable assets already banked: `assignPortOrder` + tests +
 `build/portorder-models/`; `make edgecross` + ratchet (the numeric
 target); `route-fidelity` (the shape metric); the full research base

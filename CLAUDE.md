@@ -279,18 +279,21 @@ What is left:
    sufficient against draw.io's own router; the fix REQUIRES owning
    routing end-to-end ⇒ item 1a.
 
-   1a. **ELK→Graphviz-`dot` engine swap — P0–P5 COMPLETE
-   (2026-05-19); AWAITING P6 explicit sign-off (default-flip).**
-   `LAYOUT_ENGINE=elk|dot` (`src/layout/DotLayout.mjs`,
-   `@hpcc-js/wasm-graphviz` pinned). **edgecross 30→0** proven on the
-   real rendered drawio-export render-truth; ELK default
-   byte-unchanged (628/628); `dot` path 639/639 + CI dual-engine
-   gate; `dot-layout` C6 is the CI-portable edgecross=0 contract.
-   ADR 0014 (supersedes 0008/0011). P6 (flip default, re-baseline
-   now-default artifacts WITH the flip, deprecate ELK, update
-   `puml2drawio` pin) needs explicit approval — NOTHING flips without
-   it. Status detail: `docs/research/dot-engine-swap-plan.md`. Below
-   = the original plan, retained for the P6 entry point.
+   1a. **ELK→Graphviz-`dot` engine swap — DONE, P0–P6 COMPLETE
+   (2026-05-19). `dot` is the DEFAULT engine.**
+   `LAYOUT_ENGINE=elk|dot` / `options.layoutEngine`
+   (`src/layout/DotLayout.mjs`, `@hpcc-js/wasm-graphviz` pinned);
+   ELK = retained opt-out fallback (dropped after ≥1 green release).
+   **edgecross 30→0** in the committed real drawio-export
+   render-truth; suite 639/639 under BOTH engines; factcheck
+   **CLEAN 28/28** (dot default; ELK was 26/28); arrowskew 22/22;
+   `make ci` GREEN. ADR 0014 (supersedes 0008/0011). Eyeball:
+   `docs/gallery-compare/` (PlantUML|ELK|dot). Seq pipeline is
+   engine-independent (unaffected). Follow-ups (NOT blocking): remove
+   the ELK path + `elkjs` after ≥1 green dot release; flag the
+   rendered-output change in the next `puml2drawio` bump. Detail:
+   `docs/research/dot-engine-swap-plan.md` + ADR 0014. Below = the
+   original plan, retained as the ELK-removal follow-up reference.
 
    1a. **ELK→Graphviz-`dot` engine swap — ACTIVE, IN THIS REPO
    (user decision 2026-05-18; supersedes the "new repo" prior in

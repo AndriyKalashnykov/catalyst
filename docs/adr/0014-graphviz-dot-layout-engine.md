@@ -1,9 +1,12 @@
 # ADR 0014 — Graphviz `dot` layout engine (supersedes ELK for layout+routing)
 
-- Status: **ACCEPTED — implemented behind `LAYOUT_ENGINE` (default
-  `elk` until P6); edgecross 30→0 proven on the real rendered
-  drawio-export render-truth. P6 default-flip pending explicit
-  sign-off.**
+- Status: **ACCEPTED & LIVE — P6 DONE 2026-05-19 (explicit
+  user sign-off): the default engine is now `dot`.** ELK is the
+  retained explicit opt-out fallback (`layoutEngine:'elk'` /
+  `LAYOUT_ENGINE=elk`), removed only after ≥1 green release on `dot`.
+  edgecross **30→0** on the committed real drawio-export render-truth;
+  factcheck **CLEAN 28/28** under the dot default (best ever; ELK was
+  26/28).
 - Date: 2026-05-19
 - **Supersedes ADR 0008** (Context→`layered`) and **ADR 0011**
   (layout-aspect fidelity ratchet): under `dot` the layout engine IS
@@ -117,10 +120,38 @@ order). ADR 0008/0011's ELK-specific Context/aspect tuning is
 superseded: `dot` is PlantUML's engine, so its layout IS the fidelity
 target rather than an approximation of it.
 
-## P6 (separate, explicit sign-off — irreversible-ish, outward-facing)
+## P6 — DONE 2026-05-19 (explicit user sign-off)
 
-Flip `LAYOUT_ENGINE` default `elk`→`dot`; re-baseline the
-now-default-engine committed artifacts together with the flip
-(`edgecross-baseline`→0, gallery `.drawio`+SVG, `factcheck-ratio`,
-`arrowskew`); deprecate the ELK path after ≥1 green release on `dot`;
-update `puml2drawio` pin expectations. NOT done without approval.
+- Default flipped `elk`→`dot` in `catalyst.mts`; engine detection
+  synced everywhere (`factcheck-geometry` `DOT = env!=='elk'`,
+  dual-engine CI step now gates the `elk` opt-out).
+- Now-default committed artifacts re-baselined UNDER `dot`, in this
+  same change (derived-artifact discipline): `docs/gallery/*`
+  (.drawio + SVG + PNG), `docs/gallery-c4feat/*`,
+  `tests/edgecross-baseline.json` → **all 0** (re-derived from the
+  committed dot render, not hand-typed), `tests/factcheck-ratio-
+  baseline.json` (28, dot-calibrated). `arrowskew` **CLEAN 22/22**
+  under dot (a clean/dirty contract — no baseline). `golden`/`parity`
+  unchanged (engine-invariant). `seq-gallery` byte-identical (seq
+  pipeline is engine-independent — verified).
+- **ELK-fallback caveat (documented, not a defect):** `make
+  factcheck` is the host-MANUAL fidelity gate, now calibrated to the
+  DEFAULT engine (`dot`); under `LAYOUT_ENGINE=elk` its dot-calibrated
+  `factcheck-ratio` baseline legitimately mismatches (CLEAN 14/28).
+  The ELK fallback is gated by the **vitest suite** (639/639 under
+  `LAYOUT_ENGINE=elk`, CI dual-engine step) + its structural
+  contracts, NOT the dot-host-manual ratio gate. ELK is legacy and
+  scheduled for removal (≥1 green dot release).
+- Eyeball evidence committed: `docs/gallery-compare/` (PlantUML | ELK
+  | dot side-by-side SVGs, per-fixture crossing counts —
+  `scripts/engine-compare-gallery.mjs`). Corpus: ELK 30 → dot 0,
+  PlantUML 0.
+
+### Remaining (follow-up, not P6-blocking)
+
+- Remove the ELK path + `elkjs` dep after ≥1 green release on `dot`
+  (separate change; keeps the rollback escape hatch live meanwhile).
+- `puml2drawio` consumes catalyst at a pinned `CATALYST_REF`; its next
+  bump picks up `dot` by default — no API change (the `LAYOUT_ENGINE`
+  /`layoutEngine` surface is additive), but the rendered output
+  changes (better: 0 crossings). Flag in the puml2drawio bump PR.

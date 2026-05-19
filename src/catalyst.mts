@@ -626,14 +626,19 @@ export class Catalyst {
       // as accepted-but-ignored no-ops to keep the API non-breaking.
     }
 
-    // Item 1a — engine selection. `LayoutEngine` (elkjs) and
-    // `DotLayout` (Graphviz-dot) share an identical static signature,
-    // so the swap is one binding. Precedence: option › env › 'elk'.
-    // ELK is the default + the ONLY fallback until P6; a dot failure
-    // is not caught here (it must surface — masking it would be the
-    // cardinal fake-green).
+    // Item 1a / ADR 0014 — engine selection. `LayoutEngine` (elkjs)
+    // and `DotLayout` (Graphviz-dot) share an identical static
+    // signature, so the swap is one binding. Precedence: option ›
+    // env › DEFAULT. **P6 (2026-05-19): the default is now `dot`** —
+    // PlantUML's own engine, 0 edge crossings (edgecross 30→0 proven
+    // on the rendered render-truth). ELK remains reachable as the
+    // explicit opt-out fallback (`layoutEngine:'elk'` /
+    // `LAYOUT_ENGINE=elk`) and is NOT removed until ≥1 green release
+    // on `dot` (ADR 0014 §P6 deprecation). A dot failure is not
+    // caught here (it must surface — masking it would be the cardinal
+    // fake-green).
     const engineName = options.layoutEngine
-      ?? (process.env.LAYOUT_ENGINE === 'dot' ? 'dot' : 'elk')
+      ?? (process.env.LAYOUT_ENGINE === 'elk' ? 'elk' : 'dot')
     const engine = engineName === 'dot' ? DotLayout : LayoutEngine
     const layoutData = await engine.calculateLayout(elements, relations, layoutOptions, layoutConstraints)
     // PlantUML `title <text>` (single-line; the form used corpus-wide).

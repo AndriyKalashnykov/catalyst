@@ -1,47 +1,125 @@
 <mxfile version="20.1.4" type="atlas">
   <diagram id="catalyst-diagram" name="Page-1">
-    <mxGraphModel pageHeight="530" pageWidth="117">
+    <mxGraphModel pageHeight="344" pageWidth="94">
       <root>
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
         <object placeholders="1" c4Name="User" c4Type="Person" c4Technology="" c4Description="" label="&lt;div style=&quot;font-size:11px;font-style:italic;color:#cccccc;&quot;&gt;«%c4Type%»&lt;/div&gt;&lt;div style=&quot;font-size:16px;font-weight:bold;&quot;&gt;%c4Name%&lt;/div&gt;&lt;div style=&quot;font-size:11px;color:#cccccc;&quot;&gt;%c4Description%&lt;/div&gt;" id="u">
           <mxCell style="shape=mxgraph.c4.person2;align=center;html=1;labelBackgroundColor=none;fillColor=#08427B;fontColor=#ffffff;strokeColor=#073B6F;verticalAlign=middle;whiteSpace=wrap;metaEdit=1;resizable=1" parent="1" vertex="1">
-            <mxGeometry as="geometry" height="59" width="72" x="23" y="12"/>
+            <mxGeometry as="geometry" height="59" width="72" x="10"/>
           </mxCell>
         </object>
         <object placeholders="1" c4Name="Service A" c4Type="System" c4Technology="" c4Description="" label="&lt;div style=&quot;font-size:11px;font-style:italic;color:#cccccc;&quot;&gt;«%c4Type%»&lt;/div&gt;&lt;div style=&quot;font-size:16px;font-weight:bold;&quot;&gt;%c4Name%&lt;/div&gt;&lt;div style=&quot;font-size:11px;color:#cccccc;&quot;&gt;%c4Description%&lt;/div&gt;" id="a">
           <mxCell style="rounded=1;whiteSpace=wrap;html=1;labelBackgroundColor=none;fillColor=#1061B0;fontColor=#ffffff;align=center;verticalAlign=top;arcSize=10;strokeColor=#0D5091;metaEdit=1;resizable=1" parent="1" vertex="1">
-            <mxGeometry as="geometry" height="59" width="93" x="12" y="161"/>
+            <mxGeometry as="geometry" height="59" width="93" x="0" y="95"/>
           </mxCell>
         </object>
         <object placeholders="1" c4Name="Service B" c4Type="System" c4Technology="" c4Description="" label="&lt;div style=&quot;font-size:11px;font-style:italic;color:#cccccc;&quot;&gt;«%c4Type%»&lt;/div&gt;&lt;div style=&quot;font-size:16px;font-weight:bold;&quot;&gt;%c4Name%&lt;/div&gt;&lt;div style=&quot;font-size:11px;color:#cccccc;&quot;&gt;%c4Description%&lt;/div&gt;" id="b">
           <mxCell style="rounded=1;whiteSpace=wrap;html=1;labelBackgroundColor=none;fillColor=#1061B0;fontColor=#ffffff;align=center;verticalAlign=top;arcSize=10;strokeColor=#0D5091;metaEdit=1;resizable=1" parent="1" vertex="1">
-            <mxGeometry as="geometry" height="59" width="93" x="12" y="310"/>
+            <mxGeometry as="geometry" height="59" width="93" x="0" y="189"/>
           </mxCell>
         </object>
         <object placeholders="1" c4Name="Worker" c4Type="Container" c4Technology="" c4Description="" label="&lt;div style=&quot;font-size:11px;font-style:italic;color:#cccccc;&quot;&gt;«%c4Type%»&lt;/div&gt;&lt;div style=&quot;font-size:16px;font-weight:bold;&quot;&gt;%c4Name%&lt;/div&gt;&lt;div style=&quot;font-size:11px;color:#cccccc;&quot;&gt;%c4Technology%&lt;/div&gt;&lt;div style=&quot;font-size:11px;color:#cccccc;&quot;&gt;%c4Description%&lt;/div&gt;" id="c">
           <mxCell style="rounded=1;whiteSpace=wrap;html=1;labelBackgroundColor=none;fillColor=#23A2D9;fontColor=#ffffff;align=center;verticalAlign=top;arcSize=10;strokeColor=#0E7DAD;metaEdit=1;resizable=1" parent="1" vertex="1">
-            <mxGeometry as="geometry" height="59" width="86" x="16" y="459"/>
+            <mxGeometry as="geometry" height="59" width="86" x="3" y="284"/>
           </mxCell>
         </object>
         <object placeholders="1" c4Name="uses" c4Type="Relationship" c4Technology="" c4Description="" label="&lt;div style=&quot;text-align: center;font-weight:bold;&quot;&gt;%c4Name%&lt;/div&gt;&lt;div style=&quot;text-align: center;&quot;&gt;%c4Technology%&lt;/div&gt;">
           <mxCell style="endArrow=blockThin;html=1;fontSize=10;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;metaEdit=1;endSize=14;startSize=14;jumpStyle=arc;jumpSize=16;rounded=0;curved=1" parent="1" edge="1" source="u" target="a">
-            <mxGeometry as="geometry" relative="1"/>
+            <mxGeometry as="geometry" relative="1">
+              <Array as="points">
+                <mxPoint x="47" y="60"/>
+                <mxPoint x="46" y="61"/>
+                <mxPoint x="47" y="62"/>
+                <mxPoint x="47" y="63"/>
+                <mxPoint x="47" y="64"/>
+                <mxPoint x="47" y="65"/>
+                <mxPoint x="46" y="66"/>
+                <mxPoint x="47" y="67"/>
+                <mxPoint x="47" y="68"/>
+                <mxPoint x="46" y="69"/>
+                <mxPoint x="47" y="70"/>
+                <mxPoint x="47" y="71"/>
+                <mxPoint x="47" y="72"/>
+                <mxPoint x="47" y="73"/>
+                <mxPoint x="47" y="74"/>
+                <mxPoint x="47" y="75"/>
+                <mxPoint x="47" y="76"/>
+                <mxPoint x="47" y="77"/>
+                <mxPoint x="47" y="78"/>
+                <mxPoint x="47" y="79"/>
+                <mxPoint x="47" y="80"/>
+                <mxPoint x="47" y="81"/>
+                <mxPoint x="47" y="82"/>
+              </Array>
+            </mxGeometry>
           </mxCell>
         </object>
         <object placeholders="1" c4Name="calls" c4Type="Relationship" c4Technology="" c4Description="" label="&lt;div style=&quot;text-align: center;font-weight:bold;&quot;&gt;%c4Name%&lt;/div&gt;&lt;div style=&quot;text-align: center;&quot;&gt;%c4Technology%&lt;/div&gt;">
           <mxCell style="endArrow=blockThin;html=1;fontSize=10;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;metaEdit=1;endSize=14;startSize=14;jumpStyle=arc;jumpSize=16;rounded=0;curved=1" parent="1" edge="1" source="a" target="b">
-            <mxGeometry as="geometry" relative="1"/>
+            <mxGeometry as="geometry" relative="1">
+              <Array as="points">
+                <mxPoint x="47" y="155"/>
+                <mxPoint x="46" y="156"/>
+                <mxPoint x="47" y="157"/>
+                <mxPoint x="47" y="158"/>
+                <mxPoint x="47" y="159"/>
+                <mxPoint x="47" y="160"/>
+                <mxPoint x="46" y="161"/>
+                <mxPoint x="47" y="162"/>
+                <mxPoint x="47" y="163"/>
+                <mxPoint x="46" y="164"/>
+                <mxPoint x="47" y="165"/>
+                <mxPoint x="47" y="166"/>
+                <mxPoint x="47" y="167"/>
+                <mxPoint x="47" y="168"/>
+                <mxPoint x="47" y="169"/>
+                <mxPoint x="47" y="170"/>
+                <mxPoint x="47" y="171"/>
+                <mxPoint x="47" y="172"/>
+                <mxPoint x="47" y="173"/>
+                <mxPoint x="47" y="174"/>
+                <mxPoint x="47" y="175"/>
+                <mxPoint x="47" y="176"/>
+                <mxPoint x="47" y="177"/>
+              </Array>
+            </mxGeometry>
           </mxCell>
         </object>
         <object placeholders="1" c4Name="queues" c4Type="Relationship" c4Technology="" c4Description="" label="&lt;div style=&quot;text-align: center;font-weight:bold;&quot;&gt;%c4Name%&lt;/div&gt;&lt;div style=&quot;text-align: center;&quot;&gt;%c4Technology%&lt;/div&gt;">
           <mxCell style="endArrow=blockThin;html=1;fontSize=10;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;metaEdit=1;endSize=14;startSize=14;jumpStyle=arc;jumpSize=16;rounded=0;curved=1" parent="1" edge="1" source="b" target="c">
-            <mxGeometry as="geometry" relative="1"/>
+            <mxGeometry as="geometry" relative="1">
+              <Array as="points">
+                <mxPoint x="47" y="250"/>
+                <mxPoint x="46" y="251"/>
+                <mxPoint x="47" y="252"/>
+                <mxPoint x="47" y="253"/>
+                <mxPoint x="47" y="254"/>
+                <mxPoint x="47" y="255"/>
+                <mxPoint x="46" y="256"/>
+                <mxPoint x="47" y="257"/>
+                <mxPoint x="47" y="258"/>
+                <mxPoint x="46" y="259"/>
+                <mxPoint x="47" y="260"/>
+                <mxPoint x="47" y="261"/>
+                <mxPoint x="47" y="262"/>
+                <mxPoint x="47" y="263"/>
+                <mxPoint x="47" y="264"/>
+                <mxPoint x="47" y="265"/>
+                <mxPoint x="47" y="266"/>
+                <mxPoint x="47" y="267"/>
+                <mxPoint x="47" y="268"/>
+                <mxPoint x="47" y="269"/>
+                <mxPoint x="47" y="270"/>
+                <mxPoint x="47" y="271"/>
+                <mxPoint x="47" y="272"/>
+              </Array>
+            </mxGeometry>
           </mxCell>
         </object>
         <object c4Name="Edge cases — labels only, no descriptions/technology" c4Type="Title" label="Edge cases — labels only, no descriptions/technology" id="__title">
           <mxCell style="text;html=1;align=left;verticalAlign=middle;whiteSpace=nowrap;fontSize=14;fontStyle=1;fontColor=#000000;" parent="1" vertex="1">
-            <mxGeometry as="geometry" height="17" width="361" x="12" y="-19"/>
+            <mxGeometry as="geometry" height="17" width="361" x="0" y="-31"/>
           </mxCell>
         </object>
       </root>
