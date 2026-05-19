@@ -16,7 +16,8 @@ Standalone, independently-maintained library (no upstream; never add an
   4-space nested-list indent — never 2**, it bit the CHANGELOG repeatedly).
 - `npm run test:coverage` — CI gate, thresholds 85 % (currently ≈97 %).
 - `make ci` = **static-check** + build + **coverage-check** +
-  **gallery-verify** + **seq-gallery-verify** (mirrors ci.yml's
+  **gallery-verify** + **seq-gallery-verify** + **c4feat-gallery-verify**
+  (mirrors ci.yml's
   canonical graph: `changes` → `static-check` → `build`+`test` →
   `ci-pass`). `coverage-check` runs `test:coverage` — the real 85 %
   gate, now ACTUALLY enforced over `src/**/*.mts` incl.
@@ -69,7 +70,8 @@ Standalone, independently-maintained library (no upstream; never add an
   semantic) `/ labelDrop / attachMerge` (same-pair edges collapsing)
   `/ labelHit` (label over a non-endpoint leaf) `/ nodeOverlap /
   boundaryBands`, plus advisory `rankOrder / wRatio / hRatio`. No args
-  → whole-corpus `CLEAN N/20` summary; `node scripts/factcheck-geometry.mjs
+  → whole-corpus `CLEAN N/22` summary (22 corpus + 6 spec = 28
+  audited); `node scripts/factcheck-geometry.mjs
   <stem>…` → per-fixture JSON. A fixture is "clean" ONLY when every
   contract metric is 0 — now **EIGHT**: the prior 7 + `ratioBad`
   (ADR 0011 step 0). `ratioBad` promoted `wRatio`/`hRatio`
@@ -106,7 +108,7 @@ Standalone, independently-maintained library (no upstream; never add an
 - Visual proof (corroborative only): `PLANTUML_VERSION=1.2026.2
   RENDER_SRC=<puml> RENDER_OUT=<dir> make render-compare` (java+docker;
   PlantUML PNG + catalyst→drawio PNG side by side). `make gallery`
-  renders the 20-fixture corpus into `docs/gallery/`. Large PNGs:
+  renders the 22-fixture corpus into `docs/gallery/`. Large PNGs:
   render at `DRAWIO_EXPORT_SCALE=1`.
 
 ## Non-negotiable discipline (this codebase + portfolio rules)
