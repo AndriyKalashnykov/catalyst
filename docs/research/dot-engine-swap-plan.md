@@ -124,10 +124,53 @@ the dominant selection trait (same weighting as
   the escape hatch until P6; nothing on `main` changes default until
   full acceptance.
 
+## P0 DECISION ADDENDUM (2026-05-19) — GO
+
+**Engine chosen: `@hpcc-js/wasm-graphviz@1.21.6`** (pinned `--save-exact`;
+bundles **graphviz 14.1.5**). The graphviz-only split package, smaller
+than the monolithic `@hpcc-js/wasm`. System `dot` (graphviz 2.43.0,
+2019, host-variant) was rejected for the byte-gate exactly as the
+table predicted — the wasm binary ships inside the pinned npm tarball
+so it is identical across CI/host by construction.
+
+**Premise (A) determinism — PROVEN.** `scripts/p0-dot-spike.mjs`
+renders 8 fixtures' dot graphs through the pinned engine 6× in-process
+**and once in a fresh OS process** (the genuine CI-vs-host test, not a
+warm-instance test); SHA-256 of the `json` output is **byte-identical
+across all renders and across processes, all 8 fixtures**. The
+byte-exact `gallery-verify`-class drift gates can therefore move to
+`dot`. (Determinism is the P0 hard exit criterion — met.)
+
+**Premise (B) crossings — PROVEN.** Measured with the project's OWN
+`countCrossings` core (same non-incident-crossing definition as `make
+edgecross`, Purchase 1997), on the SAME parsed entities/relations and
+content-fit `measureNode` sizes, with `cluster_*` subgraphs for
+boundaries (real nested graph, not flattened):
+
+| fixture | ELK baseline | dot | verdict |
+|---|---|---|---|
+| edge-large-graph | 18 | **0** | FIXED |
+| rel-fan-stress | 6 | **0** | FIXED |
+| rel-tech-vs-notech | 3 | **0** | FIXED |
+| rel-parallel-duplicate | 2 | **0** | FIXED |
+| rel-bidirectional | 1 | **0** | FIXED |
+| **TOTAL (5 fixtures)** | **30** | **0** | **edgecross 30→0** |
+| topology-linear-chain / hub-spoke / level-component | 0 | 0 | no regression |
+
+Corroborated against the independent signal (the rendered dot SVGs in
+`build/p0-spike/svg/`, deterministic) — clean hierarchical ranking,
+structurally faithful to each puml (e.g. edge-large-graph = 25 nodes /
+24 edges / 1 cluster). The 30→0 is real, not a gate artifact.
+
+**Verdict: GO.** Both premises hold; proceed P1→P4 per the autonomy
+contract (hard-stop only if a later phase's CONTRACT gate genuinely
+cannot go green — then negative result + escalate, never fake-green).
+`scripts/p0-dot-spike.mjs` is retained as the re-runnable proof.
+
 ## Status / entry point
 
-Branch: `feat/dot-engine` (created with this plan). Start at **P0**
-(engine spike + determinism proof), append the decision back here.
+Branch: `feat/dot-engine`. **P0 COMPLETE (GO, 2026-05-19).** Continue
+at **P1** (C4→dot graph emitter).
 Reusable assets already banked: `assignPortOrder` + tests +
 `build/portorder-models/`; `make edgecross` + ratchet (the numeric
 target); `route-fidelity` (the shape metric); the full research base
