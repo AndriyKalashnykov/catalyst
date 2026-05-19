@@ -76,6 +76,9 @@ import { polylineMidpoint } from '../dist/layout/edgeLanes.mjs'
 // ADR 0011 step-0 ratio ratchet — pure, contract-locked by
 // tests/factcheck-ratio.test.mts (extracted like p4b-svg-geom.mjs).
 import { RATIO_TOL, ratioContract } from './factcheck-ratio.mjs'
+// Item 1a / ADR 0014 — dot-engine attachMerge/labelHit residual
+// ratchet (pure, unit-tested in tests/factcheck-dot-ratchet.test.mts).
+import { dotResidualContract } from './factcheck-dot-ratchet.mjs'
 // Pure decision cores for the 8 contract metrics — extracted so each
 // has an explicit RED unit test (tests/factcheck-predicates.test.mts);
 // a gate's value is its proven RED, not its observed green. The
@@ -119,6 +122,21 @@ const RATIO_BASELINE = existsSync(RATIO_BASELINE_FILE)
   ? JSON.parse(readFileSync(RATIO_BASELINE_FILE, ENC))
   : {}
 const UPDATE_BASELINE = process.env.UPDATE_FACTCHECK_BASELINE === '1'
+
+// Item 1a / ADR 0014 — dot-engine residual ratchet (attachMerge /
+// labelHit). ONLY active when catalyst was laid out by `dot`; ELK
+// keeps the strict `=0` contract byte-unchanged. The CONTRACT stays 0
+// and honestly RED-documented (ADR 0014 §"Honest residual"); this
+// per-fixture baseline (same mechanism as factcheck-ratio /
+// edgecross-baseline) fails any REGRESSION beyond the committed dot
+// baseline. Regen: `LAYOUT_ENGINE=dot UPDATE_FACTCHECK_DOT_BASELINE=1`.
+const DOT_ENGINE = process.env.LAYOUT_ENGINE === 'dot'
+const DOT_BASELINE_FILE = join(
+  process.env.CATALYST_ROOT ?? '.', 'tests', 'factcheck-dot-baseline.json')
+const DOT_BASELINE = existsSync(DOT_BASELINE_FILE)
+  ? JSON.parse(readFileSync(DOT_BASELINE_FILE, ENC))
+  : {}
+const UPDATE_DOT_BASELINE = process.env.UPDATE_FACTCHECK_DOT_BASELINE === '1'
 
 /** draw.io <object>/<mxCell> attribute names this comparator reads. Named
  *  once so a typo can't silently make a check pass (the literals were
@@ -487,11 +505,25 @@ function factcheck(stem, dir = CORPUS) {
     // defects — count emitted elements, do not eyeball).
     const srcHasTitle = /^[ \t]*title[ \t]+\S/m.test(puml)
     const titleMiss = srcHasTitle && !(C.catTitle && C.catTitle.trim()) ? 1 : 0
+    // attachMerge/labelHit: strict `=0` CONTRACT under ELK
+    // (unchanged). Under `dot` the contract STAYS 0 & RED-documented
+    // (ADR 0014) but is gated by the per-fixture regression ratchet —
+    // the synthetic exhaustiveness fixtures legitimately pack parallel
+    // same-pair edges like PlantUML's own dot; a REGRESSION past the
+    // committed dot baseline still fails. ELK: DOT_ENGINE=false ⇒
+    // identical to before.
+    const dotRes = DOT_ENGINE
+      ? dotResidualContract(DOT_BASELINE, stem, attachMerge, labelHit)
+      : { regressed: 0, missing: false }
+    const mergeHitOk = DOT_ENGINE
+      ? dotRes.regressed === 0
+      : (attachMerge === 0 && labelHit === 0)
     const clean = entityMiss === 0 && relMiss === 0 && arrowBad === 0 &&
-      labelDrop === 0 && attachMerge === 0 && labelHit === 0 &&
+      labelDrop === 0 && mergeHitOk &&
       nodeOverlap === 0 && ratioBad === 0 && titleMiss === 0
     return { stem, clean, entityMiss, relMiss, arrowBad, labelDrop,
              attachMerge, rankOrder, wRatio, hRatio, ratioBad, ratioMissing,
+             dotRegressed: dotRes.regressed, dotMissing: dotRes.missing,
              labelHit, nodeOverlap, titleMiss,
              boundaryBands: bands,
              pml: `${P.W}x${P.H}`, cat: `${Math.round(C.W)}x${Math.round(C.H)}` }
@@ -532,9 +564,16 @@ if (isMain) {
   const all = enumerate().sort((a, b) => a.stem.localeCompare(b.stem))
   let cleanCount = 0
   const fresh = {}
+  const freshDot = {}
   for (const { stem, dir } of all) {
     const r = await factcheck(stem, dir)
     fresh[stem] = { w: r.wRatio, h: r.hRatio }
+    // Only fixtures that actually carry a residual under dot are
+    // committed (a 0/0 fixture stays governed by the strict-0 rule:
+    // dotResidualContract requires absent-stems to be 0).
+    if (r.attachMerge > 0 || r.labelHit > 0)
+      freshDot[stem] = { attachMerge: r.attachMerge, labelHit: r.labelHit }
+    if (UPDATE_DOT_BASELINE) continue
     if (UPDATE_BASELINE) continue
     if (r.clean) { cleanCount++; continue }
     const ratio = r.ratioBad
@@ -543,9 +582,20 @@ if (isMain) {
     console.log(
       `${r.stem.padEnd(26)} arrowBad=${r.arrowBad} attachMerge=${r.attachMerge} ` +
       `labelHit=${r.labelHit} entityMiss=${r.entityMiss} relMiss=${r.relMiss} ` +
-      `labelDrop=${r.labelDrop} nodeOverlap=${r.nodeOverlap} titleMiss=${r.titleMiss}${ratio}`)
+      `labelDrop=${r.labelDrop} nodeOverlap=${r.nodeOverlap} titleMiss=${r.titleMiss}${ratio}` +
+      (DOT_ENGINE && r.dotRegressed
+        ? ` dotRESIDUAL-REGRESSED (attachMerge=${r.attachMerge}/labelHit=${r.labelHit} vs baseline ` +
+          `${JSON.stringify(DOT_BASELINE[r.stem] ?? '(absent⇒must be 0)')})`
+        : (DOT_ENGINE && r.dotMissing && (r.attachMerge > 0 || r.labelHit > 0)
+          ? ` [no dot baseline — run LAYOUT_ENGINE=dot UPDATE_FACTCHECK_DOT_BASELINE=1]` : '')))
   }
-  if (UPDATE_BASELINE) {
+  if (UPDATE_DOT_BASELINE) {
+    const sorted = Object.fromEntries(
+      Object.keys(freshDot).sort().map((k) => [k, freshDot[k]]))
+    writeFileSync(DOT_BASELINE_FILE, JSON.stringify(sorted, null, 2) + '\n')
+    console.log(`factcheck DOT residual baseline written: ${DOT_BASELINE_FILE} ` +
+      `(${Object.keys(sorted).length} fixtures with a documented dot residual)`)
+  } else if (UPDATE_BASELINE) {
     const sorted = Object.fromEntries(
       Object.keys(fresh).sort().map((k) => [k, fresh[k]]))
     writeFileSync(RATIO_BASELINE_FILE, JSON.stringify(sorted, null, 2) + '\n')

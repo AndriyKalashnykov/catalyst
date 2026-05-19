@@ -1,6 +1,9 @@
 # ADR 0008 — Context layout: `layered` (like PlantUML/dot), NOT `stress`
 
-- Status: accepted
+- Status: accepted — **SUPERSEDED by ADR 0014** (2026-05-19): under
+  the `dot` engine the layout engine IS PlantUML's own, so Context
+  ranking is correct by construction, not by this ELK-`layered`
+  choice. Retained as the ELK-default rationale until 1a/P6.
 - Date: 2026-05-17
 - **Supersedes ADR 0005** (Context → `stress`+`sporeOverlap`). The
   non-hierarchical Context branch is removed entirely; every C4 diagram

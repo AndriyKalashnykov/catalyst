@@ -3,6 +3,9 @@
 - Status: **closed** — step 0 + C3 + cause D shipped; the wRatio
   premise was found to be a comparator artefact (fixed like-for-like),
   C2/C1 declined on evidence. See "Status — premise CORRECTED" below.
+  **SUPERSEDED by ADR 0014** (2026-05-19): the `dot` engine owns
+  layout aspect (it IS PlantUML's engine); the ELK-calibrated
+  `factcheck-ratio` ratchet is re-baselined under `dot` at 1a/P6.
   (Was: accepted decision base — per-candidate factcheck+byte+render PRs.)
 - Date: 2026-05-17
 - Decision record for backlog **item-0** (the "narrow diagram /

@@ -239,8 +239,10 @@ function adapt(
   // (C1 catches it); an undeclared dot phantom is never surfaced.
   const declaredLeaves = new Set<string>()
   const collectLeaves = (es: EntityDescriptor[]): void => {
-    for (const e of es)
-      e.children && e.children.length ? collectLeaves(e.children) : declaredLeaves.add(e.alias)
+    for (const e of es) {
+      if (e.children && e.children.length) collectLeaves(e.children)
+      else declaredLeaves.add(e.alias)
+    }
   }
   collectLeaves(entities)
 

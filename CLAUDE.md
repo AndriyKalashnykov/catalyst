@@ -279,6 +279,19 @@ What is left:
    sufficient against draw.io's own router; the fix REQUIRES owning
    routing end-to-end ⇒ item 1a.
 
+   1a. **ELK→Graphviz-`dot` engine swap — P0–P5 COMPLETE
+   (2026-05-19); AWAITING P6 explicit sign-off (default-flip).**
+   `LAYOUT_ENGINE=elk|dot` (`src/layout/DotLayout.mjs`,
+   `@hpcc-js/wasm-graphviz` pinned). **edgecross 30→0** proven on the
+   real rendered drawio-export render-truth; ELK default
+   byte-unchanged (628/628); `dot` path 639/639 + CI dual-engine
+   gate; `dot-layout` C6 is the CI-portable edgecross=0 contract.
+   ADR 0014 (supersedes 0008/0011). P6 (flip default, re-baseline
+   now-default artifacts WITH the flip, deprecate ELK, update
+   `puml2drawio` pin) needs explicit approval — NOTHING flips without
+   it. Status detail: `docs/research/dot-engine-swap-plan.md`. Below
+   = the original plan, retained for the P6 entry point.
+
    1a. **ELK→Graphviz-`dot` engine swap — ACTIVE, IN THIS REPO
    (user decision 2026-05-18; supersedes the "new repo" prior in
    `elk-vs-graphviz-dot.md`).** THE detailed phased plan:

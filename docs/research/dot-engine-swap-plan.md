@@ -258,12 +258,51 @@ position/extent fingerprints rebase — NOT a fake-green):
 6. **P6 (separate, explicit sign-off — irreversible):** flip default
    to `dot`, deprecate the ELK path. NOT done without approval.
 
+## P5 STATUS (2026-05-19) — COMPLETE (pending P6 sign-off)
+
+1. **attachMerge base-point comparator FP** — FIXED (`edgeEndAttach`,
+   models the rendered spline exit not the box centre);
+   mutation-verified RED; ELK factcheck **26/28 byte-unchanged**;
+   corpus attachMerge→0.
+2. **attachMerge/labelHit residual** (synthetic `c4-all-rel-variants`
+   =15 / `c4-exhaustive` labelHit=3) — resolved by the user-chosen
+   **edgecross-pattern ratchet**: committed `tests/factcheck-dot-
+   baseline.json` (2 fixtures), pure predicate
+   `scripts/factcheck-dot-ratchet.mjs`, wired into factcheck-geometry
+   ONLY under `LAYOUT_ENGINE=dot` (ELK strict-0 path byte-unchanged),
+   mutation-verified RED `tests/factcheck-dot-ratchet.test.mts`.
+   Contract stays honestly RED-documented (ADR 0014 §"Honest
+   residual"); ratchet fails any regression past baseline (0 under
+   dot now).
+3. **golden/parity re-baseline — NOT NEEDED** (a finding): both are
+   coordinate-free ⇒ engine-invariant; full suite **639/639 under
+   `LAYOUT_ENGINE=dot`**, zero baseline edits. Avoids the large risky
+   regenerated-baseline diff.
+4. **ELK-default committed artifacts** (gallery, `edgecross-baseline`
+   =30, `factcheck-ratio-baseline`) **UNCHANGED** — ELK IS still
+   default until P6; re-baselined WITH the flip (P6), not before
+   (else `gallery-verify` regen(ELK)≠committed). The `dot`
+   crossing=0 contract is CI-gated NOW via `dot-layout` C6
+   (in-pipeline, no docker).
+5. **ADR 0014** written, supersedes 0008/0011 (status headers
+   updated).
+6. **Dual-engine CI** — `ci.yml` `test` job runs the full suite
+   under `LAYOUT_ENGINE=dot` every commit.
+
+`ratioBad` under dot (CLEAN 5/28 on the host-MANUAL factcheck) = the
+ELK-calibrated ratio ratchet flagging dot's legitimately-different
+(mostly toward-PlantUML) geometry — explicitly the **P6** re-baseline
+(ADR 0014); factcheck is NOT CI. CI render-truth = `edgecross`
+(=0 via `dot-layout` C6) + `arrowskew`.
+
 ## Status / entry point
 
-Branch: `feat/dot-engine`. **P0 GO · P1+P2 · P3+P4 CORE COMPLETE —
-edgecross 30→0 decisively proven (2026-05-19).** At the **P5
-check-in boundary** (re-baseline + comparator FP fix + ADR 0014 →
-then P6 default-flip needs explicit approval).
+Branch: `feat/dot-engine`. **P0–P5 COMPLETE (2026-05-19).** ELK
+default + full suite 628/628; `dot` path 639/639 + edgecross 30→0
+proven on the real render. **AWAITING P6 explicit sign-off** (flip
+default → `dot`; re-baseline now-default artifacts WITH the flip;
+deprecate ELK after ≥1 green release; update `puml2drawio` pin).
+NOTHING flips the default without approval.
 Reusable assets already banked: `assignPortOrder` + tests +
 `build/portorder-models/`; `make edgecross` + ratchet (the numeric
 target); `route-fidelity` (the shape metric); the full research base

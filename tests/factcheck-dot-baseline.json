@@ -1,0 +1,10 @@
+{
+  "c4-all-rel-variants": {
+    "attachMerge": 15,
+    "labelHit": 0
+  },
+  "c4-exhaustive": {
+    "attachMerge": 0,
+    "labelHit": 3
+  }
+}

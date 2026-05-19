@@ -116,6 +116,15 @@ jobs:
       # 85% threshold. One make invocation so deps/build runs once.
       - name: Gallery drift gates and coverage
         run: make gallery-verify seq-gallery-verify c4feat-gallery-verify coverage-check
+      # Item 1a / ADR 0014 — dual-engine gate. The whole vitest suite
+      # under the Graphviz-`dot` engine: golden/parity are
+      # coordinate-free ⇒ engine-invariant, and `dot-layout` C6 proves
+      # edgecross==0 IN-PIPELINE (no docker, CI-portable — the
+      # CI render-truth crossing contract). ELK stays the default
+      # (the run above); this proves the `dot` path stays green every
+      # commit until the P6 default-flip. Pure node, deterministic.
+      - name: Dual-engine suite (LAYOUT_ENGINE=dot)
+        run: LAYOUT_ENGINE=dot npx vitest run
       - name: Report coverage
         uses: davelosert/vitest-coverage-report-action@02f3c2e641286b7fa308cd3e430783103ce6103b # v2
         if: always()
