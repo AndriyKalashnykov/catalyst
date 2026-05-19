@@ -128,7 +128,7 @@ notes + title; v2-deferred constructs **fail-loud** (no silent drop).
 
 | Primitive | State |
 |---|---|
-| `Lay_U/D/L/R`, `Lay_Up/Down/Left/Right` | ✓ parsed (`RelParser.getLayoutConstraints`) and fed to ELK as invisible, layout-only ranking edges (never drawn) |
+| `Lay_U/D/L/R`, `Lay_Up/Down/Left/Right` | ✓ parsed (`RelParser.getLayoutConstraints`) and fed to `dot` as invisible (`style=invis`), layout-only ranking edges (never drawn) |
 | `Lay_Distance` | ✓ parsed; carried as a layout-only constraint |
 | `LAYOUT_TOP_DOWN` | ✓ (skipped; `layoutDirection` option gives equivalent) |
 | `LAYOUT_LEFT_RIGHT` / `LAYOUT_LANDSCAPE` | ✓ (skipped) |
@@ -160,13 +160,13 @@ Handled by `src/puml/StyleParser.mts` (colour kwargs `$bgColor`/`$fontColor`/`$b
 | `SHOW_LEGEND`, `SHOW_FLOATING_LEGEND`, `SHOW_DYNAMIC_LEGEND` | ✓ → synthesized tag-entry legend box (one row per AddElementTag/AddRelTag/AddBoundaryTag stereotype: fill swatch + name), placed POST-LAYOUT right of the content (PlantUML's "legend right"). Overlay only ⇒ static-C4 byte-identical. DYNAMIC = deprecated alias |
 | `HIDE_STEREOTYPE` | ✓ → drops the `«Type»` line from element labels (PlantUML `hide stereotype`); the `c4Type` structural attribute is KEPT so golden/parity stay byte-identical. v1: box keeps the reserved stereotype-line height (measureNode untouched ⇒ static-C4 layout provably unchanged). Off by default |
 | `SHOW_PERSON_OUTLINE` / `_PORTRAIT` / `_SPRITE` | ✗ |
-| PlantUML `note left\|right\|top\|bottom of X` / `note over X[,Y]` (single + `… end note` block) | ✓ → `shape=note` placed POST-LAYOUT from the target's laid-out box (`NoteParser` separate pass; ELK/EntityParser untouched ⇒ static-C4 byte-identical). v1: ELK is note-unaware (no reflow); clamped ≥0 so never off-canvas. Floating `note as <id>` not v1 |
+| PlantUML `note left\|right\|top\|bottom of X` / `note over X[,Y]` (single + `… end note` block) | ✓ → `shape=note` placed POST-LAYOUT from the target's laid-out box (`NoteParser` separate pass; the layout engine/EntityParser untouched ⇒ static-C4 byte-identical). v1: the layout engine is note-unaware (no reflow); clamped ≥0 so never off-canvas. Floating `note as <id>` not v1 |
 
 ## Properties
 
 | Primitive | State |
 |---|---|
-| `AddProperty` / `SetPropertyHeader` / `WithoutPropertyHeader` | ✓ → up-to-4-col property table consumed by the NEXT element (fact-checked vs v2.13.0 `$getProps()` semantics), rendered POST-LAYOUT as an html grid just below that element. Overlay only ⇒ static-C4 byte-identical. v1: adjacent cell, not embedded in the element (ELK overlay-unaware — may overlap; structurally faithful, properties SHOWN not dropped) |
+| `AddProperty` / `SetPropertyHeader` / `WithoutPropertyHeader` | ✓ → up-to-4-col property table consumed by the NEXT element (fact-checked vs v2.13.0 `$getProps()` semantics), rendered POST-LAYOUT as an html grid just below that element. Overlay only ⇒ static-C4 byte-identical. v1: adjacent cell, not embedded in the element (the layout engine is overlay-unaware — may overlap; structurally faithful, properties SHOWN not dropped) |
 
 ## Priority backlog
 
@@ -174,38 +174,36 @@ Ordered by value × tractability.
 
 ### Done (structural correctness — parity-gated by `tests/parity.test.mts`)
 
-1. ✅ **Deployment nodes** (`Deployment_Node`/`Node` + `_L`/`_R`), including deep nesting (ELK native hierarchical/compound layout).
+1. ✅ **Deployment nodes** (`Deployment_Node`/`Node` + `_L`/`_R`), including deep nesting (`dot` `cluster_*` subgraph nesting, any depth).
 2. ✅ **BiRel bidirectional** — `startArrow` emitted.
 3. ✅ **Long-form Rel names** + `BiRel_*` + `Rel_Back_Neighbor`.
 4. ✅ **Parallel relations + self-loops** — one drawio edge per parsed relation (multigraph; was collapsing 17→6).
 5. ✅ **`$tags` / `$link` applied; `AddElementTag`/`AddRelTag`/`AddBoundaryTag`/`UpdateElementStyle`/`UpdateRelStyle`/`UpdateBoundaryStyle`** → colour/dashed overrides.
 
-The parity test asserts: every entity → a shape with matching `c4Type`; every relation → an edge; every endpoint resolves; `<diagram id+name>` present. Run against `c4-exhaustive.puml` (the all-encompassing fixture) + 5 real fixtures. Parity + the `tests/golden.test.mjs` structural snapshot held unchanged through the dagre→elkjs engine swap.
+The parity test asserts: every entity → a shape with matching `c4Type`; every relation → an edge; every endpoint resolves; `<diagram id+name>` present. Run against `c4-exhaustive.puml` (the all-encompassing fixture) + 5 real fixtures. Parity + the `tests/golden.test.mjs` structural snapshot are coordinate-free, so they held **unchanged** through every engine change (dagre→elkjs→dot) — proof the swaps preserved topology.
 
-### Layout fidelity (L1–L5) — engine: elkjs (Eclipse Layout Kernel)
+### Layout fidelity (L1–L5) — engine: Graphviz `dot`
 
-dagre 3.0.0 was replaced by **elkjs**: its documented option surface (wiki + spike) has no aspect/wrapping/same-rank/in-layer-order control; elkjs does. **Every** C4 diagram type — Context included — uses one algorithm, matching PlantUML's own Graphviz `dot` (ADR 0008, supersedes 0005):
+As of **2.0.0**, catalyst lays out with **Graphviz `dot`** via the pinned `@hpcc-js/wasm-graphviz` WASM build (ADR 0014, superseding the ELK ADRs 0008/0009/0011; the `elkjs` engine was removed). `dot` IS the engine PlantUML uses for C4, so catalyst reproduces PlantUML's column / rank / ribbon / ranked-cycle **by construction** rather than by approximating it with a same-family engine:
 
-- **Always `org.eclipse.elk.layered`** (flow + orthogonal routing +
-  compound nesting + `NETWORK_SIMPLEX` placement). PlantUML renders
-  every C4 level with `dot` (hierarchical ranking); ELK `layered` is
-  the same family, so catalyst reproduces PlantUML's column / rank /
-  ribbon / ranked-cycle in every case. The old people/systems→`stress`
-  +`sporeOverlap` Context branch was removed: it diverged from
-  PlantUML in every Context shape (chain→staircase, hub→scatter,
-  wide→radial). `layered` is overlap-free by construction, so no
-  declump pass is needed. Edges (Context and hierarchical alike) carry
-  ELK-computed ORTHOGONAL `sections`; laned/antiparallel edges use the
-  lane waypoint+offset fan.
+- **`dot` is PlantUML's own C4 engine.** Topology matches the
+  reference exactly: `make edgecross` = **0** non-incident crossings
+  across the corpus (catalyst == PlantUML == 0), measured on the real
+  drawio-export render-truth. Byte-deterministic (the WASM binary
+  ships in the pinned npm tarball). `dot`'s spline routes are emitted
+  VERBATIM as `curved=1` draw.io edges (ADR 0013) — no orthogonal
+  re-route, no perpendicular lane shove (the ELK-era lane apparatus
+  that was itself a crossing source was removed; `dot`'s own port
+  ordering fans parallel / BiRel / antiparallel same-pair edges).
 
 | Item | State |
 |---|---|
-| **L1 U/D** | ✓ (layered path) — engine-agnostic edge reversal ranks the target above/below |
-| **L1 L/R** | ~ honored only when the two nodes already land on the same rank (safe post-pass; cross-rank L/R is impossible in any layered engine incl. PlantUML/dot). Parsed + fed as ELK model-order influence otherwise |
-| **L2 edge routing** | ✓ ELK-computed `sections` → drawio waypoints (all diagram types, `layered`); laned/antiparallel edges use the lane waypoint+offset fan; multi-bend non-laned edges re-seat the label onto ELK's reserved rect (#56) |
-| **L3 node sizing** | ✓ real font metrics — fontkit + bundled Liberation Sans (no estimated ratios) |
-| **L4 nesting** | ✓ ELK native hierarchical/compound (boundaries, Deployment_Node), any depth |
-| **L5 aspect** | ✓ always `layered` — matches PlantUML/`dot` exactly, including the wide-rank ribbon PlantUML itself embraces (ADR 0008) |
+| **L1 U/D** | ✓ — the ranking edge is fed reversed so the target ranks above/below (the visible connector is still drawn from `pumlRelations` with the authored direction) |
+| **L1 L/R** | ✓ — same-pair pinned with `dot` `rank=same` + an invisible ordering edge; the visible connector is `constraint=false` so it does not perturb ranks |
+| **L2 edge routing** | ✓ `dot` spline control points → draw.io `curved=1` waypoints, emitted verbatim (the authoritative-route branch); label slid along the route axis only to clear unrelated leaves |
+| **L3 node sizing** | ✓ real font metrics — fontkit + bundled Liberation Sans — pinned into `dot` (`fixedsize=true`); `dot` lays out, it does not re-measure text |
+| **L4 nesting** | ✓ `dot` `cluster_*` subgraphs for boundaries / Deployment_Node, any depth |
+| **L5 aspect** | ✓ `dot` owns aspect — it IS PlantUML's engine, so the wide-rank ribbon etc. match by construction (ADR 0014, supersedes 0011) |
 
 ### Tier 2 — remaining visual fidelity
 

@@ -1,412 +1,30 @@
 /**
- * Multi-edge lane separation (renderer-side).
+ * Renderer-side label de-collision + routed-edge midpoint helpers.
  *
- * ELK de-collides antiparallel/parallel edges by distributing their node-border
- * attach points, but catalyst drops ELK's 2-point sections (no interior bend),
- * so draw.io would re-route every edge in a same-node-pair group
- * centre-to-centre — collinear, with labels stacked at the shared midpoint.
+ * Pure, side-effect-free geometry consumed by `layoutData2mx`:
  *
- * This module groups relations by their UNORDERED node pair (catching
- * antiparallel `Rel`+`Rel_Back` AND parallel duplicates) and, for any group of
- * >1 edge, fans each onto its own lane: a deterministic perpendicular offset
- * from the pair midpoint plus a matching label offset.
+ *  - `slideLabelAlongLane` — slide a `dot`-routed edge's label ALONG
+ *    the route axis the minimal distance to clear every unrelated leaf
+ *    (the authoritative-route branch's de-collision).
+ *  - `resolveLabelOverlap` — minimal perpendicular offset for a
+ *    straight 2-point edge's midpoint label (the straight branch's).
+ *  - `polylineMidpoint` — drawio's default edge-label anchor for a
+ *    multi-bend route (cumulative-arc-length midpoint).
  *
- * Pure & side-effect free so it is unit-testable without ELK/draw.io.
+ * The ELK-era multi-edge lane apparatus (`assignEdgeLanes`,
+ * `assignPortOrder`, `enforceApproachClearance`) was removed with the
+ * ELK engine (FU1 / ADR 0014) — `dot`'s own port ordering fans
+ * same-pair edges, so the perpendicular-shove machinery is gone.
  */
 
-/** Box centre + half-extents (hw = width/2, hh = height/2). The half-extents
- *  let the along-edge label cap be derived from real geometry (the label
- *  cannot be pushed past either node's border) rather than a guessed fraction. */
+/** Box centre + half-extents (hw = width/2, hh = height/2). */
 export interface NodeCenter { cx: number; cy: number; hw: number; hh: number }
 
-export interface LaneGeometry {
-  /** Interior waypoint draw.io routes the edge through (absolute coords). */
-  waypoint: { x: number; y: number }
-  /**
-   * Label position as an absolute px offset from the edge's default label
-   * anchor — emitted as `<mxPoint as="offset">` on the edge geometry.
-   * Spike-verified: drawio-export honors the offset mxPoint but IGNORES the
-   * `geometry.x` along-edge fraction, so fraction-based positioning does not
-   * de-collide labels.
-   */
-  labelOffset: { dx: number; dy: number }
-  /**
-   * Canonical-frame perpendicular UNIT vector + signed lane shift (px). Lets
-   * the caller offset ELK's own routed polyline points by the same lane
-   * amount (preserving obstacle-aware bends) instead of replacing them with
-   * the single midpoint `waypoint`.
-   */
-  perp: { x: number; y: number }
-  shift: number
-  /**
-   * Per-lane box-border attach fractions (mxGraph `exitX/exitY` on the
-   * SOURCE, `entryX/entryY` on the TARGET — each in [0,1] of that box).
-   * P10: without these every same-pair edge attaches at the box CENTRE,
-   * so two antiparallel one-way edges visually collapse into one
-   * (looking bidirectional + arrowless). Offsetting the attach point by
-   * the lane's own `shift` along the box border facing the other node
-   * makes each edge leave/enter a DISTINCT point — two clearly separate
-   * one-way lines, each with its single arrowhead, exactly as PlantUML
-   * renders Rel(a,c)+Rel(c,a). Geometry-derived (centre ± shift as a
-   * fraction of the real box extent), clamped to the border.
-   */
-  exit: { x: number; y: number }
-  entry: { x: number; y: number }
-}
-
-/** Default lane spacing for the routed waypoint (the minimum fan width
- *  when labels are absent/narrow). When a group carries labels the
- *  effective gap is widened to the group's widest label so each label,
- *  sitting on its OWN lane line, clears the neighbouring lane's label —
- *  see `assignEdgeLanes`. PlantUML fans parallel duplicates exactly this
- *  way: each label rides next to its own curve, never stacked. */
-export const EDGE_LANE_GAP_PX = 44
-
-/** mxGraph exit/entry fractions are in [0,1] of the box; 0.5 == the
- *  centre of that edge (the unconstrained default catalyst used before
- *  P10). Named so the per-lane attach math reads as "centre ± offset". */
-const HALF = 0.5
-/** Clamp an exit/entry fraction onto the box border. A lane whose
- *  perpendicular offset would exceed the box extent is pinned to the
- *  corner rather than detaching outside the shape. */
-const clamp01 = (v: number): number => Math.min(1, Math.max(0, v))
-
-/**
- * @param relations  visible relations, in emission order; the index into this
- *                    array is the key of the returned map.
- * @param nodeCenter  alias → box centre.
- * @param isExcludedEndpoint  e.g. `id => clusterIds.has(id)` — boundary/cluster
- *                    endpoints are auto-routed by draw.io, never laned.
- * @param gapPx  minimum lane spacing (used when labels are absent/narrow).
- * @param labelWidthOf  optional: relIdx → measured label width (px). When
- *                    given, each group's effective gap is widened to the
- *                    group's widest label (+`labelPadPx`) so every label,
- *                    placed ON its own lane line at the mid-gap, clears the
- *                    neighbouring lane's label. Absent ⇒ behave as before
- *                    (gap = `gapPx`).
- * @param labelPadPx  font-derived breathing added to the label-driven gap
- *                    (a real metric supplied by the caller, e.g. one space
- *                    advance at the relationship-label font).
- * @returns  per-relation-index lane geometry, ONLY for relations that belong to
- *           a same-pair group of size ≥2 whose endpoints both have a centre.
- *           Single-edge pairs / self-loops / excluded endpoints are absent
- *           (caller keeps its existing behaviour for those).
- */
-export function assignEdgeLanes(
-  relations: ReadonlyArray<{ source: string; target: string }>,
-  nodeCenter: ReadonlyMap<string, NodeCenter>,
-  isExcludedEndpoint: (id: string) => boolean,
-  gapPx: number = EDGE_LANE_GAP_PX,
-  labelWidthOf?: (relIdx: number) => number,
-  labelPadPx: number = 0,
-): Map<number, LaneGeometry> {
-  // Group by unordered pair, preserving emission order within each group.
-  // Key is JSON of the sorted pair (unambiguous for ANY alias content — no
-  // delimiter round-trip); the endpoints are carried in the value so we never
-  // split a string back into aliases.
-  const pairGroup = new Map<string, { a: string; b: string; idxs: number[] }>()
-  relations.forEach((r, i) => {
-    if (r.source === r.target || isExcludedEndpoint(r.source) || isExcludedEndpoint(r.target)) return
-    const [a, b] = [r.source, r.target].sort()
-    const key = JSON.stringify([a, b])
-    const g = pairGroup.get(key) ?? { a, b, idxs: [] }
-    g.idxs.push(i)
-    pairGroup.set(key, g)
-  })
-
-  const out = new Map<number, LaneGeometry>()
-  for (const { a: k1, b: k2, idxs } of pairGroup.values()) {
-    if (idxs.length < 2) continue
-    const A = nodeCenter.get(k1)
-    const B = nodeCenter.get(k2)
-    if (!A || !B) continue
-    // ONE canonical frame for the whole group (keyed on the sorted pair). Using
-    // each relation's own source→target would flip the perpendicular for the
-    // antiparallel partner and the offsets would cancel back onto one line.
-    const dx = B.cx - A.cx
-    const dy = B.cy - A.cy
-    const len = Math.hypot(dx, dy) || 1
-    const ex = dx / len  // edge-direction unit
-    const ey = dy / len
-    const px = -ey       // perpendicular unit
-    const py = ex
-    const mcx = (A.cx + B.cx) / 2
-    const mcy = (A.cy + B.cy) / 2
-    // Effective gap: the lane lines (and the labels riding them) must be far
-    // enough apart that two adjacent labels — each ≤ the group's widest
-    // label, both centred on their own lane — never touch. Adjacent lane
-    // centres are `gap` apart and each label spans ≤ maxW, so gap ≥ maxW
-    // (+font breathing) guarantees clearance. Pure geometry, no guessed
-    // fraction. Falls back to `gapPx` when no label widths are supplied.
-    const maxLabelW = labelWidthOf
-      ? idxs.reduce((m, i) => Math.max(m, labelWidthOf(i) || 0), 0)
-      : 0
-    const effGap = Math.max(gapPx, Math.ceil(maxLabelW + labelPadPx))
-    idxs.forEach((relIdx, idx) => {
-      // Centre the fan on 0: a 2-edge pair splits to ±half, a 3-edge group to
-      // {-1,0,+1}·gap, etc. The waypoint sets the LANE line. drawio-export
-      // anchors an edge label at the straight A↔B midpoint (NOT the routed
-      // waypoint — render-verified), so to seat the label ON its own lane
-      // line the offset must be exactly the lane's OWN perpendicular shift
-      // `(px,py)·shift` — i.e. the displacement from the midpoint anchor to
-      // the lane line. The previous code used a SEPARATE inflated constant
-      // (±120 perp / ±150 along) instead of the line's own shift, which
-      // flung every non-centre label off its line (the P1 defect). With
-      // `effGap` ≥ the group's widest label, adjacent on-line labels clear
-      // each other. The centre lane (shift 0) keeps offset (0,0).
-      const lane = idx - (idxs.length - 1) / 2
-      const shift = lane * effGap
-      // Per-lane box-border attach points (P10/P12). Use the RELATION's
-      // own source→target so the arrowhead end is correct; spread the
-      // attach fraction along the border facing the other box.
-      //
-      // P12 root-fix: the previous form was
-      // `clamp01(0.5 + px·shift / (2·hw))` — the lane's GEOMETRIC
-      // perpendicular displacement mapped to a [0,1] border fraction
-      // and CLAMPED. With ≥4 same-pair edges the outer lanes' shift
-      // (±2·effGap, effGap driven by label width) overflows the box
-      // half-extent, so two or more lanes saturate at the SAME corner
-      // (c4-all-rel-variants a→b: rel0→1.0, rel1→0.96 — 9 px apart →
-      // visual merge). The attach spread is a SEPARATE concern from the
-      // routed-line/label spread (`effGap`): K attach points must be
-      // EVENLY distributed across the whole border, never clamped.
-      // Fraction = 0.5 + dir·lane/(K−1): the canonical "K points evenly
-      // in [0,1]" (extremes at the corners, step 1/(K−1) ⇒ adjacent
-      // attaches are border-extent/(K−1) px apart — provably separated,
-      // no constant). `dir` = sign of the perpendicular component so
-      // each lane's attach stays on the side toward its own waypoint
-      // (no self-cross) and antiparallel partners keep opposite sides.
-      const S = nodeCenter.get(relations[relIdx].source)
-      const T = nodeCenter.get(relations[relIdx].target)
-      let exit = { x: HALF, y: HALF }
-      let entry = { x: HALF, y: HALF }
-      if (S && T) {
-        const sdx = T.cx - S.cx, sdy = T.cy - S.cy
-        const vertical = Math.abs(sdy) >= Math.abs(sdx)
-        const K = idxs.length
-        // even fraction across the border by signed lane index
-        const spread = (dir: number): number =>
-          clamp01(HALF + (K > 1 ? (dir >= 0 ? 1 : -1) * lane / (K - 1) : 0))
-        if (vertical) {
-          // leave/enter on the top/bottom edge; spread along X.
-          // Sign by px (perpendicular x) so the attach is on the same
-          // side as this lane's waypoint (mcx + px·shift).
-          const fx = spread(px)
-          exit = { x: fx, y: sdy > 0 ? 1 : 0 }
-          entry = { x: fx, y: sdy > 0 ? 0 : 1 }
-        } else {
-          // leave/enter on the left/right edge; spread along Y (py).
-          const fy = spread(py)
-          exit = { x: sdx > 0 ? 1 : 0, y: fy }
-          entry = { x: sdx > 0 ? 0 : 1, y: fy }
-        }
-      }
-      out.set(relIdx, {
-        waypoint: { x: Math.round(mcx + px * shift), y: Math.round(mcy + py * shift) },
-        // `+ 0` normalises a signed-zero (`Math.round(0 * -shift)` → `-0`)
-        // so the offset compares/serialises as `0`, never `-0`.
-        labelOffset: { dx: Math.round(px * shift) + 0, dy: Math.round(py * shift) + 0 },
-        perp: { x: px, y: py },
-        shift,
-        exit,
-        entry,
-      })
-    })
-  }
-  return out
-}
-
-/** Per-edge border-attach fractions (mxGraph exitX/exitY on source,
- *  entryX/entryY on target — the ONLY reliably-honored geometric lever
- *  under orthogonalEdgeStyle+curved=1; the waypoint Array is an
- *  overridable hint, see docs/research/edge-crossing-minimization.md). */
-export interface PortAttach {
-  exit: { x: number; y: number }
-  entry: { x: number; y: number }
-}
-
-/**
- * Bearing-sorted ordered-port assignment (rotation-system crossing
- * minimization with FIXED node positions) — backlog item 1 / ADR-less
- * decision `docs/research/edge-crossing-minimization.md`.
- *
- * For EVERY node, ALL its incident edges (not just same-pair groups,
- * which `assignEdgeLanes` handled) are sorted into the cyclic order of
- * the bearing from the node centre to the OTHER endpoint, grouped by
- * the box side that bearing points at, and given evenly-spaced
- * `(i+1)/(K+1)` attach fractions in that order. Per the rotation-
- * system result this removes every AVOIDABLE incident-edge ("fan")
- * crossing near a node — the class that is 100% of catalyst's measured
- * `make edgecross` defect (30/30 shared-node, 0 topologically forced).
- *
- * Same-pair (parallel/antiparallel) edges become a NESTED fan
- * (crossing-free) by construction: the sort key falls back to
- * `(pairKey, relIdx)` which is identical at BOTH endpoints, so the K
- * edges keep the same rank order on each side (monotone-consistent —
- * the metro-line nested-fan rule).
- *
- * DETERMINISTIC for the byte-exact drift gates: nodes iterated by
- * sorted id; total sort key `(bearing, pairKey, relIdx)` with relIdx
- * the unique final discriminator (no float-equality ties, no Map /
- * time / random); fractions are exact rationals.
- *
- * Pure & side-effect free. Self-loops and excluded (cluster/boundary)
- * endpoints are skipped (caller keeps existing behaviour — centre
- * attach / draw.io auto-route).
- */
-export function assignPortOrder(
-  relations: ReadonlyArray<{ source: string; target: string }>,
-  nodeCenter: ReadonlyMap<string, NodeCenter>,
-  isExcludedEndpoint: (id: string) => boolean,
-): Map<number, PortAttach> {
-  interface End { relIdx: number; far: string; isSource: boolean }
-  const endsByNode = new Map<string, End[]>()
-  relations.forEach((r, i) => {
-    if (r.source === r.target) return
-    if (isExcludedEndpoint(r.source) || isExcludedEndpoint(r.target)) return
-    if (!nodeCenter.has(r.source) || !nodeCenter.has(r.target)) return
-    ;(endsByNode.get(r.source) ?? endsByNode.set(r.source, []).get(r.source)!)
-      .push({ relIdx: i, far: r.target, isSource: true })
-    ;(endsByNode.get(r.target) ?? endsByNode.set(r.target, []).get(r.target)!)
-      .push({ relIdx: i, far: r.source, isSource: false })
-  })
-  const out = new Map<number, PortAttach>()
-  const ensure = (i: number): PortAttach => {
-    let p = out.get(i)
-    if (!p) { p = { exit: { x: HALF, y: HALF }, entry: { x: HALF, y: HALF } }; out.set(i, p) }
-    return p
-  }
-  // Monotone clockwise perimeter parameter of a border fraction,
-  // range [0,4): N 0..1, E 1..2, S 2..3, W 3..4.
-  const perimOf = (p: { x: number; y: number }): number =>
-    p.y === 0 ? p.x : p.x === 1 ? 1 + p.y : p.y === 1 ? 2 + (1 - p.x) : 3 + (1 - p.y)
-  const fromPerim = (u: number): { x: number; y: number } => {
-    const v = ((u % 4) + 4) % 4
-    return v < 1 ? { x: v, y: 0 } : v < 2 ? { x: 1, y: v - 1 }
-      : v < 3 ? { x: 3 - v, y: 1 } : { x: 0, y: 4 - v }
-  }
-  for (const node of [...endsByNode.keys()].sort()) {
-    const C = nodeCenter.get(node)!
-    const hw = C.hw || 1, hh = C.hh || 1
-    const ann = endsByNode.get(node)!.map((e) => {
-      const F = nodeCenter.get(e.far)!
-      const dx = F.cx - C.cx, dy = F.cy - C.cy
-      // ROTATION SYSTEM by construction (invariant I1): the attach is
-      // the centre-to-far RAY intersected with the box border. A ray
-      // swept clockwise hits the rectangle perimeter in strictly
-      // monotone order, so attach order == bearing cyclic order with
-      // ZERO inversions -- no per-side bucketing that breaks
-      // continuity at the corners (the disproved first attempt).
-      const adx = Math.abs(dx) || 1e-9, ady = Math.abs(dy) || 1e-9
-      const t = Math.min(hw / adx, hh / ady)
-      const a = node < e.far ? node : e.far
-      const b = node < e.far ? e.far : node
-      return {
-        ...e,
-        base: perimOf({ x: HALF + (dx * t) / (2 * hw), y: HALF + (dy * t) / (2 * hh) }),
-        pairKey: `${a} ${b}`,
-      }
-    })
-    // Equal-bearing edges (same-pair fans / collinear targets) collide
-    // at one perimeter point. Spread each group by an ordered step in
-    // (pairKey, relIdx) order -- the SAME key at both endpoints, so the
-    // K edges keep the same rank on each side (invariant I2, nested
-    // fan). Span < 0.4*(gap to next distinct base) so the spread never
-    // reorders across a distinct bearing (I1 preserved).
-    const groups = new Map<number, typeof ann>()
-    for (const a of ann) {
-      const k = Math.round(a.base * 1e6) / 1e6
-      ;(groups.get(k) ?? groups.set(k, []).get(k)!).push(a)
-    }
-    const keys = [...groups.keys()].sort((x, y) => x - y)
-    keys.forEach((k, gi) => {
-      const grp = groups.get(k)!
-      const next = keys[(gi + 1) % keys.length]
-      const gap = keys.length === 1 ? 1 : ((((next - k) % 4) + 4) % 4) || 1
-      grp.sort((p, q) =>
-        (p.pairKey < q.pairKey ? -1 : p.pairKey > q.pairKey ? 1 : 0) ||
-        p.relIdx - q.relIdx)
-      const K = grp.length
-      grp.forEach((a, idx) => {
-        const off = K === 1 ? 0 : (idx - (K - 1) / 2) * (Math.min(gap, 1) * 0.4) / K
-        const pt = fromPerim(a.base + off)
-        const pa = ensure(a.relIdx)
-        if (a.isSource) pa.exit = pt; else pa.entry = pt
-      })
-    })
-  }
-  return out
-}
 /** Axis-aligned rectangle (top-left + size) — a node's box in absolute px. */
 export interface NodeRect { x: number; y: number; w: number; h: number }
 
-/**
- * Make the edge's final approach into the target (and first departure
- * from the source) a PERPENDICULAR run long enough that draw.io's
- * arrowhead is not occluded by the orthogonal feeder segment.
- *
- * PROVEN root cause (spike vs the real drawio-export SVG, ADR/research
- * `arrowhead-orthogonal-routing.md`): every catalyst edge is
- * `edgeStyle=orthogonalEdgeStyle`, so draw.io re-routes through the
- * emitted `<Array as="points">`; `jettySize`/`exitX`/`entryX` are
- * IGNORED. When the last emitted waypoint sits closer to the target
- * border than the arrowhead is long (`REL_ARROW_SIZE`), draw.io runs
- * the orthogonal feeder *through* the arrowhead triangle — the shaft
- * reads as entering the head's SIDE (the `requeues`→`Scheduler` skew).
- * The spike measured: clearance ≥ ~2·`REL_ARROW_SIZE` removes the
- * occlusion AND leaves a clean perpendicular shaft on the REAL render.
- *
- * Transform (mirrored at both ends): push the endpoint-adjacent
- * waypoint — and the bend before it — out to `clearance` px from the
- * entered border along that border's outward normal, keeping the
- * tangential coordinate (clamped within the border extent) so the
- * segment into the border is perpendicular and ≥ `clearance` long, and
- * the feeder turn happens `clearance` px away from the box (not at
- * border level). `clearance` is `2·REL_ARROW_SIZE` (a cited renderer
- * constant) + the integer-quantisation half-step — a measured metric,
- * not a tuned pad. Endpoints (draw.io re-attaches them) are never
- * emitted; only interior waypoints, so this cannot move the attach.
- */
-export function enforceApproachClearance(
-  interior: { x: number; y: number }[],
-  src: NodeCenter,
-  tgt: NodeCenter,
-  clearance: number,
-): { x: number; y: number }[] {
-  if (interior.length === 0) return interior
-  const out = interior.map((p) => ({ x: p.x, y: p.y }))
-  // Push the waypoint nearest `box` (and the bend before it) to a
-  // perpendicular `clearance` standoff from the border it enters.
-  const anchor = (idx: number, prevIdx: number, box: NodeCenter) => {
-    const p = out[idx]
-    const nx = (p.x - box.cx) / (box.hw || 1)
-    const ny = (p.y - box.cy) / (box.hh || 1)
-    const clampX = (x: number) => Math.max(box.cx - box.hw, Math.min(box.cx + box.hw, x))
-    const clampY = (y: number) => Math.max(box.cy - box.hh, Math.min(box.cy + box.hh, y))
-    if (Math.abs(nx) >= Math.abs(ny)) {
-      // enters the left/right border ⇒ perpendicular run is horizontal
-      const border = box.cx + Math.sign(nx || 1) * box.hw
-      const standoff = border + Math.sign(nx || 1) * clearance
-      out[idx] = { x: Math.round(standoff), y: Math.round(clampY(p.y)) }
-      if (prevIdx >= 0) out[prevIdx] = { x: Math.round(standoff), y: out[prevIdx].y }
-    } else {
-      // enters the top/bottom border ⇒ perpendicular run is vertical
-      const border = box.cy + Math.sign(ny || 1) * box.hh
-      const standoff = border + Math.sign(ny || 1) * clearance
-      out[idx] = { x: Math.round(clampX(p.x)), y: Math.round(standoff) }
-      if (prevIdx >= 0) out[prevIdx] = { x: out[prevIdx].x, y: Math.round(standoff) }
-    }
-  }
-  const n = out.length
-  anchor(0, n > 1 ? 1 : -1, src)              // first departure from source
-  anchor(n - 1, n > 1 ? n - 2 : -1, tgt)      // final approach into target
-  return out
-}
-
-/** Epsilon for the "fully contains" test — MUST equal the factcheck
- *  `labelHit` gate's `contains(...,eps)` inset so this de-collision
- *  triggers on EXACTLY the cases the gate flags (and stays inert,
- *  hence byte-identical, on the cases it passes). */
+/** Gate-identical containment inset (matches `factcheck-geometry`'s
+ *  `labelHit` predicate so the slide fires on exactly its defect set). */
 const CONTAIN_EPS = 2
 
 /** Half the integer-coordinate quantum. Emitted mxPoint offsets are
@@ -420,25 +38,17 @@ const CONTAIN_EPS = 2
 const ROUND_ENVELOPE = 0.5
 
 /**
- * Minimal slide ALONG a lane line to lift a label off every obstacle.
+ * Minimal slide ALONG the route axis to lift a label off every obstacle.
  *
- * A multi-edge laned label rides its own lane line at `centre`
- * (= the rendered route's midpoint + the lane's PERPENDICULAR offset).
- * That perpendicular position is load-bearing — it is what fans the
- * group's labels apart — so de-colliding with an unrelated leaf must
- * move the label ALONG the lane line (axis = unit source→target), never
- * across it. Sliding along the axis cannot reduce the ≥`effGap`
- * perpendicular separation, so sibling labels stay fanned by
- * construction.
- *
- * Returns the smallest signed `t` (px) for which `centre + axis·t`
- * clears every obstacle under the SAME predicate `factcheck-geometry`'s
- * `labelHit` uses — a real intersection that is neither containment
- * direction, with the identical `CONTAIN_EPS` inset — so the slide
- * fires on exactly the gate's defect set. Closed-form candidate-set
- * optimiser (the optimum on a line is at an axis-contact boundary),
- * same shape as `resolveLabelOverlap`. Returns 0 when already clear
- * (⇒ caller emits the unchanged lane offset ⇒ byte-identical for every
+ * A `dot`-routed edge's label sits at `centre` (the rendered route's
+ * midpoint). De-colliding with an unrelated leaf moves it ALONG the
+ * route axis (unit source→target), the minimal signed `t` (px) for
+ * which `centre + axis·t` clears every obstacle under the SAME
+ * predicate `factcheck-geometry`'s `labelHit` uses (a real
+ * intersection that is neither containment direction, identical
+ * `CONTAIN_EPS` inset). Closed-form candidate-set optimiser (the
+ * optimum on a line is at an axis-contact boundary). Returns 0 when
+ * already clear (⇒ caller emits no offset ⇒ byte-identical for every
  * fixture the gate already passes) and 0 when no candidate clears
  * (fail-safe: never move a label somewhere no better).
  */
@@ -498,20 +108,16 @@ const aabbOverlap = (
 /**
  * Single-edge label de-collision (renderer-side, geometry-exact).
  *
- * On a non-laned edge catalyst emits no waypoint, so drawio anchors the
- * label at the straight-line midpoint. On `stress`/`force` (Context)
- * layouts ELK neither routes nor places labels, so that midpoint can
- * land on top of an unrelated node (the `topology-wide-rank` /
- * `rel-parallel` / `topology-cyclic` "label on a box" defect).
- *
- * This returns the **minimal** offset (from the midpoint, along the
- * edge's perpendicular) that separates the label's axis-aligned rect
- * from every obstacle node. The optimum along a line always occurs at an
- * axis-contact boundary, so the candidate set is exactly
- * {0} ∪ {±x-touch, ±y-touch per obstacle}; we take the smallest-|offset|
- * candidate that clears ALL obstacles. Every number is derived from real
- * rectangles — no spacing constant, no sampling step. Returns `null`
- * when the midpoint label already clears everything (emit no offset).
+ * On a straight 2-point edge catalyst emits no waypoint, so drawio
+ * anchors the label at the straight-line midpoint, which can land on
+ * an unrelated node. This returns the **minimal** offset (from the
+ * midpoint, along the edge's perpendicular) that separates the label's
+ * axis-aligned rect from every obstacle node. The optimum along a line
+ * always occurs at an axis-contact boundary, so the candidate set is
+ * exactly {0} ∪ {±x-touch, ±y-touch per obstacle}; the smallest-|offset|
+ * candidate that clears ALL obstacles wins. Every number is derived
+ * from real rectangles — no spacing constant, no sampling step.
+ * Returns `null` when the midpoint label already clears everything.
  */
 export function resolveLabelOverlap(
   a: NodeCenter,
@@ -564,11 +170,11 @@ export function resolveLabelOverlap(
  * Point at half the cumulative arc length of a polyline.
  *
  * This is drawio's default edge-label anchor for a routed (multi-bend)
- * edge: drawio-export ignores the geometry.x fraction and seats the label
- * at the routed path's LENGTH-midpoint — NOT the straight endpoint mean
- * (which `resolveLabelOverlap` assumes for straight Context edges). Used to
- * compute the offset that re-seats a multi-bend hierarchical edge's label
- * onto ELK's reserved non-overlapping rect. Pure geometry, no constant.
+ * edge: drawio-export ignores the geometry.x fraction and seats the
+ * label at the routed path's LENGTH-midpoint — NOT the straight
+ * endpoint mean (which `resolveLabelOverlap` assumes for straight
+ * edges). Used to anchor the authoritative-route branch's label slide
+ * on the route drawio actually draws. Pure geometry, no constant.
  */
 export function polylineMidpoint(
   pts: ReadonlyArray<{ x: number; y: number }>,

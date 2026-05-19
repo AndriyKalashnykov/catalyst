@@ -38,8 +38,11 @@ A fixture is **clean** iff all **eight contract metrics are 0**
 | `ratioBad` | (ADR 0011) the parity distance `abs(1−wRatio)` **or** `abs(1−hRatio)` grew > one quantisation quantum (0.01) vs the committed per-fixture baseline (`tests/factcheck-ratio-baseline.json`; ratchet, regen via `UPDATE_FACTCHECK_BASELINE=1`; predicate `scripts/factcheck-ratio.mjs`, unit-tested). **wRatio/hRatio = catalyst node-extent ÷ PlantUML node-extent — like-for-like** (NOT PlantUML's title-inflated SVG viewBox; 2026-05-17 fix, locked by `tests/factcheck-geometry.test.mts`) | no node-extent-aspect fidelity regression vs PlantUML on either axis |
 | `titleMiss` | (ADR 0012 — the **completeness invariant**, the FIRST-class structural gate, checked before any geometry/visual metric) the source `.puml` has a `title` directive but the `.drawio` has no non-empty `__title` trace cell | every source construct traces to a target element — no silent drops (the class that dropped the title on 100% of diagrams while entity/rel-only stayed green) |
 
-**Advisory** diagnostics — reported, NOT clean-disqualifying (ELK
-`layered` and PlantUML `dot` legitimately differ in same-rank order):
+**Advisory** diagnostics — reported, NOT clean-disqualifying. catalyst
+now lays out with `dot` (PlantUML's own engine, ADR 0014) so topology
+matches by construction, but the same-rank tie-break order and
+boundary-band pixel extents are not contract-stable through draw.io's
+re-render (it re-renders dot's layout with its own renderer/fonts):
 `rankOrder`, `boundaryBands`. (`wRatio`/`hRatio` themselves are still
 reported raw, but a *regression* in them is now the **contract**
 `ratioBad` — ADR 0011 promoted this axis advisory→contract. NOTE: the
@@ -59,30 +62,31 @@ exercise the path (any regression there flips a contract metric).
 
 | # | Geometry/emit path | Source | Guarding contract metric(s) | Exemplar fixtures |
 |---|---|---|---|---|
-| 1 | Cluster/boundary shape emit (title band, subtitle) | `addMxC4` (cluster) + `LayoutEngine.titlePadding` | `entityMiss`, `nodeOverlap`; advisory `boundaryBands` | c4-container, topology-deep-nesting, level-component |
-| 2 | Leaf shape emit + position | `addMxC4` (leaf) + ELK geometry | `entityMiss`, `nodeOverlap` | every fixture |
-| 3 | Leaf sizing (min size, multiline, cylinder3 cap) | `measureNode` + `theme.C4_MIN`/`CYLINDER3_CAP_PX` | `nodeOverlap` (too big/small), `layout-quality` test (≥ C4 min); advisory `wRatio/hRatio` | edge-multiline-labels, edge-large-graph (Db) |
-| 4 | Multi-edge **lane** branch: waypoint + per-lane attach (exit/entry) + along-lane label slide | `catalyst.mts` `if (lane)` → `assignEdgeLanes`, `slideLabelAlongLane` | `relMiss`, `attachMerge`, `labelHit`, `arrowBad` | rel-parallel-duplicate, rel-bidirectional, c4-all-rel-variants, c4-exhaustive |
-| 5 | Non-laned **#24-hier** multi-bend branch: interior waypoints + ELK-label re-seat offset (anchored on the rendered route — P12) | `catalyst.mts` `else if (poly>2 …)` → `polylineMidpoint` | `labelHit`, `relMiss`, `arrowBad` | edge-large-graph, level-component, **c4-container** |
-| 6 | Straight 2-point branch: `resolveLabelOverlap` de-collision | `catalyst.mts` final `else` | `labelHit`, `relMiss`, `arrowBad` | topology-wide-rank, topology-cyclic, rel-directional |
-| 7 | Edge arrowhead/style (Rel_Back reversal, BiRel, tag styles) | `addMxC4Relationship` + `relOvr` | `arrowBad`, `labelDrop` | rel-bidirectional, edge-tags-styling, c4-all-rel-variants |
-| 8 | Label text content (c4Name/desc/tech, XML/HTML escape, `<br/>`, RelIndex `n:` prefix) | `Mx` / `labelLines` / `RelParser` | `labelDrop`, `entityMiss` (normalised) | edge-unicode-specialchars, edge-multiline-labels, level-dynamic |
-| 9 | Layout algorithm (always `layered` + `NETWORK_SIMPLEX`, `ranksep`) | `LayoutEngine` (ADR 0008) | feeds ALL of the above; advisory `rankOrder` | topology-linear-chain, topology-hub-spoke |
+| 1 | Cluster/boundary shape emit (title band, subtitle) | `addMxC4` (cluster) + `DotLayout` cluster `bb` (dot `cluster_*` subgraph label band) | `entityMiss`, `nodeOverlap`; advisory `boundaryBands` | c4-container, topology-deep-nesting, level-component |
+| 2 | Leaf shape emit + position | `addMxC4` (leaf) + `DotLayout` node geometry (dot `pos`, 1 pt = 1 px) | `entityMiss`, `nodeOverlap` | every fixture |
+| 3 | Leaf sizing (min size, multiline, cylinder3 cap) | `measureNode` + `theme.C4_MIN`/`CYLINDER3_CAP_PX`, pinned into dot (`fixedsize=true`) | `nodeOverlap` (too big/small), `layout-quality` test (≥ C4 min); advisory `wRatio/hRatio` | edge-multiline-labels, edge-large-graph (Db) |
+| 4 | **Authoritative-route branch**: dot spline emitted VERBATIM as `curved=1` waypoints + along-route-axis label slide | `catalyst.mts` `if (routesAuthoritative && poly>2 && !cluster)` → `polylineMidpoint`, `slideLabelAlongLane` | `relMiss`, `attachMerge`, `labelHit`, `arrowBad` | rel-parallel-duplicate, rel-bidirectional, rel-fan-stress, c4-all-rel-variants |
+| 5 | **Straight / cluster-endpoint fallback**: no waypoint; midpoint label de-collision | `catalyst.mts` final `else` → `resolveLabelOverlap` | `labelHit`, `relMiss`, `arrowBad` | topology-wide-rank, topology-cyclic, rel-directional |
+| 6 | Edge arrowhead/style (Rel_Back reversal, BiRel, tag styles) | `addMxC4Relationship` + `relOvr` | `arrowBad`, `labelDrop` | rel-bidirectional, edge-tags-styling, c4-all-rel-variants |
+| 7 | Label text content (c4Name/desc/tech, XML/HTML escape, `<br/>`, RelIndex `n:` prefix) | `Mx` / `labelLines` / `RelParser` | `labelDrop`, `entityMiss` (normalised) | edge-unicode-specialchars, edge-multiline-labels, level-dynamic |
+| 8 | Layout algorithm (Graphviz `dot` — PlantUML's own engine; 0 crossings) | `DotLayout` (`@hpcc-js/wasm-graphviz`, ADR 0014) | feeds ALL of the above; advisory `rankOrder` | topology-linear-chain, topology-hub-spoke |
 
-Every `catalyst.mts` edge-emit branch (lane / #24-hier / straight) and
+Every `catalyst.mts` edge-emit branch (authoritative-route / straight) and
 both node-emit calls (cluster / leaf) appear above with ≥1 contract
 metric — **no emit path is unguarded**.
 
 ## Known coverage gaps (documented, not silent)
 
 1. **Advisory-only dimensions are not contracts.** Only `rankOrder`
-   (same-rank ordering legitimately differs ELK↔dot) and
-   `boundaryBands` remain advisory. `wRatio`/`hRatio` were advisory
-   until ADR 0011 promoted a *regression* in them to the contract
-   `ratioBad` (the silent-rot fix): the raw ratio still differs
-   ELK↔dot by design, but it may no longer regress AWAY from PlantUML
-   vs the committed baseline. A P9-class over-ranking/compaction is
-   now caught by that ratchet, not by strict order equality.
+   (same-rank tie-break order is not pinned through draw.io's
+   re-render even under dot) and `boundaryBands` remain advisory.
+   `wRatio`/`hRatio` were advisory until ADR 0011 promoted a
+   *regression* in them to the contract `ratioBad` (the silent-rot
+   fix): the raw ratio still differs because draw.io re-renders dot's
+   layout with its own renderer/fonts, but it may no longer regress
+   AWAY from PlantUML vs the committed baseline. An over-ranking /
+   compaction regression is caught by that ratchet, not by strict
+   order equality.
 2. **`boundaryBands`** is reported but advisory; the hard
    title-band contract is the `compound-title-clearance` /
    `compound-boundary` unit tests + `nodeOverlap` (a too-small band
