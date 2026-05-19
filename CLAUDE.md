@@ -234,8 +234,10 @@ Completed-work root-cause prose lives in git history + ADRs +
 > FACTCHECK-COVERAGE, UPGRADE-NOTES, GitHub About all re-derived.
 >
 > **Downstream:** puml2drawio `CATALYST_REF` → v2.0.0 (PR #99, full
-> CI incl. e2e green). **Open:** ibm-wm-cert-management `_drawio`
-> regen (its own release cadence) — see [[open-followups]].
+> CI incl. e2e green). **Downstream chain CLOSED:**
+> ibm-wm-cert-management `_drawio` regenerated under dot — PR #40
+> MERGED (diagrams.yml pinned to puml2drawio `# v1.6.0`) — see
+> [[open-followups]].
 >
 > **Standing gates (all green @ `v2.0.0`):** `make ci` =
 > static-check + build + coverage-check (86%) + gallery-verify +
@@ -252,8 +254,8 @@ agent memories — not re-dumped here.
 `dot` is PlantUML's own engine ⇒ `make edgecross` 0). Sequence
 (ADR 0007 a–d2b) and the C4 directive surface are feature-complete;
 P3/P5/P7 closed with cited numbers (history). Nothing in catalyst
-itself is actionably open. Remaining items, both deliberately
-deferred & documented (NOT silently dropped):
+itself is actionably open. One deliberately deferred & documented
+item remains (NOT silently dropped):
 
 1. **factcheck `attachMerge`/`labelHit` on the 2 SYNTHETIC
    exhaustiveness fixtures** (`c4-all-rel-variants`,
@@ -271,13 +273,14 @@ deferred & documented (NOT silently dropped):
    `make factcheck` is host-MANUAL, not CI; the CI render-truth
    contracts are `edgecross` (=0, via `dot-layout` C6) + `arrowskew`.
 
-2. **ibm-wm-cert-management `_drawio` regeneration** — the third
-   release-chain link (catalyst v2.0.0 → puml2drawio v2.0.0 [done,
-   PR #99] → ibm-wm). ibm-wm still pins the pre-2.0 puml2drawio and
-   ships ELK-era architecture renders; its committed
-   `docs/architecture/_drawio` will change to the dot layout
-   (large but content-faithful diff) when bumped. Separate repo, its
-   own release cadence. See [[open-followups]] / [[release-chain-topology]].
+2. **ibm-wm-cert-management `_drawio` regeneration — CLOSED
+   2026-05-19, PR #40 MERGED.** The third release-chain link
+   (catalyst v2.0.0 → puml2drawio v1.6.0 [PR #99] → ibm-wm)
+   completed this session: ibm-wm `diagrams.yml` repinned to
+   puml2drawio `# v1.6.0` and `docs/architecture/_drawio` +
+   `*.drawio.png` regenerated under the dot layout (content-faithful
+   diff, as predicted). See [[open-followups]] /
+   [[release-chain-topology]].
 
 **DO NOT reopen** without a render-measured, user-pointable defect:
 `$sprite`/`SHOW_PERSON_SPRITE` (CLOSED — no draw.io sprite registry,
