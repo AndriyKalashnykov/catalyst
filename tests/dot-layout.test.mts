@@ -144,6 +144,55 @@ describe('DotLayout — whole-path contract over the corpus', () => {
     })
   }
 
+  // Branch coverage for the directional/constraint/option/escaping
+  // paths the corpus sweep does not exercise (P6 — DotLayout is now
+  // the default engine, so these retained branches must be covered).
+  it('directional hints (L/R/U) + Lay_* constraints + rankdir + quote-escape', async () => {
+    const ent: EntityDescriptor[] = [
+      // Boundary with a quoted label → exercises q() quote-escape
+      // (leaf nodes emit no label under fixedsize, so the escape
+      // path is only reachable via a cluster label).
+      { type: 'System_Boundary', alias: 'bnd', label: 'B "quoted"',
+        children: [{ type: 'System', alias: 'a', label: 'A' }] } as EntityDescriptor,
+      { type: 'System', alias: 'b', label: 'B' } as EntityDescriptor,
+      { type: 'System', alias: 'c', label: 'C' } as EntityDescriptor,
+    ]
+    const rels = [
+      { source: 'a', target: 'b', label: 'left', description: '', direction: 'L' as const },
+      { source: 'a', target: 'c', label: 'right', description: '', direction: 'R' as const },
+      { source: 'b', target: 'c', label: 'up', description: '', direction: 'U' as const },
+    ]
+    const cons = [{ source: 'a', target: 'c', direction: 'U' as const }]
+
+    // Non-default rankdir options (LR) + the L/R same-rank +
+    // constraint(lay<i>) emit branches + the `"`-escape in q().
+    const src = DotLayout.dotSource(ent, rels, { rankdir: 'LR' }, cons)
+    expect(src).toContain('rankdir=LR')
+    expect(src).toContain('rank=same')               // L/R same-rank group
+    expect(src).toContain('id="lay0"')               // constraint edge
+    expect(src).toContain('B \\"quoted\\"')           // quote-escaped cluster label
+
+    const r = await DotLayout.calculateLayout(ent, rels, { rankdir: 'LR' }, cons)
+    expect(r.nodes.map(n => n.id).sort()).toEqual(['a', 'b', 'c'])
+    // rel<i> present for every visible relation; lay<i> surfaced too
+    // (the gvidName fallback for a constraint edge — DotLayout L310-311).
+    for (let i = 0; i < rels.length; i++)
+      expect(r.edges.some(e => e.name === `rel${i}`)).toBe(true)
+    expect(r.edges.some(e => e.name === 'lay0')).toBe(true)
+    expect(r.routesAuthoritative).toBe(true)
+  })
+
+  it('BT rankdir + a short (<4-control-point) spline degrades cleanly', async () => {
+    const ent: EntityDescriptor[] = [
+      { type: 'System', alias: 'x', label: 'X' } as EntityDescriptor,
+      { type: 'System', alias: 'y', label: 'Y' } as EntityDescriptor,
+    ]
+    const rels = [{ source: 'x', target: 'y', label: 'e', description: '' }]
+    const r = await DotLayout.calculateLayout(ent, rels, { rankdir: 'BT' })
+    expect(r.nodes).toHaveLength(2)
+    expect(r.edges[0].points!.length).toBeGreaterThanOrEqual(2)
+  })
+
   // C1-RED — mutation-verified proof the completeness gate ENFORCES.
   // The SAME predicate that returns [] above must return the dropped
   // alias when a node is removed from the contracted output. (This is
