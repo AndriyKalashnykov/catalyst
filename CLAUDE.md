@@ -245,20 +245,39 @@ git history + ADRs + memories — not re-dumped). What is left:
    aspect — NOT connectors; curved routing solved those, ADR 0013)
    becomes the dominant residual after a release.
 
-2. **`$sprite` / `SHOW_PERSON_SPRITE` — CLOSED (not a backlog item).**
+2. **Gallery-visual residuals P1/P3/P5/P7 — closed-by-AGGREGATE-
+   evidence this session, NOT individually re-judged (honest
+   follow-up).** P1 (multi-edge lane separation), P3 (long-label
+   width blow-up), P5 (hub-label proximity), P7 (short 2-pt edge
+   label cram) were retired from the backlog on the *aggregate*
+   basis: ADR 0013 curved routing closed the tangled-connector
+   class, the full 22/22 C4 gallery eyeball-sweep (handoff #21)
+   found every render content-faithful, and `make factcheck` is
+   contract-clean on all (26/28 = the 2 documented host-font ratio-
+   jitter fixtures, not a defect). They were NOT each re-verified
+   with a per-item factcheck number. Bar to act: a render-measured,
+   user-pointable defect on a specific fixture WITH the factcheck
+   metric that flags it (same evidence discipline as item 4). Likely
+   genuinely closed — but the holistic-vs-per-item distinction is
+   recorded here so it is a tracked judgement call, not a silent
+   retirement.
+
+3. **`$sprite` / `SHOW_PERSON_SPRITE` — CLOSED (not a backlog item).**
    draw.io has no PlantUML sprite registry ⇒ a sprite glyph cannot be
    faithfully rendered. Parsing never breaks; the attribute is
    captured and ignored. Documented in `C4-COVERAGE.md`. Listed here
    only so a future reader does not re-open it as "missing".
 
-3. **layout-readability — DO NOT reopen** without a render-measured,
+4. **layout-readability — DO NOT reopen** without a render-measured,
    user-pointable defect (B1 declined on evidence; tall-ribbon is
    `dot`-faithful per ADR 0011).
 
-4. **Obsolete parked branch:** `feat/seq-phase-b-layout-emit` (if it
-   still exists on origin) is SUPERSEDED — the sequence pipeline is
-   fully implemented on `main`. Safe to delete; do NOT resurrect.
+5. **Obsolete parked branch:** `feat/seq-phase-b-layout-emit`
+   (already gone from origin as of handoff #21; listed only so a
+   future reader does not resurrect it) is SUPERSEDED — the
+   sequence pipeline is fully implemented on `main`.
 
-No other open work. Sequence support and the C4 surface are
-feature-complete; the only forward-looking item is the deferred
-ELK→`dot` research bet (its own repo).
+The only forward-looking *work* item is the deferred ELK→`dot`
+research bet (its own repo); item 2 is a tracked re-verify-if-
+challenged, not active work. Sequence support and the C4 surface
+are feature-complete.
