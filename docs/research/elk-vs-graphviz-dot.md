@@ -89,6 +89,15 @@ forever"; it says:
 
 ## Why a new repo, not an in-place swap (the strong prior)
 
+> **SUPERSEDED (2026-05-18, user decision).** This "new repo" prior is
+> overridden: item 1a is now executed **in this repo** on a long-lived
+> flag-gated branch — authoritative plan:
+> **`dot-engine-swap-plan.md`** + CLAUDE.md item 1a. Its guardrails
+> (flag-gated dual-engine, full instrument-suite acceptance, per-phase
+> byte-baseline, determinism as a P0 hard gate) replace "separate
+> repo" as the risk control. Section retained as original
+> rationale/context only, not the active decision.
+
 Swapping ELK→`dot` in catalyst is not a module change; it is a
 different product:
 

@@ -279,12 +279,27 @@ What is left:
    sufficient against draw.io's own router; the fix REQUIRES owning
    routing end-to-end ⇒ item 1a.
 
-   1a. **ELK→Graphviz-`dot` full rewrite — the remaining path, own
-   repo.** `docs/research/elk-vs-graphviz-dot.md` +
-   `edge-crossing-minimization.md` (disproved-in-pipeline evidence +
-   the reusable proven `assignPortOrder`). edgeCross ratchet (30) is
-   its numeric target. Do NOT start in-place (ADR-0008/0011-
-   superseding; three in-place attempts now empirically regressed).
+   1a. **ELK→Graphviz-`dot` engine swap — ACTIVE, IN THIS REPO
+   (user decision 2026-05-18; supersedes the "new repo" prior in
+   `elk-vs-graphviz-dot.md`).** THE detailed phased plan:
+   **`docs/research/dot-engine-swap-plan.md`** (P0 engine-spike+
+   determinism → P1 C4→dot emitter → P2 dot→LayoutResult adapter →
+   P3 spline routing → P4 `LAYOUT_ENGINE=elk|dot` flag → P5 parity+
+   re-baseline+ADR 0014 → P6 flip default). Long-lived branch
+   **`feat/dot-engine`** (created with the plan); ELK stays the
+   DEFAULT and fallback until P5 fully green. Acceptance = the existing
+   instrument suite under `dot`: `edgecross` 30→**0** (the target),
+   `route-fidelity`→parity, `factcheck` completeness, `corpus-sanity`
+   no-drop, galleries regenerated, ADR 0014 superseding 0008/0011.
+   Guardrails (replace "separate repo" as risk control): flag-gated,
+   per-phase byte-baseline + `git diff --exit-code`, determinism a P0
+   hard gate, no fake-green/fixture-exclusion/contract-downgrade.
+   Banked: proven `assignPortOrder`+tests+`build/portorder-models/`,
+   the `edgecross` ratchet, `route-fidelity`, the full research base.
+   The three disproved in-place attempts (30→40/49/38,
+   `edge-crossing-minimization.md`) are the "why owning routing
+   end-to-end is required" evidence; do NOT re-attempt in-place
+   lane tweaks.
 
 2. **Gallery-visual residuals — P3/P5/P7 CLOSED; P1 REOPENED &
    RE-SCOPED to item 1 (2026-05-18).** P1's earlier "CLOSED on
