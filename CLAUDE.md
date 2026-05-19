@@ -257,20 +257,34 @@ The C4-residual sweep and seq/C4 reproducible-SVG infra are **DONE**
 REOPENED and folded into item 1 (edge crossings = global routing).
 What is left:
 
-1. **ELK→Graphviz-`dot` — RESEARCH BET, deferred, likely its own
-   repo. NOW OWNS the P1 edge-crossing residual.**
-   `docs/research/elk-vs-graphviz-dot.md` is the weighted decision
-   base + spike protocol. Do NOT start in-place (it is an
-   ADR-0008/0011-superseding rewrite of the layout+gate stack;
-   confirmed empirically — an in-place lane-routing tweak was
-   measured 30→40 crossings and reverted). The dominant residual is
-   now QUANTIFIED and GATED: `make edgecross` = 30 non-incident
-   crossings / 5 multi-edge fixtures vs PlantUML 0 (global
-   routing/port-ordering — exactly the "node placement / crossings /
-   aspect" this item covers). The edgeCross ratchet
-   (`tests/edgecross-baseline.json`) is the numeric target the
-   eventual `dot` work must drive to 0; curved routing (ADR 0013)
-   solved connector *shape*, NOT crossings.
+1. **Edge-crossing minimization — in-pipeline approach DISPROVED;
+   residual escalated to 1a (2026-05-18).** P1 QUANTIFIED & GATED:
+   `make edgecross` = 30 non-incident crossings / 5 multi-edge
+   fixtures vs PlantUML 0; ratchet `tests/edgecross-baseline.json`.
+   Full research→matrix→decision→spike→measure done
+   (`docs/research/edge-crossing-minimization.md`). The ranked
+   approach (correct-by-construction post-layout bearing-sorted
+   port-ordering pass, `assignPortOrder` + exhaustive geometry-derived
+   tests `tests/portorder.test.mts` proving rotation-system I1 /
+   nested-fan I2 / 0 pure-model crossings) was implemented and
+   RENDER-measured: it sharply improves the P1 multi-edge class
+   (those 4 fixtures 12→5) BUT draw.io's `orthogonalEdgeStyle`
+   re-router overrides the proven attach geometry on dense
+   (edge-large-graph 18→30) and boundary (c4-context 0→2) graphs →
+   net regression → **reverted, not shipped** (two prior in-place
+   tweaks also measured-worse: 30→40, 30→49/38). `assignPortOrder` is
+   RETAINED (proven-correct, deterministic, unit-tested, SVG models
+   in `build/portorder-models/`) but NOT wired — it is the building
+   block for 1a. Conclusion: the attach lever is necessary but not
+   sufficient against draw.io's own router; the fix REQUIRES owning
+   routing end-to-end ⇒ item 1a.
+
+   1a. **ELK→Graphviz-`dot` full rewrite — the remaining path, own
+   repo.** `docs/research/elk-vs-graphviz-dot.md` +
+   `edge-crossing-minimization.md` (disproved-in-pipeline evidence +
+   the reusable proven `assignPortOrder`). edgeCross ratchet (30) is
+   its numeric target. Do NOT start in-place (ADR-0008/0011-
+   superseding; three in-place attempts now empirically regressed).
 
 2. **Gallery-visual residuals — P3/P5/P7 CLOSED; P1 REOPENED &
    RE-SCOPED to item 1 (2026-05-18).** P1's earlier "CLOSED on
