@@ -34,7 +34,7 @@ import { basename, join, resolve } from 'node:path';
 import { Catalyst } from '../dist/catalyst.mjs';
 
 const PLANTUML_VERSION = process.env.PLANTUML_VERSION ?? '1.2026.2';
-const DRAWIO_IMAGE = process.env.DRAWIO_EXPORT_IMAGE ?? 'rlespinasse/drawio-export:v4.51.0';
+const DRAWIO_IMAGE = process.env.DRAWIO_EXPORT_IMAGE ?? 'rlespinasse/drawio-export:v4.52.0';
 const DRAWIO_SCALE = process.env.DRAWIO_EXPORT_SCALE ?? '2';
 // GALLERY_MD_ONLY=1  — regenerate ONLY docs/gallery/README.md from the
 //   already-rendered images (skip java/docker render + catalyst
