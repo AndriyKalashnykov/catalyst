@@ -126,6 +126,25 @@ Standalone, independently-maintained library (no upstream; never add an
   — cell `style()` `fontSize` > inline `<div style>` CSS > engine
   default. A "cited default" is wrong if a cell override exists (this is
   exactly the 10px edge-label bug).
+- **Every gate/contract test MUST prove its RED (BLOCKING,
+  portfolio-wide `gate-RED-proves-enforcement`).** A test that only
+  shows green on correct code is indistinguishable from no test. Any
+  new/changed test that asserts a contract (a metric, an invariant, an
+  instrument) ships WITH (a) a GREEN case AND (b) a RED case that fails
+  on the EXACT defect the contract guards, mutation-verified at least
+  once (break the predicate → the RED case fails → restore). A
+  fully-mocked "whole-path" test (mock returns a canned string the
+  assertion then checks) is green-only — forbidden; de-mock to real
+  output bound to a real token. A test that imports nothing from
+  `src/` and asserts literals/local mocks is FAKE — delete it (it adds
+  zero real coverage by construction). The factcheck contract metrics
+  live extracted+RED-tested in `scripts/factcheck-predicates.mjs` /
+  `tests/factcheck-predicates.test.mts` (mutation-verified); a
+  documented metric blind spot (e.g. `norm()` collapsing `\n`≡`<br/>`)
+  is itself ASSERTED so it cannot silently widen. Memory
+  `every-gate-proven-red`. The 2026-05-18 suite audit (13/17
+  proven-RED, 1 fixed, 2 fake removed/de-mocked) is the baseline —
+  keep it at 100%.
 - **golden/parity tests fingerprint topology, not coordinates** — they
   prove "no structural regression", NOT that sizing/visual is correct.
   `layout-quality` (no leaf overlap, ≥ C4 min size) is monotonic-safe
@@ -233,39 +252,79 @@ Completed-work root-cause prose lives in git history + ADRs +
 
 ## BACKLOG — remaining (priority order)
 
-Everything from items 1/2/5, the C4-residual sweep, and the
-seq/C4 reproducible-SVG infra is **DONE** (handoff #21; detail in
-git history + ADRs + memories — not re-dumped). What is left:
+The C4-residual sweep and seq/C4 reproducible-SVG infra are **DONE**
+(handoff #21). P3/P5/P7 are CLOSED with cited numbers (item 2). P1 is
+REOPENED and folded into item 1 (edge crossings = global routing).
+What is left:
 
 1. **ELK→Graphviz-`dot` — RESEARCH BET, deferred, likely its own
-   repo.** `docs/research/elk-vs-graphviz-dot.md` is the weighted
-   decision base + spike protocol. Do NOT start in-place (it is an
-   ADR-0008/0011-superseding rewrite of the layout+gate stack).
-   Revisit only if *layout* fidelity (node placement / crossings /
-   aspect — NOT connectors; curved routing solved those, ADR 0013)
-   becomes the dominant residual after a release.
+   repo. NOW OWNS the P1 edge-crossing residual.**
+   `docs/research/elk-vs-graphviz-dot.md` is the weighted decision
+   base + spike protocol. Do NOT start in-place (it is an
+   ADR-0008/0011-superseding rewrite of the layout+gate stack;
+   confirmed empirically — an in-place lane-routing tweak was
+   measured 30→40 crossings and reverted). The dominant residual is
+   now QUANTIFIED and GATED: `make edgecross` = 30 non-incident
+   crossings / 5 multi-edge fixtures vs PlantUML 0 (global
+   routing/port-ordering — exactly the "node placement / crossings /
+   aspect" this item covers). The edgeCross ratchet
+   (`tests/edgecross-baseline.json`) is the numeric target the
+   eventual `dot` work must drive to 0; curved routing (ADR 0013)
+   solved connector *shape*, NOT crossings.
 
-2. **Gallery-visual residuals P1/P3/P5/P7 — ACTIVE: individually
-   re-judge each, per item, with a cited factcheck number.** These
-   were retired this session on *aggregate* evidence only (ADR 0013
-   curved routing + the 22/22 eyeball-sweep + factcheck contract-
-   clean 26/28) — they were NOT each verified. This is open work,
-   not closed: walk each one against its specific fixtures and the
-   factcheck metric that would flag it, and record a per-item
-   verdict (CLOSED-with-number, or a render-measured defect to fix):
-     - **P1 multi-edge lane separation** — `rel-parallel-duplicate`,
-       `rel-tech-vs-notech`, `rel-bidirectional`, `rel-fan-stress`;
-       metric `attachMerge` (same-pair edges collapsing) + visual.
-     - **P3 long-label width blow-up** — `rel-long-labels`,
-       `edge-multiline-labels`; metric `wRatio`/`labelDrop`.
-     - **P5 hub-label proximity** — `topology-hub-spoke`,
-       `topology-wide-rank`; metric `labelHit` + `nodeOverlap`.
-     - **P7 short 2-pt edge-label cram** — `edge-tags-styling`,
-       `level-dynamic`; metric `labelHit` on the 2-point branch.
-   `make factcheck` per-fixture (`node scripts/factcheck-geometry.mjs
-   <stem>`) is the per-item instrument; cite its number per the
-   no-eyeball rule. Likely several are genuinely closed — but each
-   needs its own number, not the aggregate.
+2. **Gallery-visual residuals — P3/P5/P7 CLOSED; P1 REOPENED &
+   RE-SCOPED to item 1 (2026-05-18).** P1's earlier "CLOSED on
+   `attachMerge=0`" was WRONG and is retracted: `attachMerge` only
+   measures same-pair *collapse*, NOT edge *crossings* — an unmeasured
+   property is UNKNOWN, not pass (the BLOCKING done-on-a-green-gate
+   rule; the user caught it by eyeballing the gallery, the exact
+   failure that rule names):
+     - **P1 — REOPENED, re-scoped under item 1.** A NEW rendered-SVG
+       contract `make edgecross` (`scripts/edgecross-svg.mjs`, RED +
+       mutation-tested `tests/edgecross-svg.test.mjs`) measures
+       non-incident edge crossings on the COMMITTED drawio-export
+       render-truth. Honest inventory: **catalyst 30 crossings across
+       5 multi-edge fixtures (edge-large-graph 18, rel-fan-stress 6,
+       rel-tech-vs-notech 3, rel-parallel-duplicate 2,
+       rel-bidirectional 1) vs PlantUML 0** — the other 17 fixtures
+       are 0=0. Root cause: lane separation is a LOCAL per-pair
+       perpendicular translation of ELK's route, ignorant of other
+       edges → it shoves a laned route across non-group neighbours.
+       A targeted in-place fix (emit ELK's route as-is) was
+       implemented and MEASURED via docker re-render: **30→40
+       (regression) — disproved, reverted, not shipped** (negative
+       result, per the rules). This is the global routing/port-order
+       problem item 1 explicitly owns ("crossings"); not an in-place
+       fixable residual. Guard: per-fixture ratchet
+       `tests/edgecross-baseline.json` (= factcheck-ratio pattern) —
+       contract stays honestly RED (NOT advisory-downgraded), the
+       ratchet fails any regression past baseline (would have caught
+       the 30→40).
+     - **P3 long-label width — CLOSED + sufficiency note.**
+       rel-long-labels wRatio=0.98 (NO blow-up — narrower than
+       PlantUML), labelDrop=0, ratioBad=0. edge-multiline-labels:
+       literal `\n` verified emitted as `&lt;br/&gt;` in the
+       `.drawio` (NOT tofu), hRatio=1.63 within ratchet. SUFFICIENCY:
+       factcheck `norm()` collapses `\n`≡`<br/>` so `labelDrop` is
+       blind to a literal-`\n` regression — that class is guarded by
+       `corpus-sanity` pt 6 (`not.toMatch(/\\n/)`) + `output-
+       correctness` Phase-1 (triple-covered), and the blind spot is
+       now an ASSERTED limitation in `factcheck-predicates.test.mts`.
+     - **P5 hub-label proximity — CLOSED.** topology-hub-spoke (6
+       spokes) labelHit=0 nodeOverlap=0 min-leaf-clearance 53.9px;
+       topology-wide-rank (8-wide ribbon) labelHit=0 clearance
+       56.8px; ratios within ratchet. `partialOverlap` (the labelHit
+       core) RED-tested.
+     - **P7 short 2-pt edge-label cram — CLOSED.** Both fixtures are
+       all-0-waypoint (the genuine 2-point branch): edge-tags-styling
+       labelHit=0 clearance 225.5px; level-dynamic 185–204px. Robust.
+   Instrument hardened (no longer green-only): the 8 factcheck
+   contract predicates extracted to `scripts/factcheck-predicates.mjs`
+   (byte-identical 28-fixture baseline) + RED+GREEN unit tests
+   (mutation-verified). Whole test suite RED-audited (see discipline
+   below): `catalyst-functions.test.mts` (100% fake — zero `src/`
+   imports) DELETED; `catalyst.test.mts` de-mocked into a real
+   RED-capable public-API contract.
 
 3. **`$sprite` / `SHOW_PERSON_SPRITE` — CLOSED (not a backlog item).**
    draw.io has no PlantUML sprite registry ⇒ a sprite glyph cannot be
@@ -282,8 +341,10 @@ git history + ADRs + memories — not re-dumped). What is left:
    future reader does not resurrect it) is SUPERSEDED — the
    sequence pipeline is fully implemented on `main`.
 
-Active work: **item 2** (per-item re-judge of P1/P3/P5/P7 — small,
-do-able now) and the deferred **item 1** (ELK→`dot` research bet, its
-own repo). The sequence pipeline and the C4 *directive* surface are
-feature-complete; item 2 is residual *visual-fidelity* verification,
-not new capability.
+Active work: the deferred **item 1** (ELK→`dot` research bet, its own
+repo) — now the owner of the P1 edge-crossing residual, QUANTIFIED &
+ratchet-gated by `make edgecross` (30 vs PlantUML 0), with the
+in-place fix empirically disproved. P3/P5/P7 are CLOSED with cited
+numbers; the sequence pipeline and the C4 *directive* surface are
+feature-complete. The honest standing state: crossings are a real,
+measured, deferred residual — not "no residual outstanding".
