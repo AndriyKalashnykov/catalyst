@@ -1,69 +1,69 @@
 {
-    "name": "catalyst",
-    "version": "1.7.0",
-    "description": "A library for converting PlantUML C4 diagrams to draw.io XML format using the ELK (elkjs) layout engine",
-    "main": "dist/catalyst.mjs",
-    "types": "dist/catalyst.d.mts",
-    "type": "module",
-    "scripts": {
-        "build": "tsc && node scripts/copy-assets.mjs",
-        "dev": "tsc --watch",
-        "prepublishOnly": "npm run build && npm run test:run",
-        "example": "cd sample && node example.mjs",
-        "lint": "oxlint ./src",
-        "lintfix": "oxlint --fix ./src",
-        "mdlint": "markdownlint '**/*.md' --ignore node_modules --disable MD033 MD013 MD041",
-        "test": "vitest",
-        "test:run": "vitest run",
-        "test:coverage": "vitest run --coverage",
-        "golden:update": "UPDATE_GOLDEN=1 vitest run tests/golden.test.mjs",
-        "render-compare": "npm run build && node scripts/render-compare.mjs"
-    },
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/AndriyKalashnykov/catalyst"
-    },
-    "author": "",
-    "license": "MIT",
-    "bugs": {
-        "url": "https://github.com/AndriyKalashnykov/catalyst/issues"
-    },
-    "homepage": "https://catalyst.mindfield.dk",
-    "keywords": [
-        "plantuml",
-        "c4",
-        "drawio",
-        "diagram",
-        "converter",
-        "elk",
-        "layout",
-        "elkjs"
-    ],
-    "files": [
-        "dist/**/*",
-        "README.md",
-        "LICENSE"
-    ],
-    "exports": {
-        ".": {
-            "import": "./dist/catalyst.mjs",
-            "types": "./dist/catalyst.d.mts"
-        }
-    },
-    "dependencies": {
-        "elkjs": "^0.11.1",
-        "fontkit": "^2.0.4",
-        "xml2js": "^0.6.2"
-    },
-    "devDependencies": {
-        "@types/fontkit": "2.0.9",
-        "@types/node": "25.8.0",
-        "@types/xml2js": "0.4.14",
-        "@vitest/coverage-v8": "4.1.6",
-        "markdownlint-cli": "0.48.0",
-        "oxlint": "1.65.0",
-        "typescript": "6.0.3",
-        "unsplash-js": "7.0.20",
-        "vitest": "4.1.6"
+  "name": "catalyst",
+  "version": "1.8.0",
+  "description": "A library for converting PlantUML C4 diagrams to draw.io XML format using the ELK (elkjs) layout engine",
+  "main": "dist/catalyst.mjs",
+  "types": "dist/catalyst.d.mts",
+  "type": "module",
+  "scripts": {
+    "build": "tsc && node scripts/copy-assets.mjs",
+    "dev": "tsc --watch",
+    "prepublishOnly": "npm run build && npm run test:run",
+    "example": "cd sample && node example.mjs",
+    "lint": "oxlint ./src",
+    "lintfix": "oxlint --fix ./src",
+    "mdlint": "markdownlint '**/*.md' --ignore node_modules --disable MD033 MD013 MD041",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "golden:update": "UPDATE_GOLDEN=1 vitest run tests/golden.test.mjs",
+    "render-compare": "npm run build && node scripts/render-compare.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AndriyKalashnykov/catalyst"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/AndriyKalashnykov/catalyst/issues"
+  },
+  "homepage": "https://catalyst.mindfield.dk",
+  "keywords": [
+    "plantuml",
+    "c4",
+    "drawio",
+    "diagram",
+    "converter",
+    "elk",
+    "layout",
+    "elkjs"
+  ],
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "LICENSE"
+  ],
+  "exports": {
+    ".": {
+      "import": "./dist/catalyst.mjs",
+      "types": "./dist/catalyst.d.mts"
     }
+  },
+  "dependencies": {
+    "elkjs": "^0.11.1",
+    "fontkit": "^2.0.4",
+    "xml2js": "^0.6.2"
+  },
+  "devDependencies": {
+    "@types/fontkit": "2.0.9",
+    "@types/node": "25.8.0",
+    "@types/xml2js": "0.4.14",
+    "@vitest/coverage-v8": "4.1.6",
+    "markdownlint-cli": "0.48.0",
+    "oxlint": "1.65.0",
+    "typescript": "6.0.3",
+    "unsplash-js": "7.0.20",
+    "vitest": "4.1.6"
+  }
 }

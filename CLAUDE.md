@@ -172,428 +172,91 @@ Everything below is researched, not speculative. Sizes are honest.
 Completed-work root-cause prose lives in git history + ADRs +
 `docs/UPGRADE-NOTES.md` + agent memories — not re-dumped here.
 
-> ▶ **HANDOFF #20, 2026-05-18 (cont.) — seq permutation matrix +
-> a real dispatch-gate defect it caught.** 12 systematic
-> `seq-perm-*` fixtures (arrows/self-msg/activation/notes/fragments
-> [+nested]/dividers/ref/create-destroy/box/c4-kinds/combined) +
-> `tests/seq/seq-corpus-sanity.test.mts` (the seq analogue of C4
-> corpus-sanity — globs all 18 seq fixtures, asserts convert + strict
-> XML + decl-order-X + source-order-Y + no tofu). It immediately
-> caught a REAL product defect: `src/catalyst.mts` dispatched to
-> `SeqConverter` only when `elements===0 && relations===0`, so a
-> C4-macro-form sequence (`Rel()`/`Person()`/`*_Boundary()` — valid
-> C4_Sequence) mis-routed to static-C4/ELK → crash/0-lifelines.
-> Fixed: `C4_Sequence` include / `participant` line is authoritative,
-> dispatch FIRST ungated. Zero C4 risk PROVEN (gallery-verify +
-> arrowskew 22/22 + 538 vitest byte-identical). seq-gallery now 18
-> fixtures (committed SVG, seq-gallery-verify CI-gated). C4 gallery
-> eyeball-swept 21/22 this session (all content-faithful, curved
-> splines clean, dense fixtures = inherent dot-faithful topology not
-> defect-crosswiring; `edge-empty-descriptions` not yet eyeballed —
-> factcheck+arrowskew CLEAN); P8 confirmed DONE (stale backlog).
-> **Still TODO (task 16): C4 gallery committed-SVG parity** (C4 is
-> PNG-only; seq got SVG #132) + C4 residuals (note/sketch/
-> HIDE_STEREOTYPE/legend/AddProperty; `$sprite`/`_SPRITE` genuinely
-> not implementable — no drawio sprite registry) + seq self-message
-> short-label re-spike (task 13; the `seq-perm-self-message` fixture
-> now has BOTH a short and a long self-label for it).
+> ▶ **HANDOFF #21, 2026-05-18 — C4 residuals swept; ADR 0007 COMPLETE;
+> seq+C4 reproducible-SVG galleries; coverage-gate fake-gate fixed.**
+> 14 catalyst PRs (#127–#140) + 3 claude-config rule commits.
 >
-> ▶ **session handoff #18, 2026-05-18 (cont.) —
-> ADR 0007 phase (d2) sequence fragments LANDED.** Branch
-> `feat/seq-d2-fragments` (PR pending): `alt/else/opt/loop/par/
-> critical/group/break` (nested) now convert — paired
-> `fragment-start|else|end` events, `SeqParser` nesting stack
-> (unterminated/orphan-`else` fail-loud), `LaidFragment` box
-> (header-widened so `[guard]` is one line; `minChildRight` floor ⇒
-> parent strictly encloses children by construction), `umlFrame`
-> emit BEHIND messages. +11 seq tests (47 total), 475 vitest, lint 0,
-> mdlint 0, gallery-verify CLEAN, arrowskew CLEAN 20/20,
-> `tests/fixtures/seq/seq-d2-fragments.puml` render-compare clean vs
-> PlantUML. **factcheck 24/26 = proven pre-existing host-calibration
-> noise** (origin/main yields identical `ratioBad` w/hRatio on THIS
-> host for `c4-all-rel-variants`/`edge-unicode-specialchars` — the
-> documented host-font MANUAL-gate caveat; baseline correctly NOT
-> regenerated since there is no intentional C4 geometry change). Zero
-> C4 risk VERIFIED, not assumed. Still deferred (fail-loud, no silent
-> drop): `box`/`Boundary` grouping, `ref`, `create`/`destroy`.
+> **Sequence — ADR 0007 FULLY IMPLEMENTED (phases a–d2b, NOTHING
+> deferred):** `ref` (#131), `create`/`destroy` (#133),
+> `box`/`*_Boundary` (#134) landed; `SeqParser.DEFERRED` is now
+> intentionally empty (fail-loud kept for malformed/unknown only).
+> Empty `====` → thin rule (#130); self-message loop width = own
+> measured label not the column gap (#137). 12 `seq-perm-*`
+> permutation fixtures + `seq-corpus-sanity` globbing gate (#135) —
+> caught & fixed a REAL dispatch defect (C4-macro-form sequence
+> mis-routed to the static/ELK path → crash). `make seq-gallery` +
+> `seq-gallery-verify` (committed SVG drift gate, CI) (#132).
 >
-> **Handoff #19, 2026-05-18 (cont.) — RELEASE CHAIN SHIPPED.**
-> catalyst **v1.7.0** tagged on `main` (`7691aac`, PR #125; annotated
-> tag, no GitHub Release — `github-tags` datasource). Full downstream
-> chain landed + artifact-verified: catalyst v1.7.0 → puml2drawio
-> **v1.5.5** (PR #96; tag `^{}`=`991065e0`; ghcr `:1.5.5`==`:1`
-> digest-matched; floating `v1`/`v1.5` retargeted) → ibm-wm SHA-pin
-> `991065e0…` (PR #13 MERGED `a6eb9a7`; `diagrams-pass` green;
-> `_drawio/*` regenerated with curved connectors — caught + fixed a
-> Make-timestamp stale-render no-op). Downstream test premises
-> changed by v1.7.0 (C4_MIN floor removed, C4_Sequence now supported)
-> — puml2drawio layout-quality + runner tests rewritten accordingly.
-> CHANGELOG `[Unreleased]`→`[1.7.0]` curated (sequence/title/aspect
-> headline entries were missing). Memory `release-chain-topology`
-> updated with the 2026-05-18 chain + the two downstream-adaptation
-> lessons. **NEXT-SESSION priority is now: (1) ADR 0007 phase d2b
-> (`box`/`Boundary`/`ref`/`create`/`destroy`); (2) seq v1.x polish;
-> (3) ELK→Graphviz research bet (deferred); (4) optional
-> housekeeping.** The release (old item 3) is DONE.
+> **C4 residuals — ALL actionable ones done** (each: `c4-feat`
+> fixture + committed SVG + tests + `C4-COVERAGE.md` ✗→✓; overlay/
+> style-only ⇒ static-C4 corpus byte-identical, proven by
+> gallery-verify/golden diff): `HIDE_STEREOTYPE`, `LAYOUT_AS_SKETCH`/
+> `SET_SKETCH_STYLE` (#138); `note left|right|top|bottom of X` (#139,
+> note-text-render regression fixed #140); `SHOW_LEGEND`,
+> `AddProperty`/`SetPropertyHeader` (#140). `make c4feat-gallery` +
+> `c4feat-gallery-verify` (CI). `$sprite`/`SHOW_PERSON_SPRITE` =
+> **CLOSED, not implementable** (no draw.io sprite registry — a fact,
+> not a TODO).
 >
-> Prior handoff #17, 2026-05-18 — `main` @ `dd764f1` (post-#122),
-> connector-fidelity arc COMPLETE. That session landed, all MERGED:**
-> #117 path-filtered `render-gate` ci.yml job (`make arrowskew` hard
-> `ci-pass` contract; new `render` paths-filter group) + the
-> bind-mount-EACCES fix its own first CI run flushed out · #118
-> portfolio-standard `cleanup-runs.yml` + `.claude/` gitignored
-> (untracked `scheduled_tasks.lock`) · #119 `factcheck-geometry.mjs`
-> now `process.exitCode=1` on non-clean (latent fake-gate fixed) +
-> **factcheck Docker-pin attempted & EMPIRICALLY CLOSED (negative
-> result, reverted)** — the only portable PlantUML image is a
-> noisier multi-modal oracle than the ADR-0010 host; factcheck
-> stays host-JVM **manual** (NOT CI). `deps-plantuml`/
-> `GALLERY_FETCH_JAR_ONLY` removed as orphaned · #120 **route-fidelity
-> comparator** (`scripts/route-fidelity.mjs`, scale/layout-invariant
-> detour+turn distributions — immune to the factcheck node-pos FP
-> class) + **44 exhaustive tests** + `docs/research/elk-vs-graphviz-
-> dot.md` + ADR 0013 (pending) · #121 committed self-verifying
-> **`make routefidelity`** harness (`scripts/route-fidelity-matrix
-> .mjs`+`-convert.mjs`; R1–R5, aborts on non-differentiation) →
-> **ADR 0013 ACCEPTED** (route-shape L1 to PlantUML: orthogonal
-> 1.017 → curved 0.294, ~3.5× closer, robust on both metrics) ·
-> #122 **`curved: 1` edge routing LIVE** (was `orthogonalEdgeStyle`;
-> the user-reported `rel-bidirectional` connector tangle is fixed) +
-> full `docs/gallery/` re-render + gate re-derivation. Also: GH
-> workflow-run history purged to last 5 (`cleanup-runs.yml` keeps
-> it). **The connector-fidelity arc is COMPLETE; curved is on main.**
+> **Infra/correctness:** the vitest 85 % coverage gate was a silent
+> no-op (`thresholds.global` is Jest syntax) — fixed to the real
+> schema + scoped to `src/**/*.mts`, `src/catalyst.mts` now gated
+> (#128). `bendcount` `make` target + the instrument fixed for
+> ADR-0013 curved edges (#127). `rel-self-loop`/`rel-fan-stress`
+> promoted into `corpus/` (#129). C4 gallery gained committed
+> reproducible SVG, parity with seq (#136). C4 gallery eyeball-swept
+> 22/22 (content-faithful; dense fixtures are dot-faithful topology,
+> not defect-crosswiring).
 >
-> **▶▶ NEXT SESSION — pick up here (priority order):**
+> **Memories:** `silent-fake-gate-classes`, `render-verify-and-emit-
+> encoding` (+ MEMORY.md). **claude-config rules added:** gate-RED-
+> proves-enforcement; render-verified-must-confirm-content; new-
+> parallel-subsystem-needs-own-drift-gate; permutation-matrix-corpus.
 >
-> 1. **ADR 0007 — ✅ FULLY IMPLEMENTED (phases a–d2b complete,
->    NOTHING deferred).** `ref` (#131), `create`/`destroy` (#133)
->    and `box`/`Boundary` lifeline grouping (this session — `SeqBox`
->    contiguous declaration-range, non-nesting; one `topShift =
->    titleH + boxBandH` keeps boxed+non-boxed heads aligned; box
->    derived from final lifeline positions, full height; emitted
->    behind lifelines; 14 tests, 519 vitest; the stale "box still
->    fail-louds" output-correctness contract UPDATED not deleted;
->    render-compare structurally faithful; gallery-verify +
->    seq-gallery-verify CLEAN ⇒ zero C4 risk verified). The
->    fail-loud seam now guards only malformed input + future grammar
->    (contract-lock). **No remaining d2b work.**
-> 2. **Sequence v1.x polish** (ADR 0007 "Known v1 imperfections") —
->    empty `====` → thin rule **✅ DONE** (this session: line-edge
->    rule not a filled band; render-compare verified; emit-contract
->    tested + labelled-band regression guard). note↔activation row
->    overlap **DECLINED on evidence** (overlap is X-axis; the ADR's
->    "reserve row height" fix is mis-targeted; catalyst already draws
->    note-on-top = PlantUML behaviour — see ADR 0007). Remaining:
->    self-message-loop-width = MEASURED no-op for long labels —
->    re-spike ONLY with a SHORT-self-label fixture, else leave it.
-> 3. **Downstream release — ✅ DONE (handoff #19).** catalyst v1.7.0
->    → puml2drawio v1.5.5 → ibm-wm SHA-pin `991065e0…` (PR #13
->    MERGED). Artifact-verified end-to-end. See handoff #19 above +
->    memory `release-chain-topology` (2026-05-18 chain). No further
->    release action until d2b/v1.x change the surface again.
-> 4. **ELK→Graphviz-`dot` — RESEARCH BET, deferred, likely its own
->    repo.** `docs/research/elk-vs-graphviz-dot.md` is the weighted
->    decision base + spike protocol. Do NOT start in-place (it is an
->    ADR-0008/0011-superseding rewrite of the layout+gate stack).
->    Only revisit if *layout* fidelity (node placement/crossings/
->    aspect — NOT connectors; those are now solved by curved) remains
->    the dominant residual after a release.
-> 5. **Optional / low:** (a) **DONE** — `rel-self-loop`/
->    `rel-fan-stress` promoted from `route-stress/` into `corpus/`
->    (gallery regenerated 22, arrowskew CLEAN 22/22, factcheck
->    baseline +2 this-host entries, existing 26 byte-identical;
->    `route-stress/` removed, `route-fidelity-matrix.mjs` sources
->    from `corpus/`; per ADR 0013 blast-radius). (b) **DONE** —
->    `make bendcount` target added + the instrument fixed for
->    ADR-0013 curved edges (PR #127); the vitest 85% gate was a
->    silent no-op (`thresholds.global` is Jest/nyc syntax, never
->    enforced) — fixed to the real vitest schema + scoped to
->    `src/**/*.mts`, `src/catalyst.mts` now under the gate (PR
->    #128). (c) **layout-readability — DO NOT reopen** without a
->    render-measured user-pointable defect (B1 declined on evidence;
->    tall-ribbon is `dot`-faithful per ADR 0011).
+> **Standing gates (all green @ handoff, main @ post-#140):** `make
+> ci` = static-check + build + coverage-check (real 85 %, ≈97 %) +
+> gallery-verify + seq-gallery-verify + c4feat-gallery-verify, all
+> CLEAN; 560 vitest; arrowskew CLEAN 22/22 (CI render-truth);
+> factcheck 26/28 (host-JVM MANUAL — the 2 non-clean are the
+> documented ≤0.01 host-font ratio jitter, NOT a defect);
+> `make routefidelity` self-verifying. Repo 0 warnings.
 >
-> **Standing gates (all green at handoff):** `make ci` green (463
-> vitest, lint/sec clean, gallery-verify, coverage 85%); `make
-> arrowskew` CLEAN 20/20 (CI render-truth contract via `render-gate`,
-> docker, on the curved gallery); `make factcheck` 26/26 (host-JVM
-> **MANUAL** — NOT CI, host-font-dependent; see #119 / memory
-> `factcheck-harness-gate`); `make routefidelity` self-verifying
-> (curved L1=0.294 = winner); repo 0 warnings; ADR 0013 ACCEPTED.
->
-> **Process lesson (codified — `factcheck-harness-gate`):** a "visual"
-> contract MUST be measured from the renderer's ACTUAL output
-> (`make arrowskew` parses the drawio-export SVG — the render-truth
-> gate that would have caught #107), never a reconstruction the
-> renderer ignores. `gallery-verify` only diffs the deterministic
-> `.drawio`; `make arrowskew` is the standing render-truth gate
-> (docker, like `make factcheck`). Distrust a new gate's own flags —
-> fact-check each against the real render before trusting OR acting.
->
-> **Infra now in place (post #102/#104 — next session relies on
-> this):** `make static-check` is COMPOSITE
-> (`lint`+`mdlint`+`vulncheck`+`secrets`+`trivy-fs`, one CI job);
-> `make ci` = `static-check build coverage-check gallery-verify`,
-> mirroring the canonical 5-job `ci.yml`
-> (`changes→static-check→build+test→ci-pass`, single required check
-> `ci-pass`); `.mise.toml` manages node/java/act/gitleaks/trivy
-> (NO `# renovate:` inside — native mise manager); `setup.sh`
-> cross-platform (apt/dnf/brew/pacman). `make ci-run` = the real
-> `ci.yml` via mise-managed `act`.
->
-> **Parked WIP branch (on `origin`, NO PR — do NOT prune; needs a
-> rebase onto fresh `origin/main` before resuming — branched off
-> pre-#102 main):**
->
-> - `feat/seq-phase-b-layout-emit` @ `c18a403` (base `62acfcd`).
->   See item 1 below. (The old `feat/perpendicular-arrowhead-routing`
->   branch's port-stub-on-EMITTED-waypoints approach was a no-op for
->   `orthogonalEdgeStyle` — do NOT resurrect it. The correct fix
->   landed this PR: `enforceApproachClearance` + the `make arrowskew`
->   render-truth gate.)
->
-> **arrowhead skew — REDONE PROPERLY this PR (supersedes reverted
-> #107).** `enforceApproachClearance` (`src/layout/edgeLanes.mts`)
-> pushes the endpoint-adjacent emitted waypoint + its feeder to a
-> `2·REL_ARROW_SIZE+½-ULP` perpendicular standoff so draw.io's
-> orthogonal feeder can't occlude the arrowhead; wired into the
-> non-laned multi-bend AND laned multi-point branches (the
-> single-midpoint fan is left untouched — different geometry). The
-> render-truth gate is **`make arrowskew`** (`scripts/arrowskew-svg.mjs`,
-> docker; renders each `.drawio` via drawio-export → SVG, asserts
-> shaft⇔head-axis collinearity + no feeder occlusion). CLEAN 20/20.
-> `factcheck` "CLEAN 26/26" = the legitimate 7 contracts
-> (un-regressed; `arrowSkew` is NOT a factcheck metric — it lives in
-> the SVG gate, which is the only thing that can measure draw.io's
-> real route). Lesson: the #11 handoff's "laned same-pair port-stub"
-> label was too narrow — the fix is universal across multi-bend
-> pinned edges (memory `factcheck-harness-gate`).
->
-> **Surfaced, NOT absorbed (next-session follow-ups):**
->
-> - `vitest.config.ts` `exclude:` omits `src/catalyst.mts` (the core
->   orchestrator, heavily changed #101/#107) from the 85%
->   `thresholds.global` gate — CI gate correct, coverage *scope* is a
->   `/test-coverage-analysis` finding. Pursue.
-> - oxlint advisory `unicorn(prefer-string-starts-ends-with)` at
->   `src/seq/SeqParser.mts:154` (`/^!/.test(t)` → `t.startsWith('!')`)
->   — pre-existing on `origin/main` from #91 Phase (a); `make ci`
->   tolerates it (advisory, exit 0). Fix opportunistically in the
->   Sequence phase-(b) PR (same file area).
->
-> **Methodology (ADR 0012, researched MDE M2M principle — do NOT
-> hand-roll):** this is a model-to-model transformation. Verify in
-> this order: (1) **completeness invariant** — every source construct
-> traces to a target element, no silent drops (`titleMiss` is the
-> first; generalise to notes/legend); (2) structural/geometry
-> contracts; (3) PNG visual LAST, corroborative only. The `title`
-> was dropped on 100% of diagrams for the project's whole life
-> because nothing COUNTED it — coverage gaps hide real defects.
-> `make factcheck` is THE gate (numeric PlantUML→drawio comparator,
-> ALL 26 conversions vs `-tsvg`; NO eyeballing — every visual claim
-> cites a metric). It now has **8 contract metrics** incl. `ratioBad`
-> (the wRatio/hRatio ratchet, ADR 0011 step 0). **NO auto-merge** —
-> per-PR flow: branch from fresh `origin/main` → push → `gh pr
-> create` → wait CI green → **explicit `gh pr merge <n> --squash
-> --delete-branch`** → `git fetch --prune && git reset --hard
-> origin/main`. **Any emit/geometry change MUST `make gallery` +
-> commit the refreshed `docs/gallery/` in the SAME PR** — the #93
-> gallery-drift CI gate fails otherwise (it caught a stale gallery
-> twice this session; do it BEFORE pushing, it's a derived artifact).
->
-> **Operating discipline — emphatic, REPEATEDLY violated this session
-> (the user escalated to "you're full of shit", "not improving"):**
->
-> 1. **A gate's pass is read ONLY from its OWN `rc=$?` on its OWN
->    line.** NEVER `grep`/`tail`/`||`/`&&`/`echo $?`-after-pipe
->    between a gate and a commit. Bit ≥5× across sessions incl. THIS
->    one (mdlint, then `make gallery-verify`). Run gate bare →
->    capture rc → branch on it as a separate statement → THEN commit.
-> 2. **Self-audit EVERY literal YOU introduce** — string AND numeric,
->    in code, COMMENTS, and TEST args/keys — against existing named
->    constants (`PUML_FONT`, `PUML_LEAF_BOX`, `theme.*`,
->    `SHAPE.REL_ARROW_SIZE`, …) BEFORE surfacing. Flagged 4× this
->    session. See memory `self-audit-introduced-literals`.
-> 3. **Tests for new/changed code are PART of the change**, written
->    automatically, never user-prompted; report coverage as a stated
->    fact in the done-summary.
-> 4. **Do NOT narrate intent to "record in memory / fold into
->    checklist" — silently DO it that turn, report it done.** The
->    promise-instead-of-act IS the failure (memory
->    `self-audit-introduced-literals` ESCALATION note).
-> 5. Real fact-based fixes ONLY; root-cause not launder; fact-check
->    before AND after via version-exact docs + the tool's own
->    registry; surface tensions, don't force.
->
-> THIS session: **#107 was merged then REVERTED — a false-green.**
-> The construction looked correct (`incidentAxis`+`endpointStub`
-> port-stub) and `make factcheck` reported `arrowSkew` 26/26, but the
-> metric reconstructed `[exit,…emitted-wps,entry]` while EVERY
-> catalyst edge carries `edgeStyle=orthogonalEdgeStyle` ⇒ draw.io
-> discards the emitted waypoints and routes itself. The user caught
-> the still-skewed `requeues` arrowhead by eyeballing the merged
-> `topology-cyclic.drawio.png`; an independent drawio-export render
-> proved pre-#107 == post-#107 == committed PNG (`md5 1e061af…`) —
-> the change is a render no-op. Reverted via PR (this work). #108
-> (handoff #12 + `docs/research/layout-readability.md`) was a
-> separate docs PR — kept, but its #107 references corrected.
-> `docs/research/layout-readability.md`'s findings (ELK "bare
-> defaults" premise FALSE — catalyst sets `nodesep:50`/`ranksep:36`;
-> "tall ribbon" PlantUML-faithful per ADR 0011) remain valid (they
-> are independent of #107). Memory `factcheck-harness-gate` updated
-> with the false-green post-mortem: a "visual" contract MUST be
-> measured from the renderer's REAL output (parse drawio-export SVG),
-> never a reconstruction; gate the gallery PNG as a fresh render.
-> Memories carried: `derived-artifact-enforcement-gate`,
-> `self-audit-introduced-literals`, `no-guesses-fact-check-discipline`,
-> `factcheck-harness-gate`.
->
-> ### ▶▶ NEXT SESSION (priority order)
->
-> 0. **arrowhead skew — DONE this PR (supersedes reverted #107).**
->    Root cause proven vs the real drawio-export SVG: every catalyst
->    edge is `orthogonalEdgeStyle` ⇒ draw.io re-routes; the skew is
->    the orthogonal feeder OCCLUDING the arrowhead when the
->    endpoint-adjacent waypoint is closer to the border than the
->    arrowhead is long (`exitX/entryX`/`jettySize` are ignored —
->    spiked, ruled out). Fix: `enforceApproachClearance`
->    (`2·REL_ARROW_SIZE+½-ULP` standoff) on the non-laned multi-bend
->    and laned multi-point paths. Gate: `make arrowskew`
->    (`scripts/arrowskew-svg.mjs`, drawio-export SVG, render-truth)
->    CLEAN 20/20; 26 vitest; factcheck 26/26 un-regressed; visual
->    corroboration done. The single-midpoint laned fan was left
->    untouched (different geometry — re-spike if a future fixture
->    flags it on the gate). No further arrowhead work unless
->    `make arrowskew` reports a regression.
-> 1. **Layout readability — BACKLOG DISSOLVED under fact-check (see
->    `docs/research/layout-readability.md` "Post-spike conclusion").**
->    B1 (bend-reduction) DECLINED on evidence: `collapseCollinearBends`
->    was a proven full render no-op (20/20 `.drawio` byte-identical;
->    the redundant ≤1.5 px bends are draw.io `orthogonalEdgeStyle`
->    router-owned, not in catalyst's emit — the #111/#107 lesson
->    again). B2 not-applicable (canvas already tracks content bbox).
->    B5 already-correct (measured PlantUML `INSET`, not 0). Spacing
->    premise was FALSE (`nodesep:50`/`ranksep:36`); tall-ribbon is
->    `dot`-faithful (ADR 0011). Net: the `dot`-fidelity design target
->    is met; **no further layout-readability work** beyond optional
->    low-priority B4 (`contentAlignment` nesting) / B6 (`aspectRatio`,
->    soft). Instrument `scripts/bendcount-svg.mjs` kept as the
->    reproducible evidence + future routing-change probe. Re-open only
->    with a render-measured defect a user can point to, not a metric
->    in isolation.
->    (ADR 0011 layout-**aspect** remains CLOSED — that was the gate,
->    not the product; this is the distinct readability/aesthetic axis.)
-> 2. **Sequence diagrams** (#12, ADR 0007) — **phases (a)+(b)+(c)+(d1)
->    DONE** (a: SeqParser #91; b+c #112; **d1 `== divider ==` this
->    PR** — `SeqDivider` event + full-width band emit + render-compare
->    gate; SeqParser:154 oxlint advisory also fixed in-scope ⇒ repo
->    now 0 warnings; factcheck 26/26 + arrowskew 20/20 + 26 static
->    byte-identical prove zero C4 risk; **unblocks ibm-wm
->    `==dividers==`**). **Remaining: phase (d2) v2 fragments**
->    (`alt/opt/loop/par/critical`, `box`/`Boundary` grouping, `ref`,
->    create/destroy) — still fail-loud with token+line (no-silent-drop
->    guard; the materially-harder nested-Y-range layout). Plus the
->    recorded v1.x polish (ADR 0007 "Known v1 imperfections":
->    self-message loop = MEASURED no-op for the long-label fixture,
->    only helps short labels — re-spike only with a short-self-label
->    fixture; note↔activation overlap; empty `====` → thin rule not a
->    full band). Coordinate the catalyst→puml2drawio→ibm-wm release
->    now that v1+dividers ship (memory `release-chain-topology` —
->    downstream `skip-unsupported` sequence fixture now converts).
-> 3. C4 surface TRUE residuals (`$sprite`, sketch, legend, dropped
->    `note`) — low/opportunistic.
-> (P13 SHIPPED then REVERTED 2026-05-17 — uniform `width=420`
-> magnified the item-0 layout-aspect mismatch into "humongous fonts";
-> embed back to `height=360`. See `docs/research/p13-gallery-
-> uniformity.md` "REVERTED". P4b box-sizing ✅ correct (per-leaf
-> verified) — but its "render-compare at PlantUML parity" claim above
-> was overstated: only 2 of 3 fixtures were eyeballed; aspect is
-> item-0, not P4b.)
-> Re-confirm P1/P3/P5/P7 status against the post-P4b gallery before
-> spiking them — content-fit re-sized every box, so the
-> defect-catalog below may have shifted (re-render + re-judge via
-> factcheck numbers, never PNG eyeball).
->
-> **DONE & pruned** (detail in git history + ADRs + memories per the
-> convention at the top of BACKLOG — NOT re-dumped): P12, P2 (#85),
-> P4b+cause-D (ADR 0010 + ADR 0011 §Status), #15, #17, ADR 0011
-> step 0/C3/D, **ADR 0011 CLOSED** (wRatio comparator-artefact fix +
-> C2/C1 declined on evidence — see item 0). **P13** = SHIPPED then
-> REVERTED same-day (uniform
-> `width=420` magnified the item-0 layout-aspect gap → reverted to
-> `height=360`; idea ABANDONED, superseded by item-0;
-> `docs/research/p13-gallery-uniformity.md` "REVERTED" + memory
-> `md-image-embedding`). `GALLERY_MD_ONLY`/`GALLERY_DRAWIO_ONLY`
-> infra + the #93 drift gate are kept.
->
-> **OPEN (priority): (1) Sequence diagrams #12 phase (b)+ — WIP
-> parked on branch `feat/seq-phase-b-layout-emit` @ `c18a403`, see
-> item 1 (now the TOP priority — ADR 0011 closed). (2) C4 surface
-> true residuals. Plus the open gallery-visual residuals below —
-> RE-JUDGE each via the corrected `make factcheck` numbers (the C2
-> "subsumes these" note is void; they were never the artefact, but
-> they ARE now measured honestly node-vs-node).**
+> **Process discipline (this session's lessons — see memories):**
+> a gate's value is its proven RED, never an observed green;
+> "render-verified" means the rendered TEXT was confirmed present,
+> not that a shape appeared (#139 shipped empty notes); a new
+> parallel pipeline needs its OWN committed artifact + drift gate
+> from inception; a systematic permutation matrix catches dispatch
+> defects curated fixtures hide.
 
-### ▶▶ GALLERY VISUAL OPEN RESIDUALS (P2/P4/P6 DONE — pruned)
+## BACKLOG — remaining (priority order)
 
-Audit basis: `docs/gallery/img/<stem>.{puml,drawio}.png` pairs
-(regen `make gallery`). Aesthetic fidelity to PlantUML is
-first-class. **The earlier "cause B / subsumed by C2" framing is
-VOID** — ADR 0011 found the wRatio gap was a comparator artefact
-(node-extent vs title-inflated viewBox), now fixed; C2 declined.
-Re-judge each below against the **corrected** `make factcheck`
-node-vs-node numbers + the pair images; do NOT assume a width
-defect exists without a corrected-metric number citing it (memory
-`factcheck-harness-gate`: distrust the gate, cite a number).
+Everything from items 1/2/5, the C4-residual sweep, and the
+seq/C4 reproducible-SVG infra is **DONE** (handoff #21; detail in
+git history + ADRs + memories — not re-dumped). What is left:
 
-- **P1 — multi-edge lane separation** (`rel-parallel-duplicate`,
-  `rel-tech-vs-notech`, `rel-bidirectional`): same-pair fan
-  under-separated / labels flung. = **cause B / C2** (the fan is
-  post-ELK). Re-check post-C2; factcheck `attachMerge` already 0.
-- **P3 — long edge label → width blow-up** (`rel-long-labels`):
-  ELK reserves a huge label rect. Interacts with C2/`measureEdgeLabel`
-  wrap cap. Re-check post-C2.
-- **P5 — hub label proximity** (`topology-hub-spoke`,
-  `topology-wide-rank`): likely already resolved by ADR 0008
-  (always-`layered`); re-judge, gate vs PlantUML.
-- **P7 — short 2-point hierarchical-edge label cram**
-  (`edge-tags-styling`, `level-dynamic`): may be covered by the
-  routed/laned label de-collision (`slideLabelAlongLane`, extended
-  for routed edges in #97). Re-check; small along-edge offset for the
-  non-laned 2-point branch if it still reproduces.
-- **P8 — `«tag»` stereotype text not rendered** (LOW, independent of
-  C2): `edge-tags-styling` Core shows `«System»`, PlantUML
-  `«critical»«system»`. Prepend matched tag stereotypes to the
-  element `«type»` line. Gate: re-rendered Core shows `«critical»`.
+1. **ELK→Graphviz-`dot` — RESEARCH BET, deferred, likely its own
+   repo.** `docs/research/elk-vs-graphviz-dot.md` is the weighted
+   decision base + spike protocol. Do NOT start in-place (it is an
+   ADR-0008/0011-superseding rewrite of the layout+gate stack).
+   Revisit only if *layout* fidelity (node placement / crossings /
+   aspect — NOT connectors; curved routing solved those, ADR 0013)
+   becomes the dominant residual after a release.
 
----
+2. **`$sprite` / `SHOW_PERSON_SPRITE` — CLOSED (not a backlog item).**
+   draw.io has no PlantUML sprite registry ⇒ a sprite glyph cannot be
+   faithfully rendered. Parsing never breaks; the attribute is
+   captured and ignored. Documented in `C4-COVERAGE.md`. Listed here
+   only so a future reader does not re-open it as "missing".
 
-1. **Sequence-diagram support #12 (ADR 0007), phased.** Design in
-   `docs/adr/0007-sequence-diagram-support.md`: parallel non-ELK
-   pipeline (`SeqParser` → linear `seqLayout` → `umlLifeline` emit)
-   behind the fail-loud detector; v1 vs deferred-v2; each phase its
-   own byte-scope+render-compare gated PR. **(a) `SeqParser` DONE
-   (#91).** **(b) NEXT** — linear `seqLayout` + `src/mx/seq/
-   Lifeline.mts` emit + `SeqConverter` + flip the `src/catalyst.mts`
-   detector `throw`→dispatch; **WIP PARKED on branch
-   `feat/seq-phase-b-layout-emit` @ `c18a403`** (seqLayout +
-   Lifeline.mts + SeqConverter written; catalyst.mts dispatch +
-   emit-contract tests + rebase-on-fresh-main remain). (c) corpus
-   fixture + render-compare gate; (d) v2 fragments/dividers. v1
-   fails loud on deferred constructs (the ibm-wm fixture uses
-   `==dividers==` ⇒ it is a phase-(c)/(d) fixture, NOT a v1 success
-   fixture; phase (c) needs a divider-free v1 sequence fixture).
+3. **layout-readability — DO NOT reopen** without a render-measured,
+   user-pointable defect (B1 declined on evidence; tall-ribbon is
+   `dot`-faithful per ADR 0011).
 
-2. **C4 surface TRUE residuals (low/opportunistic).** Only the
-   genuinely-unimplemented `✗` surface remains, none blocking
-   parity/golden: `$sprite` (no drawio sprite registry),
-   `$shadowing`/custom `$lineStyle`/`SET_SKETCH_STYLE`, legend
-   (`SHOW_LEGEND`/`_FLOATING`/`_DYNAMIC`, `HIDE_STEREOTYPE`,
-   `SHOW_PERSON_OUTLINE/_PORTRAIT/_SPRITE`), `AddProperty`/property
-   tables, sequence display toggles, and dropped PlantUML `note`
-   callouts (add a `note` row to `docs/C4-COVERAGE.md` when
-   tackled). Pick up individually only when a downstream diagram
-   needs one.
+4. **Obsolete parked branch:** `feat/seq-phase-b-layout-emit` (if it
+   still exists on origin) is SUPERSEDED — the sequence pipeline is
+   fully implemented on `main`. Safe to delete; do NOT resurrect.
 
-Deferred research (not blocking): Graphviz edge-routing benchmark
-(reference only, memory `open-followups` item 2).
+No other open work. Sequence support and the C4 surface are
+feature-complete; the only forward-looking item is the deferred
+ELK→`dot` research bet (its own repo).

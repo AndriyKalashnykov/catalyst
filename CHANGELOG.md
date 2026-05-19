@@ -6,6 +6,65 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 This project adheres to [Keep a CHANGELOG](http://keepachangelog.com/).
 
+## [1.8.0] - 2026-05-18
+
+### Added
+
+- **Sequence-diagram support is now COMPLETE (ADR 0007, phases
+  a–d2b; nothing deferred).** `ref over A[,B…]` reference frames
+  (inline + block), `create`/`destroy` lifeline lifespan (head drops
+  to first-use Y; foot truncates with an ✕ glyph), and
+  `box "T"`/`*_Boundary(...)` lifeline grouping (head-shifting title
+  band over a contiguous declaration range, non-nesting). Empty
+  `====` divider now renders as PlantUML's thin rule, not a filled
+  band. The fail-loud seam is retained for malformed/unknown input
+  only (contract-lock).
+- **C4 display/style directive coverage** (each overlay/style-only ⇒
+  the static C4 corpus is byte-identical):
+    - `HIDE_STEREOTYPE()` — drops the `«Type»` line (the `c4Type`
+      structural attribute is kept; golden/parity unchanged).
+    - `LAYOUT_AS_SKETCH()` / `SET_SKETCH_STYLE()` — draw.io `sketch=1`
+      hand-drawn render on every cell.
+    - PlantUML `note left|right|top|bottom of X` callouts — were
+      silently dropped; now rendered as `shape=note` placed
+      post-layout from the target's box.
+    - `SHOW_LEGEND()` / `_FLOATING` / `_DYNAMIC` — a synthesized
+      tag-entry legend box (one row per AddElementTag/AddRelTag/
+      AddBoundaryTag stereotype + fill swatch).
+    - `AddProperty()` / `SetPropertyHeader()` /
+      `WithoutPropertyHeader()` — up-to-4-column property table
+      consumed by the next element, rendered post-layout as an html
+      grid.
+- **Committed reproducible-SVG galleries + deterministic CI drift
+  gates** for the sequence pipeline (`make seq-gallery` /
+  `seq-gallery-verify`, 18 fixtures incl. a 12-fixture permutation
+  matrix) and the C4 feature set (`make c4feat-gallery` /
+  `c4feat-gallery-verify`); the C4 use-case gallery also gained
+  committed SVG (parity). `make bendcount` target.
+
+### Fixed
+
+- **The 85 % coverage gate was a silent no-op** (`thresholds.global`
+  is Jest/nyc syntax that Vitest ignores) — corrected to the real
+  Vitest schema, scoped to `src/**/*.mts`; `src/catalyst.mts` is now
+  under the gate (≈97 %).
+- **`C4_Sequence` dispatch defect:** a sequence diagram written with
+  C4 `Rel()`/`Person()`/`*_Boundary()` macros was mis-routed to the
+  static-C4/ELK path and crashed; the `C4_Sequence` include /
+  `participant` line is now authoritative.
+- `bendcount` instrument silently measured nothing after ADR 0013
+  (curved edges have no `L` path command) — now parses bezier
+  on-curve waypoints.
+- Self-message loop width is now driven by the message's own measured
+  label (compact PlantUML-style hook for short labels) instead of the
+  unrelated neighbour-column gap.
+
+### Not implementable (closed, not deferred)
+
+- `$sprite` / `SHOW_PERSON_SPRITE` — draw.io has no PlantUML sprite
+  registry; the attribute is parsed and ignored (parsing never
+  breaks). Documented in `docs/C4-COVERAGE.md`.
+
 ## [1.7.0] - 2026-05-18
 
 ### Added
