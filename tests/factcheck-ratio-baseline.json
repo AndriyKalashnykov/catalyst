@@ -1,114 +1,114 @@
 {
   "c4-all-entity-variants": {
-    "w": 3.87,
+    "w": 3.86,
     "h": 0.31
   },
   "c4-all-rel-variants": {
-    "w": 0.92,
-    "h": 2.11
+    "w": 0.84,
+    "h": 0.32
   },
   "c4-container": {
-    "w": 0.93,
-    "h": 1.05
+    "w": 0.85,
+    "h": 0.74
   },
   "c4-context": {
-    "w": 0.67,
-    "h": 1.29
+    "w": 1.03,
+    "h": 0.72
   },
   "c4-deployment": {
-    "w": 0.57,
-    "h": 1.22
+    "w": 0.83,
+    "h": 0.63
   },
   "c4-exhaustive": {
-    "w": 0.72,
-    "h": 2.13
+    "w": 0.74,
+    "h": 0.71
   },
   "edge-empty-descriptions": {
     "w": 1.01,
-    "h": 0.98
+    "h": 0.66
   },
   "edge-large-graph": {
-    "w": 2.24,
-    "h": 1.01
+    "w": 1.04,
+    "h": 0.75
   },
   "edge-multiline-labels": {
     "w": 0.98,
-    "h": 1.65
+    "h": 1.3
   },
   "edge-tags-styling": {
     "w": 0.96,
-    "h": 1.05
+    "h": 0.69
   },
   "edge-unicode-specialchars": {
     "w": 0.99,
-    "h": 0.95
+    "h": 0.7
   },
   "level-component": {
-    "w": 0.87,
-    "h": 0.88
+    "w": 0.95,
+    "h": 0.77
   },
   "level-dynamic": {
     "w": 1.02,
-    "h": 1.42
+    "h": 0.94
   },
   "level-system-landscape": {
-    "w": 0.61,
-    "h": 1.04
+    "w": 0.79,
+    "h": 0.61
   },
   "rel-bidirectional": {
     "w": 0.97,
-    "h": 1.05
+    "h": 0.73
   },
   "rel-directional": {
-    "w": 0.76,
-    "h": 1.21
+    "w": 0.97,
+    "h": 0.75
   },
   "rel-fan-stress": {
-    "w": 1.25,
-    "h": 1.06
+    "w": 1.15,
+    "h": 0.68
   },
   "rel-layout-constraints": {
-    "w": 1.28,
-    "h": 0.61
+    "w": 1.27,
+    "h": 0.5
   },
   "rel-long-labels": {
     "w": 0.98,
-    "h": 0.91
+    "h": 0.5
   },
   "rel-parallel-duplicate": {
     "w": 1.01,
-    "h": 1.05
+    "h": 0.73
   },
   "rel-self-loop": {
     "w": 0.94,
-    "h": 1.05
+    "h": 0.73
   },
   "rel-tech-vs-notech": {
-    "w": 0.73,
-    "h": 1.1
+    "w": 0.75,
+    "h": 0.73
   },
   "topology-cyclic": {
-    "w": 0.73,
-    "h": 1.08
+    "w": 1,
+    "h": 0.75
   },
   "topology-deep-nesting": {
-    "w": 0.61,
-    "h": 0.76
+    "w": 0.65,
+    "h": 0.56
   },
   "topology-disconnected": {
     "w": 1.04,
-    "h": 1.07
+    "h": 0.79
   },
   "topology-hub-spoke": {
     "w": 1.05,
-    "h": 1.07
+    "h": 0.78
   },
   "topology-linear-chain": {
     "w": 0.94,
-    "h": 1.04
+    "h": 0.73
   },
   "topology-wide-rank": {
     "w": 1.07,
-    "h": 1.14
+    "h": 0.79
   }
 }

@@ -116,6 +116,13 @@ jobs:
       # 85% threshold. One make invocation so deps/build runs once.
       - name: Gallery drift gates and coverage
         run: make gallery-verify seq-gallery-verify c4feat-gallery-verify coverage-check
+      # Item 1a / ADR 0014 — dual-engine gate. P6: `dot` is now the
+      # DEFAULT (exercised by `coverage-check` above). This step
+      # gates the retained `elk` opt-out fallback so it stays green
+      # every commit until ELK is removed (≥1 green release on dot,
+      # ADR 0014 §P6 deprecation). Pure node, deterministic.
+      - name: Dual-engine suite (LAYOUT_ENGINE=elk fallback)
+        run: LAYOUT_ENGINE=elk npx vitest run
       - name: Report coverage
         uses: davelosert/vitest-coverage-report-action@02f3c2e641286b7fa308cd3e430783103ce6103b # v2
         if: always()

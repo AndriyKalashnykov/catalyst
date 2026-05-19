@@ -150,7 +150,12 @@ describe('edgeCross corpus — CI ratchet + instrument fact-check (committed ren
       if (existsSync(f)) total += countCrossings(edgePolys(readFileSync(f, 'utf8'), 'puml')).total
     }
     expect(total, 'PlantUML-side crossings must be 0 (instrument FP guard)').toBe(0)
-  })
+  }, 60000)
+  // ↑ 60s: under `coverage-check` (v8 instrumentation) the O(E²·P²)
+  // pairwise crossing scan over all committed SVGs is ~6–8s (raw ~1s);
+  // the dot engine's curved splines have many more control points than
+  // ELK's sparse orthogonal routes. Deterministic & bounded — a
+  // generous timeout, NOT a weakened assertion (still strict `=0`).
 
   it.skipIf(!have)('committed drawio render: every fixture ≤ its '
     + 'baseline (the regression ratchet, now CI-enforced) and total '
@@ -166,5 +171,5 @@ describe('edgeCross corpus — CI ratchet + instrument fact-check (committed ren
     expect(regressions, 'edgeCross regression vs committed baseline').toEqual([])
     const baseTotal = Object.values(base).reduce((a, b) => (a as number) + (b as number), 0)
     expect(total, 'corpus total drifted from the fact-checked baseline (re-baseline deliberately if intended)').toBe(baseTotal)
-  })
+  }, 60000)   // see the 60s rationale above (coverage-instrumented O(E²·P²) over dot curved splines)
 })

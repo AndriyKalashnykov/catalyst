@@ -33,6 +33,18 @@ interface LayoutResult {
   clusters: LayoutNode[]
   width: number
   height: number
+  /**
+   * Item 1a — when true (the `dot` engine), `edges[].points` are a
+   * GLOBALLY crossing-free route the renderer must follow VERBATIM:
+   * `layoutData2mx` emits the spline as-is and DELIBERATELY bypasses
+   * the ELK-era `assignEdgeLanes` perpendicular-shove (that machinery
+   * compensates for ELK's poor multi-edge routing; applied on top of
+   * dot's already-fanned splines it reintroduces the very crossings
+   * the engine swap eliminates — measured: rel-fan-stress raw 0 →
+   * post-lane 10). Absent/false for ELK ⇒ legacy path unchanged
+   * (byte-identical, proven by the existing suite + gallery-verify).
+   */
+  routesAuthoritative?: boolean
 }
 
 type Rel = { source: string; target: string; label: string; description: string; direction?: 'U' | 'D' | 'L' | 'R' }

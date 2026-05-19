@@ -4,7 +4,7 @@ import { describe, it, expect } from 'vitest'
 import {
   ATTACH_SEP_MIN, ARROWS_BIDIRECTIONAL, ARROWS_ONE_WAY,
   norm, textPreserved, arrowCountOk,
-  intersects, contains, partialOverlap, attachPoint, attachMerged,
+  intersects, contains, partialOverlap, attachPoint, attachMerged, edgeEndAttach,
 } from '../scripts/factcheck-predicates.mjs'
 
 // A gate's value is its demonstrated RED, not its observed green
@@ -114,6 +114,50 @@ describe('attachPoint — edge endpoint attach geometry', () => {
   })
   it('null node ⇒ origin (matches inline `n ? … : 0`)', () => {
     expect(attachPoint(null, 0.5, 0.5)).toEqual({ x: 0, y: 0 })
+  })
+})
+
+describe('edgeEndAttach — base-point FP fix (item 1a / P5)', () => {
+  const n = { x: 100, y: 200, w: 80, h: 40 }   // centre (140,220)
+  it('explicit exit/entry fraction ⇒ identical to attachPoint (ELK '
+    + 'laned edges unchanged ⇒ no ELK factcheck regression)', () => {
+    expect(edgeEndAttach(n, 0, 0.5, { x: 9, y: 9 })).toEqual(attachPoint(n, 0, 0.5))
+    expect(edgeEndAttach(n, 1, 1, undefined)).toEqual(attachPoint(n, 1, 1))
+  })
+  it('no fraction AND no route waypoint ⇒ box centre (genuine '
+    + 'centre-attached straight edge — unchanged fallback)', () => {
+    expect(edgeEndAttach(n, undefined, undefined, undefined)).toEqual({ x: 140, y: 220 })
+  })
+  it('GREEN: no fraction + a route waypoint ⇒ the border crossing '
+    + 'TOWARD the waypoint (models the curved spline exit), NOT centre', () => {
+    // waypoint straight below centre ⇒ exits the bottom border (y=240)
+    const a = edgeEndAttach(n, undefined, undefined, { x: 140, y: 999 })
+    expect(a).toEqual({ x: 140, y: 240 })
+    // waypoint to the right ⇒ exits the right border (x=180)
+    const b = edgeEndAttach(n, undefined, undefined, { x: 999, y: 220 })
+    expect(b).toEqual({ x: 180, y: 220 })
+  })
+  it('RED: the exact dot-engine FP — two same-pair edges dot fanned '
+    + '(no exit/entry, DIFFERENT first waypoints) must NOT collapse. '
+    + 'The centre proxy (old attachPoint) gives d2=0 ⇒ false '
+    + 'attachMerged; edgeEndAttach separates them past ATTACH_SEP_MIN', () => {
+    // Reproduces rel-parallel-duplicate: a→b twice, fanned by dot.
+    const s = { x: 0, y: 0, w: 60, h: 40 }, t = { x: 0, y: 400, w: 60, h: 40 }
+    const wp1s = { x: -200, y: 60 }, wp1t = { x: -200, y: 380 }   // edge 1 bows left
+    const wp2s = { x: 260, y: 60 }, wp2t = { x: 260, y: 380 }     // edge 2 bows right
+    // OLD centre proxy → identical centre for both ⇒ FALSE merge:
+    const oldMerged = attachMerged(
+      attachPoint(s, undefined, undefined), attachPoint(t, undefined, undefined),
+      attachPoint(s, undefined, undefined), attachPoint(t, undefined, undefined))
+    expect(oldMerged).toBe(true)                       // the FP being fixed
+    // FIXED base-point → distinct border attaches ⇒ correctly NOT merged:
+    const fixedMerged = attachMerged(
+      edgeEndAttach(s, undefined, undefined, wp1s), edgeEndAttach(t, undefined, undefined, wp1t),
+      edgeEndAttach(s, undefined, undefined, wp2s), edgeEndAttach(t, undefined, undefined, wp2t))
+    expect(fixedMerged).toBe(false)
+  })
+  it('null node ⇒ origin (matches attachPoint contract)', () => {
+    expect(edgeEndAttach(null, undefined, undefined, { x: 1, y: 1 })).toEqual({ x: 0, y: 0 })
   })
 })
 

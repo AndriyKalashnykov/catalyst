@@ -1,37 +1,89 @@
 <mxfile version="20.1.4" type="atlas">
   <diagram id="catalyst-diagram" name="Page-1">
-    <mxGraphModel pageHeight="728" pageWidth="197">
+    <mxGraphModel pageHeight="560" pageWidth="144">
       <root>
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
         <object placeholders="1" c4Name="K8s Secret&lt;br/&gt;&amp;lt;workload&gt;-tls" c4Type="ContainerDb" c4Technology="[Kubernetes]" c4Description="Holds the issued&lt;br/&gt;leaf certificate&lt;br/&gt;and private key" label="&lt;div style=&quot;font-size:11px;font-style:italic;color:#cccccc;&quot;&gt;«%c4Type%»&lt;/div&gt;&lt;div style=&quot;font-size:16px;font-weight:bold;&quot;&gt;%c4Name%&lt;/div&gt;&lt;div style=&quot;font-size:11px;color:#cccccc;&quot;&gt;%c4Technology%&lt;/div&gt;&lt;div style=&quot;font-size:11px;color:#cccccc;&quot;&gt;%c4Description%&lt;/div&gt;" id="secret">
           <mxCell style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;labelBackgroundColor=none;fillColor=#23A2D9;fontColor=#ffffff;strokeColor=#0E7DAD;align=center;verticalAlign=middle;metaEdit=1;resizable=1" parent="1" vertex="1">
-            <mxGeometry as="geometry" height="201" width="133" x="46" y="515"/>
+            <mxGeometry as="geometry" height="201" width="133" x="5" y="359"/>
           </mxCell>
         </object>
         <object placeholders="1" c4Name="Admin API" c4Type="Container" c4Technology="[Go]" c4Description="OpenAPI 3.1 REST:&lt;br/&gt;  POST /issue&lt;br/&gt;  POST /renew&lt;br/&gt;  GET  /status" label="&lt;div style=&quot;font-size:11px;font-style:italic;color:#cccccc;&quot;&gt;«%c4Type%»&lt;/div&gt;&lt;div style=&quot;font-size:16px;font-weight:bold;&quot;&gt;%c4Name%&lt;/div&gt;&lt;div style=&quot;font-size:11px;color:#cccccc;&quot;&gt;%c4Technology%&lt;/div&gt;&lt;div style=&quot;font-size:11px;color:#cccccc;&quot;&gt;%c4Description%&lt;/div&gt;" id="admin">
           <mxCell style="rounded=1;whiteSpace=wrap;html=1;labelBackgroundColor=none;fillColor=#23A2D9;fontColor=#ffffff;align=center;verticalAlign=top;arcSize=10;strokeColor=#0E7DAD;metaEdit=1;resizable=1" parent="1" vertex="1">
-            <mxGeometry as="geometry" height="171" width="144" x="41" y="230"/>
+            <mxGeometry as="geometry" height="171" width="144" y="152"/>
           </mxCell>
         </object>
         <object placeholders="1" c4Name="Operator" c4Type="Person" c4Technology="" c4Description="Drives certificate&lt;br/&gt;lifecycle operations" label="&lt;div style=&quot;font-size:11px;font-style:italic;color:#cccccc;&quot;&gt;«%c4Type%»&lt;/div&gt;&lt;div style=&quot;font-size:16px;font-weight:bold;&quot;&gt;%c4Name%&lt;/div&gt;&lt;div style=&quot;font-size:11px;color:#cccccc;&quot;&gt;%c4Description%&lt;/div&gt;" id="op">
           <mxCell style="shape=mxgraph.c4.person2;align=center;html=1;labelBackgroundColor=none;fillColor=#08427B;fontColor=#ffffff;strokeColor=#073B6F;verticalAlign=middle;whiteSpace=wrap;metaEdit=1;resizable=1" parent="1" vertex="1">
-            <mxGeometry as="geometry" height="116" width="140" x="43" y="12"/>
+            <mxGeometry as="geometry" height="116" width="140" x="2"/>
           </mxCell>
         </object>
         <object placeholders="1" c4Name="issues / renews via" c4Type="Relationship" c4Technology="[HTTPS]" c4Description="" label="&lt;div style=&quot;text-align: center;font-weight:bold;&quot;&gt;%c4Name%&lt;/div&gt;&lt;div style=&quot;text-align: center;&quot;&gt;%c4Technology%&lt;/div&gt;">
           <mxCell style="endArrow=blockThin;html=1;fontSize=10;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;metaEdit=1;endSize=14;startSize=14;jumpStyle=arc;jumpSize=16;rounded=0;curved=1" parent="1" edge="1" source="op" target="admin">
-            <mxGeometry as="geometry" relative="1"/>
+            <mxGeometry as="geometry" relative="1">
+              <Array as="points">
+                <mxPoint x="72" y="117"/>
+                <mxPoint x="72" y="118"/>
+                <mxPoint x="72" y="119"/>
+                <mxPoint x="72" y="120"/>
+                <mxPoint x="72" y="121"/>
+                <mxPoint x="72" y="122"/>
+                <mxPoint x="72" y="123"/>
+                <mxPoint x="72" y="124"/>
+                <mxPoint x="72" y="125"/>
+                <mxPoint x="72" y="126"/>
+                <mxPoint x="72" y="127"/>
+                <mxPoint x="72" y="128"/>
+                <mxPoint x="72" y="129"/>
+                <mxPoint x="72" y="130"/>
+                <mxPoint x="72" y="131"/>
+                <mxPoint x="72" y="132"/>
+                <mxPoint x="72" y="133"/>
+                <mxPoint x="72" y="134"/>
+                <mxPoint x="72" y="135"/>
+                <mxPoint x="72" y="136"/>
+                <mxPoint x="72" y="137"/>
+                <mxPoint x="72" y="138"/>
+                <mxPoint x="72" y="139"/>
+              </Array>
+            </mxGeometry>
           </mxCell>
         </object>
         <object placeholders="1" c4Name="writes&lt;br/&gt;leaf cert + key to" c4Type="Relationship" c4Technology="[K8s API]" c4Description="" label="&lt;div style=&quot;text-align: center;font-weight:bold;&quot;&gt;%c4Name%&lt;/div&gt;&lt;div style=&quot;text-align: center;&quot;&gt;%c4Technology%&lt;/div&gt;">
           <mxCell style="endArrow=blockThin;html=1;fontSize=10;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;metaEdit=1;endSize=14;startSize=14;jumpStyle=arc;jumpSize=16;rounded=0;curved=1" parent="1" edge="1" source="admin" target="secret">
-            <mxGeometry as="geometry" relative="1"/>
+            <mxGeometry as="geometry" relative="1">
+              <Array as="points">
+                <mxPoint x="72" y="324"/>
+                <mxPoint x="72" y="325"/>
+                <mxPoint x="72" y="326"/>
+                <mxPoint x="72" y="327"/>
+                <mxPoint x="72" y="328"/>
+                <mxPoint x="72" y="329"/>
+                <mxPoint x="72" y="330"/>
+                <mxPoint x="72" y="331"/>
+                <mxPoint x="72" y="332"/>
+                <mxPoint x="72" y="333"/>
+                <mxPoint x="72" y="334"/>
+                <mxPoint x="72" y="335"/>
+                <mxPoint x="72" y="336"/>
+                <mxPoint x="72" y="337"/>
+                <mxPoint x="72" y="338"/>
+                <mxPoint x="72" y="339"/>
+                <mxPoint x="72" y="340"/>
+                <mxPoint x="72" y="341"/>
+                <mxPoint x="72" y="342"/>
+                <mxPoint x="72" y="343"/>
+                <mxPoint x="72" y="344"/>
+                <mxPoint x="72" y="345"/>
+                <mxPoint x="72" y="346"/>
+              </Array>
+            </mxGeometry>
           </mxCell>
         </object>
         <object c4Name="Edge cases — explicit PlantUML &lt;br/&gt; line breaks in name and description" c4Type="Title" label="Edge cases — explicit PlantUML &lt;br/&gt; line breaks in name and description" id="__title">
           <mxCell style="text;html=1;align=left;verticalAlign=middle;whiteSpace=nowrap;fontSize=14;fontStyle=1;fontColor=#000000;" parent="1" vertex="1">
-            <mxGeometry as="geometry" height="17" width="474" x="41" y="-19"/>
+            <mxGeometry as="geometry" height="17" width="474" y="-31"/>
           </mxCell>
         </object>
       </root>
