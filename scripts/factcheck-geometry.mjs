@@ -76,6 +76,15 @@ import { polylineMidpoint } from '../dist/layout/edgeLanes.mjs'
 // ADR 0011 step-0 ratio ratchet — pure, contract-locked by
 // tests/factcheck-ratio.test.mts (extracted like p4b-svg-geom.mjs).
 import { RATIO_TOL, ratioContract } from './factcheck-ratio.mjs'
+// Pure decision cores for the 8 contract metrics — extracted so each
+// has an explicit RED unit test (tests/factcheck-predicates.test.mts);
+// a gate's value is its proven RED, not its observed green. The
+// expressions are byte-identical to the closures they replaced
+// (28-fixture factcheck baseline unchanged across the extraction).
+import {
+  textPreserved, arrowCountOk,
+  contains, partialOverlap, attachPoint, attachMerged,
+} from './factcheck-predicates.mjs'
 
 const SVG_DIR = process.env.SVG_DIR ?? '/tmp/svg'
 const CORPUS = process.env.CORPUS_DIR ?? 'tests/fixtures/corpus'
@@ -128,38 +137,14 @@ const STYLE = {
  *  start and a `classic` head at the end. */
 const ARROW_NONE = 'none'
 const DEFAULT_END_ARROW = 'classic'
-/** Minimum endpoint-attach separation for two edges of the same
- *  unordered pair to read as distinct lines. = 2 × the relationship
- *  arrow-head size (theme `SHAPE.REL_ARROW_SIZE` = 14) so two heads
- *  cannot visually touch. A cited renderer metric, not a guess. */
-const ATTACH_SEP_MIN = 28
-/** C4 arrowhead-count contract: a bidirectional relation (`BiRel`)
- *  renders an arrow at BOTH ends; every one-way relation (`Rel`,
- *  `Rel_Back`, `RelIndex`) renders EXACTLY one. An edge whose emitted
- *  count differs is the P10 "looks bidirectional / looks arrowless"
- *  defect. */
-const ARROWS_BIDIRECTIONAL = 2
-const ARROWS_ONE_WAY = 1
+// ATTACH_SEP_MIN, ARROWS_BIDIRECTIONAL, ARROWS_ONE_WAY now live in
+// factcheck-predicates.mjs (imported above) — single-sourced with the
+// RED-tested predicates that consume them.
 
-/**
- * Normalise text for a present/absent comparison. The emitted c4Name
- * legitimately differs from the parsed label by: word-wrap `<br/>`
- * insertions (long verbs / `\n`), and XML/HTML escaping (`&amp;`
- * `&lt;` `&gt;` — incl. P8's double-escaped `&amp;lt;`). Stripping
- * those + collapsing whitespace makes "is the text preserved?" a
- * true content check, not a formatting diff. Verified by hand against
- * rel-long-labels / edge-multiline-labels / edge-unicode-specialchars
- * (all were harness false-positives before this).
- */
-function norm(s) {
-  return (s ?? '')
-    .replace(/&lt;br\/?&gt;|<br\/?>/gi, ' ')      // wrap breaks (HTML)
-    .replace(/\\n|\n/g, ' ')                      // PlantUML `\n` (literal or real)
-    .replace(/&amp;lt;/g, '<').replace(/&amp;gt;/g, '>') // P8 double-escape
-    .replace(/&amp;/g, '&').replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'")
-    .replace(/\s+/g, ' ').trim()
-}
+// `norm()` (text-normalisation for the present/absent comparison) now
+// lives in factcheck-predicates.mjs, imported above and RED-tested
+// (incl. an explicit "norm() blind spot" assertion for the
+// `\n`↔`<br/>` collapse so the limitation cannot silently widen).
 
 /** Parse PlantUML SVG → { nodes:[{alias,x,y,w,h}], w, h }. */
 function parsePlantumlSvg(svg) {
@@ -289,18 +274,10 @@ function parseCatalyst(xml) {
   return { nodes, byAlias, objAttrs, edges, catTitle, W: maxX - minX, H: maxY - minY }
 }
 
-const intersects = (a, b) =>
-  a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y
-/** a fully contains b (b ⊆ a, with a tiny epsilon for the inset). */
-const contains = (a, b, eps = 2) =>
-  a.x - eps <= b.x && a.y - eps <= b.y &&
-  a.x + a.w + eps >= b.x + b.w && a.y + a.h + eps >= b.y + b.h
-/** TRUE (defect) overlap: intersect but neither contains the other.
- *  catalyst emits flat+absolute (no XML nesting) so a boundary visually
- *  CONTAINS its children — that is legitimate compound nesting, not an
- *  overlap. Only partial intersection is a real node-collision defect. */
-const partialOverlap = (a, b) =>
-  intersects(a, b) && !contains(a, b) && !contains(b, a)
+// intersects / contains / partialOverlap now live in
+// factcheck-predicates.mjs (imported above, RED-tested).
+// `partialOverlap` is BOTH the `nodeOverlap` predicate AND the
+// `labelHit` core (label-rect vs non-endpoint leaf).
 
 /** PlantUML names its output after the `@startuml <name>` token, NOT
  *  the .puml filename (e.g. c4-all-entity-variants.puml → all-variants).
@@ -365,7 +342,7 @@ function factcheck(stem, dir = CORPUS) {
       for (const n of C.nodes) {
         if (n.alias === g.source || n.alias === g.target) continue
         if (isContainer.has(n.alias)) continue       // boundary outline, not a leaf collision
-        if (intersects(lr, n) && !contains(lr, n) && !contains(n, lr)) {
+        if (partialOverlap(lr, n)) {                  // intersect ∧ neither contains
           labelHit++
           if (process.env.FACTCHECK_DEBUG)
             process.stderr.write(`  labelHit: "${r.label}" (${g.source}->${g.target}) ` +
@@ -410,8 +387,8 @@ function factcheck(stem, dir = CORPUS) {
     for (const e of flatEnt) {
       const o = objById.get(e.alias)
       if (!o || o.c4Type !== e.type) { entityMiss++; continue }
-      const nm = norm(e.label)
-      if (nm && !norm(o.c4Name).includes(nm) && !norm(o.value).includes(nm)) entityMiss++
+      // name present in c4Name OR value (RED-tested `textPreserved`).
+      if (!textPreserved(e.label, o.c4Name, o.value)) entityMiss++
     }
     // relMiss + arrowBad + labelDrop, per parsed relation.
     let relMiss = 0, arrowBad = 0, labelDrop = 0
@@ -424,13 +401,13 @@ function factcheck(stem, dir = CORPUS) {
       if (idx < 0) { relMiss++; continue }
       usedEdge.add(idx)
       const g = C.edges[idx]
-      const expectArrows = r.bidirectional ? ARROWS_BIDIRECTIONAL : ARROWS_ONE_WAY
-      if (g.arrowN !== expectArrows) arrowBad++
+      if (!arrowCountOk(g.arrowN, r.bidirectional)) arrowBad++
       // Label text lives in the edge object's c4Name (verb) — NOT
-      // `value` (that's the `%c4Name%` placeholder template). norm()
-      // strips wrap `<br/>` + XML-escaping so this is a content check.
-      const verb = norm(r.label)
-      if (verb && !norm(g.verb).includes(verb)) labelDrop++
+      // `value` (that's the `%c4Name%` placeholder template).
+      // `textPreserved` norm-strips wrap `<br/>` + XML-escaping so this
+      // is a content check (RED-tested, incl. its `\n`↔`<br/>` blind
+      // spot which the hRatio ratchet — not labelDrop — guards).
+      if (!textPreserved(r.label, g.verb)) labelDrop++
     }
     // attachMerge: same unordered pair, ≥2 edges → their endpoint attach
     // points must be separated on at least ONE end, else they collapse
@@ -451,8 +428,9 @@ function factcheck(stem, dir = CORPUS) {
       const k = JSON.stringify([g.source, g.target].sort())
       ;(grp.get(k) ?? grp.set(k, []).get(k)).push(i)
     })
-    const ax = (n, frac) => n ? (frac === undefined ? n.x + n.w / 2 : n.x + frac * n.w) : 0
-    const ay = (n, frac) => n ? (frac === undefined ? n.y + n.h / 2 : n.y + frac * n.h) : 0
+    // attach points via the RED-tested `attachPoint`; `attachMerged`
+    // (Euclidean both-ends < ATTACH_SEP_MIN) is the contract decision —
+    // both proven RED in tests/factcheck-predicates.test.mts.
     let attachMerge = 0
     for (const idxs of grp.values()) {
       if (idxs.length < 2) continue
@@ -462,25 +440,18 @@ function factcheck(stem, dir = CORPUS) {
           const s1 = C.byAlias.get(g1.source), t1 = C.byAlias.get(g1.target)
           const s2 = C.byAlias.get(g2.source), t2 = C.byAlias.get(g2.target)
           if (!s1 || !t1 || !s2 || !t2) continue
-          const dSrc = Math.hypot(
-            ax(s1, g1.exitX) - ax(s2, g2.exitX),
-            ay(s1, g1.exitY) - ay(s2, g2.exitY))
-          const dTgt = Math.hypot(
-            ax(t1, g1.entryX) - ax(t2, g2.entryX),
-            ay(t1, g1.entryY) - ay(t2, g2.entryY))
-          if (dSrc < ATTACH_SEP_MIN && dTgt < ATTACH_SEP_MIN) {
+          const src1 = attachPoint(s1, g1.exitX, g1.exitY)
+          const tgt1 = attachPoint(t1, g1.entryX, g1.entryY)
+          const src2 = attachPoint(s2, g2.exitX, g2.exitY)
+          const tgt2 = attachPoint(t2, g2.entryX, g2.entryY)
+          if (attachMerged(src1, tgt1, src2, tgt2)) {
             attachMerge++
             if (process.env.FACTCHECK_DEBUG) {
-              const ay = (n, f) => n ? (f === undefined ? n.y + n.h / 2 : n.y + f * n.h) : 0
-              const sx1 = ax(s1, g1.exitX), sy1 = ay(s1, g1.exitY)
-              const sx2 = ax(s2, g2.exitX), sy2 = ay(s2, g2.exitY)
-              const tx1 = ax(t1, g1.entryX), ty1 = ay(t1, g1.entryY)
-              const tx2 = ax(t2, g2.entryX), ty2 = ay(t2, g2.entryY)
-              const e2 = (x1, y1, x2, y2) => Math.round(Math.hypot(x1 - x2, y1 - y2))
+              const e2 = (a, b) => Math.round(Math.hypot(a.x - b.x, a.y - b.y))
               process.stderr.write(`  attachMerge: ${g1.source}->${g1.target} ` +
                 `[${C.rels?.[idxs[i]]?.label ?? idxs[i]} vs ${C.rels?.[idxs[j]]?.label ?? idxs[j]}] ` +
-                `src dX=${Math.round(dSrc)} dY=${Math.round(Math.abs(sy1 - sy2))} d2=${e2(sx1, sy1, sx2, sy2)} | ` +
-                `tgt dX=${Math.round(dTgt)} dY=${Math.round(Math.abs(ty1 - ty2))} d2=${e2(tx1, ty1, tx2, ty2)} ` +
+                `src dX=${Math.round(Math.abs(src1.x - src2.x))} dY=${Math.round(Math.abs(src1.y - src2.y))} d2=${e2(src1, src2)} | ` +
+                `tgt dX=${Math.round(Math.abs(tgt1.x - tgt2.x))} dY=${Math.round(Math.abs(tgt1.y - tgt2.y))} d2=${e2(tgt1, tgt2)} ` +
                 `(exitY ${g1.exitY}/${g2.exitY} entryY ${g1.entryY}/${g2.entryY})\n`)
             }
           }

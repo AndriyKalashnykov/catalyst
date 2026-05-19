@@ -1,0 +1,117 @@
+import { describe, it, expect } from 'vitest'
+// @ts-expect-error — plain .mjs gate logic, no d.ts (intentional, like
+// route-fidelity / bendcount-svg). isMain-guarded CLI side-effects.
+import {
+  SHARE_TOL, NODE_R,
+  properIntersection, sharedNode, polylineCrossings, countCrossings,
+  edgecrossRatchet,
+} from '../scripts/edgecross-svg.mjs'
+
+// A gate's value is its demonstrated RED (every-gate-proven-red). The
+// edgeCross contract exists because NO prior gate measured edge
+// crossings (factcheck attachMerge = same-pair collapse only;
+// route-fidelity = per-edge detour, corpus-MEAN; arrowskew =
+// arrowhead occlusion). Each block has a GREEN case AND a RED case
+// that fails on the exact defect (a non-incident crossing); the
+// incident-fan exclusion is asserted so it cannot silently widen into
+// "ignores real crossings near a node".
+
+describe('cited convention constants', () => {
+  it('SHARE_TOL = REL_ARROW_SIZE (14); NODE_R = 2× (28)', () => {
+    expect(SHARE_TOL).toBe(14)
+    expect(NODE_R).toBe(28)
+  })
+})
+
+describe('properIntersection', () => {
+  it('GREEN: a clean X returns the crossing point', () => {
+    expect(properIntersection([0, 0], [10, 10], [0, 10], [10, 0]))
+      .toEqual([5, 5])
+  })
+  it('GREEN: parallel / disjoint → null', () => {
+    expect(properIntersection([0, 0], [10, 0], [0, 5], [10, 5])).toBeNull()
+    expect(properIntersection([0, 0], [1, 0], [5, 5], [6, 5])).toBeNull()
+  })
+  it('touching only at a shared endpoint is NOT a proper crossing', () => {
+    // two edges meeting at (0,0) — incidence, not a crossing
+    expect(properIntersection([0, 0], [10, 5], [0, 0], [10, -5])).toBeNull()
+  })
+})
+
+describe('sharedNode', () => {
+  it('detects a shared endpoint within SHARE_TOL', () => {
+    const A = [[0, 0], [50, 50]]
+    const B = [[100, 100], [3, 4]]                 // B end ≈ A start (dist 5 ≤ 14)
+    expect(sharedNode(A, B)).toEqual([1.5, 2])
+  })
+  it('returns null when no endpoints are within tolerance', () => {
+    expect(sharedNode([[0, 0], [50, 0]], [[0, 100], [50, 100]])).toBeNull()
+  })
+})
+
+describe('polylineCrossings — the contract decision', () => {
+  it('GREEN: two non-incident parallel edges → 0', () => {
+    const A = [[0, 0], [100, 0]]
+    const B = [[0, 20], [100, 20]]
+    expect(polylineCrossings(A, B).count).toBe(0)
+  })
+
+  it('RED: two NON-incident edges that cross are flagged (the defect '
+    + 'no prior gate could see — a→b × c→a far from any shared node)', () => {
+    // distinct endpoints (no shared node), clean mid-span crossing.
+    const A = [[0, 0], [100, 100]]
+    const B = [[0, 100], [100, 0]]
+    const r = polylineCrossings(A, B)
+    expect(r.count).toBe(1)
+    expect(r.points[0]).toEqual([50, 50])
+  })
+
+  it('EXCLUSION asserted: incident edges crossing WITHIN NODE_R of '
+    + 'their shared node is legitimate convergence ⇒ 0 (must not '
+    + 'silently widen into ignoring a real crossing)', () => {
+    // both edges start at ≈(0,0) (shared node) and immediately splay;
+    // their only intersection is at the shared node → excluded.
+    const A = [[0, 0], [10, 50]]
+    const B = [[1, 1], [10, -50]]
+    expect(polylineCrossings(A, B).count).toBe(0)
+  })
+
+  it('RED: incident edges that ALSO cross FAR from the shared node '
+    + '(beyond NODE_R) IS still a defect — exclusion is local, not '
+    + 'a blanket "incident ⇒ ignore"', () => {
+    // shared node at ≈(0,0); A runs straight right along y=0. B leaves
+    // the same node above A then plunges vertically through it at
+    // x=150 — a proper crossing at (150,0), dist 150 ≫ NODE_R(28).
+    const A = [[0, 0], [200, 0]]
+    const B = [[1, 1], [150, 1], [150, -30]]
+    const r = polylineCrossings(A, B)
+    expect(r.count).toBe(1)
+    expect(r.points[0]).toEqual([150, 0])
+    expect(r.points.every((p: number[]) => Math.hypot(p[0], p[1]) > NODE_R)).toBe(true)
+  })
+
+  it('edgecrossRatchet — regression guard (NOT a contract downgrade)', () => {
+    const base = { 'rel-bidirectional': 1, 'rel-fan-stress': 6 }
+    // hold or improve ⇒ not a regression
+    expect(edgecrossRatchet(base, 'rel-bidirectional', 1).regressed).toBe(0)
+    expect(edgecrossRatchet(base, 'rel-fan-stress', 4).regressed).toBe(0)
+    expect(edgecrossRatchet(base, 'rel-fan-stress', 0).regressed).toBe(0)
+    // RED: the exact disproven-fix regression (1→2, 6→11) is caught
+    expect(edgecrossRatchet(base, 'rel-bidirectional', 2).regressed).toBe(1)
+    expect(edgecrossRatchet(base, 'rel-fan-stress', 11).regressed).toBe(1)
+    // a fixture not in the baseline must stay at 0 (no new crossings)
+    expect(edgecrossRatchet(base, 'topology-linear-chain', 0).regressed).toBe(0)
+    expect(edgecrossRatchet(base, 'topology-linear-chain', 1).regressed).toBe(1)
+  })
+
+  it('countCrossings sums pairwise and lists the offending pair', () => {
+    const polys = [
+      { pts: [[0, 0], [100, 100]] },   // 0
+      { pts: [[0, 100], [100, 0]] },   // 1  crosses 0 at (50,50)
+      { pts: [[0, 200], [100, 200]] },  // 2  isolated
+    ]
+    const r = countCrossings(polys)
+    expect(r.total).toBe(1)
+    expect(r.detail[0]).toMatchObject({ i: 0, j: 1, count: 1 })
+  })
+})

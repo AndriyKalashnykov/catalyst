@@ -174,6 +174,21 @@ routefidelity: build
 	@# differentiate (the failure mode of the reverted /tmp driver).
 	@PLANTUML_JAR=$(PLANTUML_JAR) DRAWIO_EXPORT_IMAGE=$(DRAWIO_EXPORT_IMAGE) node scripts/route-fidelity-matrix.mjs
 
+#edgecross: @ Non-incident edge-crossing inventory + regression ratchet vs committed render-truth (deterministic; no java/docker)
+edgecross: build
+	@# Crossings are THE primary readability aesthetic (Purchase 1997).
+	@# Measured on the COMMITTED drawio-export render-truth
+	@# (docs/gallery/svg) — never emitted points (#107 lesson: draw.io
+	@# re-routes). CONTRACT (crossings=0) is honestly RED & DEFERRED:
+	@# 30 across 5 multi-edge fixtures vs PlantUML's 0 — the global
+	@# routing/port-ordering problem CLAUDE.md item 1 (ELK→dot) owns;
+	@# an in-place targeted fix was measured (30→40) and disproved.
+	@# This is NOT advisory-downgraded: a per-fixture RATCHET
+	@# (tests/edgecross-baseline.json, same pattern as factcheck-ratio)
+	@# fails on any REGRESSION beyond baseline (the 30→40 class) while
+	@# the contract stays RED & documented. Run on any routing change.
+	@node scripts/edgecross-svg.mjs
+
 #gallery-verify: @ Fail if the committed gallery .drawio drifted from the current emit (deterministic; no java/docker)
 gallery-verify: build
 	@# The .drawio XML IS catalyst's emit output; regenerating it is pure
@@ -247,4 +262,4 @@ ci-run: deps
 
 .PHONY: help deps deps-render clean build lint test coverage-check vulncheck \
 	secrets trivy-fs static-check golden-update render-compare gallery \
-	factcheck arrowskew routefidelity gallery-verify ci ci-run
+	factcheck arrowskew routefidelity edgecross gallery-verify ci ci-run

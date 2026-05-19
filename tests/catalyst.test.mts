@@ -1,108 +1,72 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
+import { Catalyst } from '../src/catalyst.mjs';
+import xml2js from 'xml2js';
 
-// Mock dependencies
+/**
+ * PUBLIC-API CONTRACT for the `Catalyst` facade — the stable surface
+ * downstream (puml2drawio) pins. NO mocks: the previous version of this
+ * file `vi.mock`'d EntityParser/RelParser/Mx/LayoutEngine, so
+ * `Mx.generate` returned a hard-coded `'<xml>test</xml>'` and every
+ * assertion tested the MOCK, not catalyst — a green-only test
+ * indistinguishable from no test (portfolio rule
+ * gate-RED-proves-enforcement). Each case below is RED-capable: it
+ * asserts a real property of real output that a genuine regression in
+ * the public entrypoint would fail. Whole-path emit/geometry contracts
+ * live in output-correctness / parity / corpus-sanity; this file's
+ * distinct contract is *the three public methods behave as documented
+ * on real input*.
+ */
 
-// parse() returns ONE entity (not []) so the convert()-orchestration test
-// gets past the fail-loud guard (Catalyst.convert now throws on zero
-// entities + zero relations — see output-correctness.test.mts). The two
-// parse* tests below only assert Array-ness, so a non-empty default is fine.
-vi.mock('../src/puml/EntityParser.mjs', () => ({
-  EntityParser: class MockEntityParser {
-    parse = vi.fn().mockReturnValue([{ alias: 'sys1', type: 'System', label: 'System 1' }])
-    getObjectWithPropertyAndValueInHierarchy = vi.fn().mockReturnValue(null)
-  }
-}));
+const C4 = (body: string) =>
+  `@startuml t\n!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Container.puml\n${body}\n@enduml\n`;
 
-vi.mock('../src/mx/Mx.mjs', () => ({
-  Mx: class MockMx {
-    addMxC4 = vi.fn()
-    addMxC4Relationship = vi.fn()
-    generate = vi.fn().mockResolvedValue('<xml>test</xml>')
-  },
-  MxGeometry: class MockMxGeometry {
-    constructor(x: number, y: number, width: number, height: number) {}
-  }
-}));
-
-vi.mock('../src/puml/RelParser.mjs', () => ({
-  RelParser: {
-    getRelations: vi.fn().mockReturnValue([]),
-    getLayoutConstraints: vi.fn().mockReturnValue([])
-  }
-}));
-
-vi.mock('../src/layout/LayoutEngine.mjs', () => ({
-  LayoutEngine: {
-    calculateLayout: vi.fn().mockResolvedValue({
-      nodes: [],
-      edges: [],
-      clusters: [],
-      width: 800,
-      height: 600
-    })
-  }
-}));
-
-describe('Catalyst Library', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  it('should export Catalyst class', async () => {
-    const { Catalyst } = await import('../src/catalyst.mjs');
-    
-    expect(Catalyst).toBeDefined();
+describe('Catalyst public API — surface', () => {
+  it('exports the three documented static entrypoints', () => {
     expect(typeof Catalyst.convert).toBe('function');
     expect(typeof Catalyst.parseEntities).toBe('function');
     expect(typeof Catalyst.parseRelations).toBe('function');
   });
+});
 
-  it('should convert PlantUML content to draw.io XML', async () => {
-    const { Catalyst } = await import('../src/catalyst.mjs');
-    
-    const pumlContent = `
-      @startuml
-      !include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
-      System(sys1, "System 1", "Description")
-      @enduml
-    `;
-    
-    const result = await Catalyst.convert(pumlContent);
-    
-    expect(result).toBeDefined();
-    expect(typeof result).toBe('string');
-    expect(result).toContain('xml');
+describe('Catalyst.parseEntities — real parse, RED on a dropped entity', () => {
+  it('returns the declared entities with exact alias + structural type', () => {
+    const ents = Catalyst.parseEntities(C4('System(sys1, "System 1", "desc")'));
+    const sys1 = ents.find((e) => e.alias === 'sys1');
+    expect(sys1, 'declared System "sys1" must be parsed').toBeDefined();
+    expect(sys1!.type).toBe('System');           // RED if the kind is lost
+    expect(sys1!.label).toBe('System 1');         // RED if the name is dropped
   });
 
-  it('should parse entities from PlantUML content', async () => {
-    const { Catalyst } = await import('../src/catalyst.mjs');
-    
-    const pumlContent = `
-      @startuml
-      System(sys1, "System 1", "Description")
-      @enduml
-    `;
-    
-    const entities = Catalyst.parseEntities(pumlContent);
-    
-    expect(entities).toBeDefined();
-    expect(Array.isArray(entities)).toBe(true);
+  it('does NOT fabricate entities from a directive line (RED on over-parse)', () => {
+    const ents = Catalyst.parseEntities(C4('System(keep, "Keep")\nLAYOUT_TOP_DOWN()'));
+    expect(ents.map((e) => e.alias)).toEqual(['keep']);
+  });
+});
+
+describe('Catalyst.parseRelations — real parse, RED on a lost relation', () => {
+  it('returns the relation with exact endpoints + verb', () => {
+    const rels = Catalyst.parseRelations(
+      C4('System(a, "A")\nSystem(b, "B")\nRel(a, b, "uses")'));
+    expect(rels).toHaveLength(1);
+    expect(rels[0].source).toBe('a');
+    expect(rels[0].target).toBe('b');
+    expect(rels[0].label).toBe('uses');           // RED if the verb is dropped
+  });
+});
+
+describe('Catalyst.convert — real whole-path, RED on a broken conversion', () => {
+  it('emits a strict-XML-well-formed drawio carrying the declared node', async () => {
+    const xml = await Catalyst.convert(C4('System(sys1, "System 1", "desc")'));
+    // RED: a real `Mx.generate` regression that dropped the node, or
+    // emitted malformed XML, fails one of these (the OLD mock made all
+    // three pass unconditionally on `'<xml>test</xml>'`).
+    expect(xml).toContain('id="sys1"');
+    await expect(xml2js.parseStringPromise(xml)).resolves.toBeDefined();
+    expect(/<diagram\s+id="[^"]+"\s+name="[^"]+"/.test(xml)).toBe(true);
   });
 
-  it('should parse relations from PlantUML content', async () => {
-    const { Catalyst } = await import('../src/catalyst.mjs');
-
-    const pumlContent = `
-      @startuml
-      System(sys1, "System 1")
-      System(sys2, "System 2")
-      Rel(sys1, sys2, "uses")
-      @enduml
-    `;
-
-    const relations = Catalyst.parseRelations(pumlContent);
-
-    expect(relations).toBeDefined();
-    expect(Array.isArray(relations)).toBe(true);
+  it('fails loudly on input with zero convertible C4 elements (RED: no silent stub)', async () => {
+    await expect(Catalyst.convert('@startuml x\ntitle nothing\n@enduml'))
+      .rejects.toThrow(/no convertible C4 elements found/);
   });
 });
