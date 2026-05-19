@@ -191,11 +191,79 @@ mutation-verified. Full suite 628/628 (ELK path untouched — additive).
 Corroborative eyeball: `scripts/dot-layout-gallery.mjs` →
 `build/dot-layout/` (deterministic).
 
+## P3+P4 STATUS (2026-05-19) — CORE COMPLETE; decisive result
+
+**P4 flag:** `options.layoutEngine` › `process.env.LAYOUT_ENGINE` ›
+`'elk'`. No silent fallback (a dot failure surfaces — never masked
+into ELK = the cardinal fake-green). ELK path byte-identical
+(`routesAuthoritative` absent ⇒ legacy branch; full suite 628/628).
+
+**P3 routing (the #107-correct measurement):** dot's emitted splines
+are 0-crossing (P0), but the FIRST rendered drawio-export pass showed
+catalyst-dot=11 (rel-fan-stress 6→10 REGRESSION) — root-caused by
+MEASUREMENT to the ELK-era `assignEdgeLanes` perpendicular-shove
+applied on top of dot's already-fanned splines (rel-fan-stress raw
+spline 0 → post-lane 10; the CLAUDE.md item-2 defect). Fix:
+`LayoutResult.routesAuthoritative` (set by DotLayout) → a new leading
+branch in `layoutData2mx` emits dot's spline VERBATIM (`curved=1`,
+ADR 0013) and bypasses the lane machinery + lane exit/entry attach.
+
+**DECISIVE — `make edgecross` 30 → 0** on the real committed
+drawio-export render-truth: ALL 22 corpus fixtures
+catalyst==PlantUML==0, 0 regressions. The crossing CONTRACT (Purchase
+1997), honestly RED for the project's whole life under ELK, is GREEN
+under dot. This is the entire reason for 1a.
+
+**Fidelity under dot (measured, not assumed):**
+
+- corpus-sanity + output-correctness + spec-coverage: **65/65**.
+- factcheck CONTRACT metrics across all 28:
+  `entityMiss=relMiss=labelDrop=arrowBad=nodeOverlap=titleMiss=0`
+  (the completeness invariant — ADR 0012, the FIRST gate — HOLDS).
+- `ratioBad` moved on ~24 fixtures, mostly TOWARD 1.0/PlantUML (dot
+  *is* PlantUML's engine) — the **sanctioned P5 re-baseline**, not a
+  defect.
+- `attachMerge` (c4-all-rel-variants=23, c4-exhaustive=3,
+  rel-fan-stress=1, rel-parallel-duplicate=1): **proven 100%
+  comparator FALSE-POSITIVE**, not a product defect. Mechanism
+  (`FACTCHECK_DEBUG`): every flag is `d2=0 (exitY
+  undefined/undefined)` — dot's authoritative `curved` edges
+  intentionally carry no `exitX/entryX`, so `attachPoint` collapses
+  every same-pair edge to the box centre. Independent signal (real
+  drawio-export rendered path endpoints): **0** both-ends-coincident
+  pairs on the corpus. This is the documented factcheck base-point FP
+  class. **Fix (P5, principled — fix the gate's FP, never mask the
+  correct product):** when an edge has no `exitX/entryX`, `attachMerge`
+  must use the RENDERED path terminal points (the comparator already
+  parses them), not the centre proxy; ship with a mutation-verified
+  RED in `factcheck-predicates.test.mts`.
+- `labelHit=3` (c4-exhaustive only): NOT yet fact-checked (real vs
+  FP) — a P5 item.
+
+## P5 PLAN (the user check-in point — re-baseline + ADR 0014)
+
+Sanctioned position-baseline reset (every CONTRACT still green; only
+position/extent fingerprints rebase — NOT a fake-green):
+
+1. `attachMerge` comparator base-point FP fix + RED test.
+2. Fact-check `labelHit=3` (c4-exhaustive) → fix product or comparator.
+3. Re-baseline under dot: golden, parity, `factcheck-ratio-baseline`,
+   gallery (`.drawio` + committed render SVG), `edgecross-baseline`
+   (→ all 0), `arrowskew`.
+4. Dual-engine CI shape (run the suite under both; per-engine
+   `edgecross`/`routefidelity`).
+5. **ADR 0014** — superseding ADR 0008 (Context→layered) and ADR 0011
+   (layout-aspect ratchet — dot owns aspect now), with the measured
+   before/after numbers; `edge-crossing-minimization.md` is the "why".
+6. **P6 (separate, explicit sign-off — irreversible):** flip default
+   to `dot`, deprecate the ELK path. NOT done without approval.
+
 ## Status / entry point
 
-Branch: `feat/dot-engine`. **P0 GO · P1+P2 COMPLETE (2026-05-19).**
-Continue at **P3** (spline routing fidelity, measured on rendered
-SVG) then **P4** (`LAYOUT_ENGINE` flag + dual-engine).
+Branch: `feat/dot-engine`. **P0 GO · P1+P2 · P3+P4 CORE COMPLETE —
+edgecross 30→0 decisively proven (2026-05-19).** At the **P5
+check-in boundary** (re-baseline + comparator FP fix + ADR 0014 →
+then P6 default-flip needs explicit approval).
 Reusable assets already banked: `assignPortOrder` + tests +
 `build/portorder-models/`; `make edgecross` + ratchet (the numeric
 target); `route-fidelity` (the shape metric); the full research base
