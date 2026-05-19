@@ -254,8 +254,9 @@ agent memories — not re-dumped here.
 `dot` is PlantUML's own engine ⇒ `make edgecross` 0). Sequence
 (ADR 0007 a–d2b) and the C4 directive surface are feature-complete;
 P3/P5/P7 closed with cited numbers (history). Nothing in catalyst
-itself is actionably open. One deliberately deferred & documented
-item remains (NOT silently dropped):
+itself is actionably open. Remaining items (NOT silently dropped) —
+one deliberately deferred, one decision-gated research spike;
+item 2 CLOSED this session:
 
 1. **factcheck `attachMerge`/`labelHit` on the 2 SYNTHETIC
    exhaustiveness fixtures** (`c4-all-rel-variants`,
@@ -281,6 +282,34 @@ item remains (NOT silently dropped):
    `*.drawio.png` regenerated under the dot layout (content-faithful
    diff, as predicted). See [[open-followups]] /
    [[release-chain-topology]].
+
+3. **RESEARCH (very deep, decision-gated — do NOT implement before
+   the research doc is reviewed): broaden PlantUML coverage beyond the
+   C4 + C4-sequence families.** catalyst today converts the C4 static
+   family and the C4 dynamic/sequence family (ADR 0007). PlantUML spans
+   *dozens* of unrelated diagram families catalyst does **not**
+   convert — class, object, activity, state, use-case, component
+   (non-C4), timing, ER, JSON/YAML, mindmap, gantt, WBS, network
+   (nwdiag), salt/wireframe, and more — which is exactly why the
+   title/About must stay scoped ("…for PlantUML C4 & sequence
+   diagrams"), not the overclaiming "PlantUML → draw.io". This item
+   is a **research spike**, not a build commitment: produce a
+   committed decision doc (`docs/research/plantuml-beyond-c4.md`)
+   covering, per family — (a) PlantUML grammar surface & how it's
+   parsed (PlantUML's own grammar is notoriously irregular; assess
+   feasibility honestly), (b) a faithful draw.io shape/edge mapping
+   (or proof none exists), (c) layout-engine fit (does `dot` serve
+   it, or does the family need a different engine — see the deferred
+   `elk-vs-graphviz-dot.md` bet), (d) demand/value vs maintenance
+   cost, (e) architecture impact on the parser/emit/gate pipeline and
+   the completeness-invariant gates (ADR 0012). Output is a weighted
+   matrix + ranking + a per-family ACCEPT/DECLINE recommendation
+   (parallel-research → weighted-matrix → spike methodology). Expect
+   most families to be **DECLINE on evidence** — a negative,
+   well-argued result is a valid deliverable; the goal is a defensible
+   scope boundary, not feature sprawl. Gate: nothing ships to the
+   parser/emit until the doc is reviewed and a family is explicitly
+   ACCEPTED. See [[open-followups]].
 
 **DO NOT reopen** without a render-measured, user-pointable defect:
 `$sprite`/`SHOW_PERSON_SPRITE` (CLOSED — no draw.io sprite registry,

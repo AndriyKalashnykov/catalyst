@@ -3,7 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen.svg)](LICENSE)
 [![Renovate enabled](https://img.shields.io/badge/renovate-enabled-brightgreen.svg)](https://app.renovatebot.com/dashboard#github/AndriyKalashnykov/catalyst)
 
-# Catalyst — PlantUML C4 & Sequence → draw.io Converter
+# Catalyst — draw.io converter for PlantUML C4 & sequence diagrams
 
 <div align="center">
   <img src="logo.svg" width="100" height="100" alt="Catalyst Logo">
@@ -204,13 +204,15 @@ Rel(systemA, containerA, "Uses")
 Coverage of the full C4-PlantUML surface is tracked in
 [`docs/C4-COVERAGE.md`](docs/C4-COVERAGE.md).
 
-catalyst converts the **static C4 subset only** (Context / Container /
-Component / Deployment). The C4-PlantUML **dynamic/sequence** family
+catalyst converts the **static C4 diagrams** (Context / Container /
+Component / Deployment) **and** the **C4 dynamic/sequence** family
 (`C4_Sequence.puml`, `actor`/`participant` + message arrows / `==stage==`
-dividers) is **not** supported: `Catalyst.convert()` **throws** a clear
-error rather than emitting a content-less stub, so callers fail fast
-instead of generating blank artifacts. Likewise, any input that yields
-zero entities and zero relations is rejected.
+dividers — ADR 0007, fully implemented). PlantUML's non-C4 diagram
+families (class, activity, state, use-case, mindmap, gantt, …) are out
+of scope. Genuinely unknown diagram types and any input that yields
+zero entities and zero relations fail loud: `Catalyst.convert()`
+**throws** a clear error rather than emitting a content-less stub, so
+callers fail fast instead of generating blank artifacts.
 
 ## Available Make Targets
 
