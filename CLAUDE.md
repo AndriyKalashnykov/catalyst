@@ -312,7 +312,18 @@ What is left:
        contract `make edgecross` (`scripts/edgecross-svg.mjs`, RED +
        mutation-tested `tests/edgecross-svg.test.mjs`) measures
        non-incident edge crossings on the COMMITTED drawio-export
-       render-truth. Honest inventory: **catalyst 30 crossings across
+       render-truth. The ratchet is **CI-enforced via vitest** (a
+       deterministic no-docker test reads the committed gallery SVGs;
+       fails on any regression past `tests/edgecross-baseline.json`)
+       AND an independent-signal FP guard (PlantUML render side must
+       be 0) — both fact-checked 2026-05-18 (no PlantUML FP, no
+       self-split FP, edge-large-graph's 1 spurious path = 0
+       crossings, FP-corrected==instrument). LIMITATION (honest): it
+       gates the COMMITTED render; `gallery-verify` refreshes only
+       `.drawio`, so an emit change that worsens crossings is caught
+       when the gallery SVGs are re-rendered and committed
+       (`make gallery`, docker) — same freshness model as the gallery
+       PNGs, not a live emit gate. Honest inventory: **catalyst 30 crossings across
        5 multi-edge fixtures (edge-large-graph 18, rel-fan-stress 6,
        rel-tech-vs-notech 3, rel-parallel-duplicate 2,
        rel-bidirectional 1) vs PlantUML 0** — the other 17 fixtures

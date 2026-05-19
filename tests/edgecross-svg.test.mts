@@ -1,10 +1,13 @@
 import { describe, it, expect } from 'vitest'
 // @ts-expect-error — plain .mjs gate logic, no d.ts (intentional, like
 // route-fidelity / bendcount-svg). isMain-guarded CLI side-effects.
+import { readFileSync, readdirSync, existsSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
+import { dirname, join } from 'node:path'
 import {
   SHARE_TOL, NODE_R,
   properIntersection, sharedNode, polylineCrossings, countCrossings,
-  edgecrossRatchet,
+  edgecrossRatchet, edgePolys,
 } from '../scripts/edgecross-svg.mjs'
 
 // A gate's value is its demonstrated RED (every-gate-proven-red). The
@@ -113,5 +116,55 @@ describe('polylineCrossings — the contract decision', () => {
     const r = countCrossings(polys)
     expect(r.total).toBe(1)
     expect(r.detail[0]).toMatchObject({ i: 0, j: 1, count: 1 })
+  })
+})
+
+// CI-ENFORCED corpus ratchet + the instrument-trust fact-check, run
+// in vitest (deterministic over the COMMITTED drawio-export
+// render-truth — no docker). This closes the "ratchet is manual-only,
+// passive" gap: a routing regression in the committed render now
+// fails CI here, not only under a manual `make edgecross`.
+//
+// GUARANTEE & LIMITATION (stated honestly): this gates the COMMITTED
+// gallery SVGs. `gallery-verify` regenerates only the `.drawio`; the
+// `.svg` render-truth is refreshed by `make gallery` (docker, manual).
+// So an emit change that worsens crossings is caught the moment the
+// gallery SVGs are re-rendered+committed — NOT before (same freshness
+// model as the gallery PNGs). It is a real regression guard on the
+// render-truth, not a live emit gate; do not over-read it.
+describe('edgeCross corpus — CI ratchet + instrument fact-check (committed render-truth)', () => {
+  const SVG = join(dirname(fileURLToPath(import.meta.url)), '..', 'docs', 'gallery', 'svg')
+  const BASE = join(dirname(fileURLToPath(import.meta.url)), 'edgecross-baseline.json')
+  const have = existsSync(SVG) && existsSync(BASE)
+  const stems = have
+    ? [...new Set(readdirSync(SVG).filter((f) => f.endsWith('.drawio.svg'))
+        .map((f) => f.replace('.drawio.svg', '')))].sort()
+    : []
+
+  it.skipIf(!have)('PlantUML render side is 0 — the instrument does NOT '
+    + 'false-positive on clean dot splines (independent-signal '
+    + 'fact-check, locked so it cannot silently rot)', () => {
+    let total = 0
+    for (const s of stems) {
+      const f = join(SVG, `${s}.puml.svg`)
+      if (existsSync(f)) total += countCrossings(edgePolys(readFileSync(f, 'utf8'), 'puml')).total
+    }
+    expect(total, 'PlantUML-side crossings must be 0 (instrument FP guard)').toBe(0)
+  })
+
+  it.skipIf(!have)('committed drawio render: every fixture ≤ its '
+    + 'baseline (the regression ratchet, now CI-enforced) and total '
+    + 'equals the fact-checked baseline', () => {
+    const base = JSON.parse(readFileSync(BASE, 'utf8'))
+    const regressions: string[] = []
+    let total = 0
+    for (const s of stems) {
+      const n = countCrossings(edgePolys(readFileSync(join(SVG, `${s}.drawio.svg`), 'utf8'), 'drawio')).total
+      total += n
+      if (edgecrossRatchet(base, s, n).regressed) regressions.push(`${s}: ${n} > base ${base[s] ?? 0}`)
+    }
+    expect(regressions, 'edgeCross regression vs committed baseline').toEqual([])
+    const baseTotal = Object.values(base).reduce((a, b) => (a as number) + (b as number), 0)
+    expect(total, 'corpus total drifted from the fact-checked baseline (re-baseline deliberately if intended)').toBe(baseTotal)
   })
 })
