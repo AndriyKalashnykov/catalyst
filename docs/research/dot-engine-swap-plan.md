@@ -167,10 +167,35 @@ contract (hard-stop only if a later phase's CONTRACT gate genuinely
 cannot go green — then negative result + escalate, never fake-green).
 `scripts/p0-dot-spike.mjs` is retained as the re-runnable proof.
 
+## P1+P2 STATUS (2026-05-19) — COMPLETE
+
+`src/layout/DotLayout.mts` — C4→dot emitter (P1) + dot-JSON→
+`LayoutResult` adapter (P2) as one unit, mirroring `LayoutEngine`'s
+static signature (zero call-site change for the P4 flag). Ranks TB,
+`cluster_*` subgraphs for boundary/Deployment_Node nesting, node sizes
+pinned from ADR-0010 `measureNode` (`fixedsize=true`, px→inch so
+1 dot-pt == 1 px ⇒ adapter is a pure y-flip), edges stamped
+`id="rel<i>"`/`lay<i>` for EXPLICIT relation-index recovery (dot
+reorders/parallels), Rel_U/D/L/R + Lay_* mapped to dot ranking.
+Hardening found via the C1-RED: dot auto-creates undeclared
+edge-endpoint nodes — the adapter surfaces ONLY declared leaves so a
+parser gap is caught by completeness, not leaked as a phantom box.
+
+Gate `tests/dot-layout.test.mts` — WHOLE-PATH (real parser → real
+pinned engine, no mocks), 29 tests green: C1 completeness · C2 no edge
+dropped · C3 cluster containment · C4 no leaf overlap · C5 byte-
+determinism (source AND LayoutResult) · C6 the 5 ELK-crossing fixtures
+route to **0** non-incident crossings THROUGH the real adapter
+(P0's 30→0 survives P1/P2, project's own instrument) · C1-RED
+mutation-verified. Full suite 628/628 (ELK path untouched — additive).
+Corroborative eyeball: `scripts/dot-layout-gallery.mjs` →
+`build/dot-layout/` (deterministic).
+
 ## Status / entry point
 
-Branch: `feat/dot-engine`. **P0 COMPLETE (GO, 2026-05-19).** Continue
-at **P1** (C4→dot graph emitter).
+Branch: `feat/dot-engine`. **P0 GO · P1+P2 COMPLETE (2026-05-19).**
+Continue at **P3** (spline routing fidelity, measured on rendered
+SVG) then **P4** (`LAYOUT_ENGINE` flag + dual-engine).
 Reusable assets already banked: `assignPortOrder` + tests +
 `build/portorder-models/`; `make edgecross` + ratchet (the numeric
 target); `route-fidelity` (the shape metric); the full research base
