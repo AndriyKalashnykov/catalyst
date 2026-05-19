@@ -284,9 +284,9 @@ item 2 CLOSED this session:
    [[release-chain-topology]].
 
 3. **RESEARCH (very deep, decision-gated — do NOT implement before
-   the research doc is reviewed): broaden PlantUML coverage beyond C4
-   + C4-sequence.** catalyst today converts the C4 static family +
-   the C4 dynamic/sequence family (ADR 0007). PlantUML itself spans
+   the research doc is reviewed): broaden PlantUML coverage beyond the
+   C4 + C4-sequence families.** catalyst today converts the C4 static
+   family and the C4 dynamic/sequence family (ADR 0007). PlantUML spans
    *dozens* of unrelated diagram families catalyst does **not**
    convert — class, object, activity, state, use-case, component
    (non-C4), timing, ER, JSON/YAML, mindmap, gantt, WBS, network
