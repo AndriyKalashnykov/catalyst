@@ -279,14 +279,17 @@ What is left:
    sufficient against draw.io's own router; the fix REQUIRES owning
    routing end-to-end ⇒ item 1a.
 
-   1a. **ELK→Graphviz-`dot` engine swap — DONE, P0–P6 COMPLETE
-   (2026-05-19). `dot` is the DEFAULT engine.**
-   `LAYOUT_ENGINE=elk|dot` / `options.layoutEngine`
-   (`src/layout/DotLayout.mjs`, `@hpcc-js/wasm-graphviz` pinned);
-   ELK = retained opt-out fallback (dropped after ≥1 green release).
+   1a. **ELK→Graphviz-`dot` engine swap — DONE, P0–P6 + ELK REMOVED
+   (2026-05-19). `dot` is the SOLE engine.** `@hpcc-js/wasm-graphviz`
+   pinned, `src/layout/DotLayout.mjs`. The `elkjs` dep,
+   `LayoutEngine.mts`, the `layoutEngine`/`LAYOUT_ENGINE` selector,
+   the ELK-impl tests, and the vestigial ELK-compensation emit
+   machinery (lane + dead multi-bend branch) are DELETED (FU1) —
+   lane/multibend removal proven BYTE-IDENTICAL (gallery-verify).
+   No `LayoutResult` shape change (`src/layout/types.mjs`).
    **edgecross 30→0** in the committed real drawio-export
-   render-truth; suite 639/639 under BOTH engines; factcheck
-   **CLEAN 28/28** (dot default; ELK was 26/28); arrowskew 22/22;
+   render-truth; factcheck **CLEAN 28/28** (was 26/28 ELK);
+   arrowskew 22/22; coverage 86.09%;
    `make ci` GREEN. ADR 0014 (supersedes 0008/0011). Eyeball:
    `docs/gallery-compare/` (PlantUML|ELK|dot). Seq pipeline is
    engine-independent (unaffected). Follow-ups (NOT blocking): remove

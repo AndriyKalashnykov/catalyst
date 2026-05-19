@@ -34,7 +34,7 @@
 import { Graphviz } from '@hpcc-js/wasm-graphviz'
 import { EntityDescriptor } from '../puml/EntityDescriptor.interface.mjs'
 import { measureNode } from './measureNode.mjs'
-import type { LayoutResult, LayoutNode, LayoutEdge } from './LayoutEngine.mjs'
+import type { LayoutResult, LayoutNode, LayoutEdge } from './types.mjs'
 
 type Rel = { source: string; target: string; label: string; description: string; direction?: 'U' | 'D' | 'L' | 'R' }
 type Lay = { source: string; target: string; direction?: 'U' | 'D' | 'L' | 'R'; distance?: number }

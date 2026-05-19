@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import { EntityParser } from '../src/puml/EntityParser.mjs'
 import { RelParser } from '../src/puml/RelParser.mjs'
-import { LayoutEngine } from '../src/layout/LayoutEngine.mjs'
+import { DotLayout } from '../src/layout/DotLayout.mjs'
 import { measureNode } from '../src/layout/measureNode.mjs'
 import type { EntityDescriptor } from '../src/puml/EntityDescriptor.interface.mjs'
 
@@ -48,7 +48,7 @@ describe('layout quality (rendered shapes do not overlap/cram)', () => {
     it(`${name}: leaf shapes are ≥ content-fit box and never overlap`, async () => {
       const puml = fixture(name)
       const ents = new EntityParser().parse(puml)
-      const r = await LayoutEngine.calculateLayout(
+      const r = await DotLayout.calculateLayout(
         ents,
         RelParser.getRelations(puml),
         { rankdir: 'TB', nodesep: 50, edgesep: 10, ranksep: 50, marginx: 20, marginy: 20 },

@@ -1,12 +1,15 @@
 # ADR 0014 — Graphviz `dot` layout engine (supersedes ELK for layout+routing)
 
-- Status: **ACCEPTED & LIVE — P6 DONE 2026-05-19 (explicit
-  user sign-off): the default engine is now `dot`.** ELK is the
-  retained explicit opt-out fallback (`layoutEngine:'elk'` /
-  `LAYOUT_ENGINE=elk`), removed only after ≥1 green release on `dot`.
+- Status: **ACCEPTED & LIVE — P6 DONE then ELK REMOVED 2026-05-19
+  (explicit user sign-off, FU1): `dot` is the SOLE engine.** The
+  `elkjs` dep, `LayoutEngine.mts`, the `layoutEngine`/`LAYOUT_ENGINE`
+  selector, the ELK-impl tests, and the now-vestigial ELK-compensation
+  emit machinery (`assignEdgeLanes` lane branch + the dead multi-bend
+  branch in `layoutData2mx`) are deleted. Lane/multibend removal
+  proven BYTE-IDENTICAL (gallery-verify) — they were dead under dot.
   edgecross **30→0** on the committed real drawio-export render-truth;
-  factcheck **CLEAN 28/28** under the dot default (best ever; ELK was
-  26/28).
+  factcheck **CLEAN 28/28** under dot (best ever; ELK was 26/28);
+  arrowskew 22/22; coverage 86.09%.
 - Date: 2026-05-19
 - **Supersedes ADR 0008** (Context→`layered`) and **ADR 0011**
   (layout-aspect fidelity ratchet): under `dot` the layout engine IS
@@ -147,11 +150,16 @@ target rather than an approximation of it.
   `scripts/engine-compare-gallery.mjs`). Corpus: ELK 30 → dot 0,
   PlantUML 0.
 
-### Remaining (follow-up, not P6-blocking)
+### Follow-up status
 
-- Remove the ELK path + `elkjs` dep after ≥1 green release on `dot`
-  (separate change; keeps the rollback escape hatch live meanwhile).
-- `puml2drawio` consumes catalyst at a pinned `CATALYST_REF`; its next
-  bump picks up `dot` by default — no API change (the `LAYOUT_ENGINE`
-  /`layoutEngine` surface is additive), but the rendered output
-  changes (better: 0 crossings). Flag in the puml2drawio bump PR.
+- **ELK path + `elkjs` dep — REMOVED 2026-05-19 (FU1).** The user
+  directed removal now rather than waiting ≥1 release; justified —
+  dot shipped green (PR #150: CI green, 661/661, edgecross 0,
+  factcheck 28/28). No rollback escape hatch remains by design; the
+  proven byte-identical lane/multibend removal + the full
+  render-truth suite are the safety net.
+- `puml2drawio` consumes catalyst at a pinned `CATALYST_REF`; the
+  2.0.0 bump picks up `dot`. **BREAKING**: the `layoutEngine` option
+  is removed (was additive, now gone) and rendered output changes
+  substantially (0 crossings) → catalyst **2.0.0** (major). Flag both
+  in the puml2drawio bump PR; ibm-wm then regenerates `_drawio`.

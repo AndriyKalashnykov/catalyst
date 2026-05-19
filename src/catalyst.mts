@@ -6,21 +6,13 @@ import { parseNotes, type C4Note } from './puml/NoteParser.mjs'
 import { parseProperties, type C4PropertyTable } from './puml/PropertyParser.mjs'
 import { splitLabelLines } from './text/labelLines.mjs'
 import { ELEMENT_BODY_PX, PUML_LEAF_BOX } from './mx/c4/theme.mjs'
-import { LayoutEngine, LayoutResult } from './layout/LayoutEngine.mjs'
+import type { LayoutResult } from './layout/types.mjs'
 import { DotLayout } from './layout/DotLayout.mjs'
-import { assignEdgeLanes, resolveLabelOverlap, slideLabelAlongLane, polylineMidpoint, enforceApproachClearance, type NodeCenter, type NodeRect } from './layout/edgeLanes.mjs'
+import { resolveLabelOverlap, slideLabelAlongLane, polylineMidpoint, type NodeCenter, type NodeRect } from './layout/edgeLanes.mjs'
 import { measureEdgeLabel } from './layout/measureNode.mjs'
-import { spaceAdvance, textWidth, renderedLineHeight, MX_DEFAULT_FONTSIZE } from './text/TextMetrics.mjs'
-import { RELATIONSHIP_LABEL_PX, DIAGRAM_TITLE_PX, SHAPE } from './mx/c4/theme.mjs'
+import { textWidth, renderedLineHeight, MX_DEFAULT_FONTSIZE } from './text/TextMetrics.mjs'
+import { DIAGRAM_TITLE_PX } from './mx/c4/theme.mjs'
 
-/** Final-approach / first-departure perpendicular standoff for emitted
- *  edge waypoints. `2·REL_ARROW_SIZE` clears draw.io's arrowhead reach
- *  (the spike vs the real render: occlusion stops past ~1·arrow, a
- *  clean shaft needs ~2·) + the integer-quantisation half-step (emitted
- *  mxPoints are `Math.round`-ed). Cited renderer constant ×2 + ½-ULP —
- *  a measured metric, NOT a tuned pad. See
- *  `docs/research/arrowhead-orthogonal-routing.md`. */
-const APPROACH_CLEARANCE_PX = 2 * SHAPE.REL_ARROW_SIZE + 0.5
 import { StyleParser } from './puml/StyleParser.mjs'
 import { SeqConverter } from './seq/SeqConverter.mjs'
 import { DECIMAL_RADIX } from "./constants.mjs"
@@ -247,30 +239,22 @@ async function layoutData2mx(layoutData: LayoutResult, pumlElements: EntityDescr
     return ca && cb ? Math.min(ca.hw * 2, cb.hw * 2) : Infinity
   }
 
-  // Multi-edge lane separation — see src/layout/edgeLanes.mts for the why.
-  // Feed each relation's MEASURED label width so the lane gap widens to the
-  // group's widest label: every label then rides its own lane line at the
-  // mid-gap (offset 0) without colliding with the neighbouring lane's
-  // label, the way PlantUML fans parallel duplicates. The wrap cap matches
-  // edgeLabelCap (what ELK reserved), and the breathing pad is one space
-  // advance at the relationship-label font — a real metric, not a guess.
-  const laneLabelWidth = (i: number): number =>
-    measureEdgeLabel(
-      pumlRelations[i].label,
-      pumlRelations[i].description,
-      edgeLabelCap(pumlRelations[i].source, pumlRelations[i].target),
-    ).width
-  const laneLabelPad = Math.ceil(spaceAdvance(RELATIONSHIP_LABEL_PX, false))
-  const edgeLanes = assignEdgeLanes(
-    pumlRelations, nodeCenter, (id) => clusterIds.has(id),
-    undefined, laneLabelWidth, laneLabelPad,
-  )
+  // FU1 / ADR 0014: the ELK-era `assignEdgeLanes` perpendicular-shove
+  // multi-edge lane machinery was removed with the ELK engine. `dot`
+  // fans parallel / BiRel / antiparallel same-pair edges itself via
+  // its own port ordering (the whole point of the swap — applying the
+  // lane shove on top reintroduced the very crossings it eliminated;
+  // measured rel-fan-stress raw 0 → post-lane 10). Every dot edge is
+  // emitted via the authoritative-route branch below; the lane branch
+  // was proven dead under dot (no fixture — even an engineered
+  // cluster-endpoint multi-edge group — reaches it) and its removal
+  // is byte-identical (gallery-verify / factcheck / arrowskew /
+  // edgecross all unchanged).
 
   for (let i = 0; i < pumlRelations.length; i++) {
     const rel = pumlRelations[i]
     const g = new MxGeometry()
     g.$.relative = 1
-    const lane = edgeLanes.get(i)
     const poly = layoutEdgeByRelIdx.get(i)
     if (layoutData.routesAuthoritative && poly && poly.length > 2
         && !clusterIds.has(rel.source) && !clusterIds.has(rel.target)) {
@@ -310,153 +294,6 @@ async function layoutData2mx(layoutData: LayoutResult, pumlElements: EntityDescr
         const t = slideLabelAlongLane({ x: mid.x, y: mid.y }, axis, d.width, d.height, obstacles)
         if (t !== 0) g.addPoint(new MxPoint(Math.round(axis.x * t), Math.round(axis.y * t), 'offset'))
       }
-    } else if (lane) {
-      // Collect the interior waypoints actually emitted so the label
-      // anchor below is computed against the SAME polyline the renderer
-      // (and the factcheck oracle) sees — never ELK's raw attach-point
-      // poly (the P12 base-point lesson, mirrored here for laned edges).
-      const laneInterior: { x: number; y: number }[] = []
-      if (poly && poly.length > 2 && !clusterIds.has(rel.source) && !clusterIds.has(rel.target)) {
-        // ELK produced a real obstacle-aware polyline for this laned edge —
-        // preserve its bends, just shift each interior point into the lane
-        // (rather than discarding the route for a single midpoint waypoint).
-        for (const p of poly.slice(1, -1)) {
-          laneInterior.push({
-            x: Math.round(p.x + lane.perp.x * lane.shift),
-            y: Math.round(p.y + lane.perp.y * lane.shift),
-          })
-        }
-      } else {
-        // Common case (per spike: ELK returns straight 2-point sections for
-        // adjacent same-pair edges) — synthesize the lane midpoint waypoint.
-        laneInterior.push({ x: lane.waypoint.x, y: lane.waypoint.y })
-      }
-      // Perpendicular-approach clearance for the LANED multi-bend
-      // sub-case (ELK routed a real polyline around — e.g. the laned
-      // ANTIPARALLEL back-edge in rel-tech-vs-notech, whose feeder turn
-      // otherwise cuts through its own arrowhead, same occlusion class
-      // as topology-cyclic — confirmed by the SVG `arrowskew` gate).
-      // The single-midpoint synthesized fan case (length 1) is the
-      // load-bearing perpendicular lane spread — NOT an approach run —
-      // so it is left untouched (a different geometry, not spiked here).
-      const Alane = nodeCenter.get(rel.source)
-      const Blane = nodeCenter.get(rel.target)
-      const laneEmit = (Alane && Blane && laneInterior.length >= 2)
-        ? enforceApproachClearance(laneInterior, Alane, Blane, APPROACH_CLEARANCE_PX)
-        : laneInterior
-      for (const p of laneEmit) g.addArrayPoint(new MxPoint(p.x, p.y))
-      // Fan the label off the shared midpoint via an absolute offset mxPoint
-      // (drawio-export honors this; it ignores the geometry.x fraction).
-      // P12: the lane offset alone (perpendicular spread) places the label
-      // ON its lane line — but that line can cross an UNRELATED leaf that
-      // ELK happened to rank in the corridor (c4-all-rel-variants `d`,
-      // c4-exhaustive `sys`). The perpendicular position is load-bearing
-      // (it fans the group's labels), so de-collide by sliding ALONG the
-      // lane line only. Anchor = the rendered route's midpoint + the lane
-      // offset, exactly what the factcheck `labelHit` gate computes, so
-      // the slide fires on precisely the gate's defect set and is inert
-      // (byte-identical) everywhere it already passes.
-      let labelDx = lane.labelOffset.dx, labelDy = lane.labelOffset.dy
-      const A = Alane
-      const B = Blane
-      if (A && B) {
-        // P12: anchor on the route drawio actually draws (the
-        // clearance-adjusted `laneEmit`, not the pre-adjust array).
-        const route = [{ x: A.cx, y: A.cy }, ...laneEmit, { x: B.cx, y: B.cy }]
-        const m = polylineMidpoint(route)
-        const centre = { x: m.x + labelDx, y: m.y + labelDy }
-        const vx = B.cx - A.cx, vy = B.cy - A.cy
-        const len = Math.hypot(vx, vy) || 1
-        const axis = { x: vx / len, y: vy / len }
-        const d = measureEdgeLabel(rel.label, rel.description, edgeLabelCap(rel.source, rel.target))
-        const obstacles: NodeRect[] = []
-        for (const [id, c] of nodeCenter) {
-          if (id === rel.source || id === rel.target) continue
-          obstacles.push({ x: c.cx - c.hw, y: c.cy - c.hh, w: c.hw * 2, h: c.hh * 2 })
-        }
-        const t = slideLabelAlongLane(centre, axis, d.width, d.height, obstacles)
-        if (t !== 0) {
-          labelDx = Math.round(labelDx + axis.x * t)
-          labelDy = Math.round(labelDy + axis.y * t)
-        }
-      }
-      g.addPoint(new MxPoint(labelDx, labelDy, 'offset'))
-    } else if (poly && poly.length > 2 && !clusterIds.has(rel.source) && !clusterIds.has(rel.target)) {
-      const rawInterior = poly.slice(1, -1).map((p) => ({ x: Math.round(p.x), y: Math.round(p.y) }))
-      // Perpendicular-approach clearance (the REAL fix for the
-      // orthogonalEdgeStyle arrowhead skew — proven vs the drawio
-      // render, `docs/research/arrowhead-orthogonal-routing.md`). Push
-      // the endpoint-adjacent bends out so draw.io's feeder cannot
-      // occlude the arrowhead. The SAME adjusted array is used for the
-      // emit AND the label base-point (P12: anchor on the route drawio
-      // actually draws).
-      const Ac = nodeCenter.get(rel.source)
-      const Bc = nodeCenter.get(rel.target)
-      const interior = (Ac && Bc)
-        ? enforceApproachClearance(rawInterior, Ac, Bc, APPROACH_CLEARANCE_PX)
-        : rawInterior
-      for (const p of interior) {
-        g.addArrayPoint(new MxPoint(p.x, p.y))
-      }
-      // #24-hier: a non-laned MULTI-BEND hierarchical edge. ELK already
-      // reserved a non-overlapping label rect (layoutEdgeLabelByRelIdx),
-      // but drawio auto-anchors the label at the routed polyline's
-      // LENGTH-midpoint — which, for the External-fanout edges in
-      // edge-large-graph, lands in the crammed junction. Re-seat the
-      // label onto ELK's rect with the absolute offset between ELK's
-      // label centre and drawio's path-midpoint anchor. Same offset
-      // mxPoint mechanism the lane fan + Context solo paths use; scoped
-      // to THIS branch only (2-point `calls` chain, laned, and
-      // Context(#24) paths are untouched ⇒ byte-identical).
-      //
-      // P12: the anchor MUST be computed over the polyline drawio
-      // ACTUALLY renders, not ELK's raw `poly`. catalyst emits only the
-      // INTERIOR waypoints (poly.slice(1,-1)) and lets drawio re-attach
-      // the endpoints to the source/target CELL CENTRES — so ELK's
-      // node-attach-point endpoints are discarded. Computing the offset
-      // against `polylineMidpoint(poly)` (ELK attach endpoints) but
-      // applying it against drawio's `[A-centre,…interior,B-centre]`
-      // route is a base-point mismatch: in c4-container it displaced the
-      // ingress→apps "Routes /" and lb→apps labels ~186 px onto the
-      // `docker` leaf. Anchor on the same route the comparator/drawio
-      // use so `renderedMidpoint + offset === ELK-label-centre` by
-      // construction (provable against the factcheck oracle, not eyeballed).
-      const lbl = layoutEdgeLabelByRelIdx.get(i)
-      const A = Ac
-      const B = Bc
-      if (lbl && A && B) {
-        const route = [{ x: A.cx, y: A.cy }, ...interior, { x: B.cx, y: B.cy }]
-        const mid = polylineMidpoint(route)
-        // The label renders at ELK's placed rect `lbl` (the offset
-        // below re-anchors renderedMidpoint → lbl.centre). ELK places
-        // it clear of the boxes IT laid out, but a multi-rank routed
-        // edge's label can still land on an INTERVENING leaf whose
-        // (correct, ADR-0011-bigger) box ELK packed tighter than the
-        // label needs — the c4-deployment `SQL` over `cache` defect.
-        // This branch was the ONLY de-collision-less one (laned uses
-        // slideLabelAlongLane, straight uses resolveLabelOverlap);
-        // add the SAME geometry-exact slide so all three guarantee no
-        // `labelHit`. Slide is byte-inert where ELK already cleared
-        // (t=0 ⇒ unchanged offset), so only the genuine defect set
-        // moves — provable against the factcheck oracle.
-        let cx = lbl.x + lbl.width / 2, cy = lbl.y + lbl.height / 2
-        const vx = B.cx - A.cx, vy = B.cy - A.cy
-        const len = Math.hypot(vx, vy) || 1
-        const axis = { x: vx / len, y: vy / len }
-        const obstacles: NodeRect[] = []
-        for (const [id, c] of nodeCenter) {
-          if (id === rel.source || id === rel.target) continue
-          obstacles.push({ x: c.cx - c.hw, y: c.cy - c.hh, w: c.hw * 2, h: c.hh * 2 })
-        }
-        const t = slideLabelAlongLane(
-          { x: cx, y: cy }, axis, lbl.width, lbl.height, obstacles)
-        if (t !== 0) { cx += axis.x * t; cy += axis.y * t }
-        g.addPoint(new MxPoint(
-          Math.round(cx - mid.x),
-          Math.round(cy - mid.y),
-          'offset',
-        ))
-      }
     } else {
       // Straight 2-point edge: ELK returned a section with no bend points
       // (a same-rank or short hierarchical hop). ELK does not place the
@@ -489,7 +326,7 @@ async function layoutData2mx(layoutData: LayoutResult, pumlElements: EntityDescr
     // -> c4Technology). Passing rel.description as the `technology` arg fixes
     // the swapped-field bug where the verb landed in unused c4Name and the
     // template rendered the technology bold + an empty "[]".
-    await mx.addMxC4Relationship(g, rel.source, rel.target, 'Relationship', rel.label, rel.description, undefined, rel.bidirectional === true, Object.keys(relOvr).length ? relOvr : undefined, edgeLabelCap(rel.source, rel.target), rel.back === true, (lane && !layoutData.routesAuthoritative) ? { exit: lane.exit, entry: lane.entry } : undefined)
+    await mx.addMxC4Relationship(g, rel.source, rel.target, 'Relationship', rel.label, rel.description, undefined, rel.bidirectional === true, Object.keys(relOvr).length ? relOvr : undefined, edgeLabelCap(rel.source, rel.target), rel.back === true, undefined /* lane exit/entry attach: never pinned under dot — its spline owns the route (FU1: was `(lane && !routesAuthoritative)`, always undefined since dot always sets routesAuthoritative) */)
     if (!emittedIds.has(rel.source) || !emittedIds.has(rel.target)) {
       // Not silently swallowed: an unresolved endpoint means the puml
       // referenced an alias that never produced a shape. Surface it so the
@@ -535,16 +372,6 @@ export interface CatalystOptions {
   marginx?: number
   /** @deprecated #15 — accepted for API compatibility but IGNORED. */
   marginy?: number
-  /**
-   * Item 1a — layout engine selector. `'elk'` (DEFAULT) is the
-   * battle-tested elkjs path; `'dot'` opts into the Graphviz-`dot`
-   * engine (the swap target — PlantUML's own engine, 0 edge crossings).
-   * Precedence: this option › `process.env.LAYOUT_ENGINE` › `'elk'`.
-   * ELK stays the default + the only fallback until 1a/P6; a `dot`
-   * failure is NEVER silently swallowed into the ELK path (that would
-   * be fake-green) — it surfaces so P3–P5 measure real behaviour.
-   */
-  layoutEngine?: 'elk' | 'dot'
 }
 
 export class Catalyst {
@@ -626,21 +453,10 @@ export class Catalyst {
       // as accepted-but-ignored no-ops to keep the API non-breaking.
     }
 
-    // Item 1a / ADR 0014 — engine selection. `LayoutEngine` (elkjs)
-    // and `DotLayout` (Graphviz-dot) share an identical static
-    // signature, so the swap is one binding. Precedence: option ›
-    // env › DEFAULT. **P6 (2026-05-19): the default is now `dot`** —
-    // PlantUML's own engine, 0 edge crossings (edgecross 30→0 proven
-    // on the rendered render-truth). ELK remains reachable as the
-    // explicit opt-out fallback (`layoutEngine:'elk'` /
-    // `LAYOUT_ENGINE=elk`) and is NOT removed until ≥1 green release
-    // on `dot` (ADR 0014 §P6 deprecation). A dot failure is not
-    // caught here (it must surface — masking it would be the cardinal
-    // fake-green).
-    const engineName = options.layoutEngine
-      ?? (process.env.LAYOUT_ENGINE === 'elk' ? 'elk' : 'dot')
-    const engine = engineName === 'dot' ? DotLayout : LayoutEngine
-    const layoutData = await engine.calculateLayout(elements, relations, layoutOptions, layoutConstraints)
+    // Item 1a / ADR 0014 — layout via Graphviz `dot` (PlantUML's own
+    // engine, 0 edge crossings). The ELK engine was removed (FU1)
+    // after dot shipped green; `DotLayout` is now the only engine.
+    const layoutData = await DotLayout.calculateLayout(elements, relations, layoutOptions, layoutConstraints)
     // PlantUML `title <text>` (single-line; the form used corpus-wide).
     // Skip-listed by EntityParser — parsed here so the completeness
     // invariant (every source construct traces to a target element)
