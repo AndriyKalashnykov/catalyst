@@ -83,7 +83,7 @@ import { RATIO_TOL, ratioContract } from './factcheck-ratio.mjs'
 // (28-fixture factcheck baseline unchanged across the extraction).
 import {
   textPreserved, arrowCountOk,
-  contains, partialOverlap, attachPoint, attachMerged,
+  contains, partialOverlap, attachPoint, attachMerged, edgeEndAttach,
 } from './factcheck-predicates.mjs'
 
 const SVG_DIR = process.env.SVG_DIR ?? '/tmp/svg'
@@ -440,10 +440,18 @@ function factcheck(stem, dir = CORPUS) {
           const s1 = C.byAlias.get(g1.source), t1 = C.byAlias.get(g1.target)
           const s2 = C.byAlias.get(g2.source), t2 = C.byAlias.get(g2.target)
           if (!s1 || !t1 || !s2 || !t2) continue
-          const src1 = attachPoint(s1, g1.exitX, g1.exitY)
-          const tgt1 = attachPoint(t1, g1.entryX, g1.entryY)
-          const src2 = attachPoint(s2, g2.exitX, g2.exitY)
-          const tgt2 = attachPoint(t2, g2.entryX, g2.entryY)
+          // Base-point-correct attach (1a/P5 FP fix): for a curved
+          // AUTHORITATIVE edge (no exitX/entryX — dot's spline owns the
+          // route) the visual attach is where the spline leaves the
+          // box toward its box-adjacent waypoint, NOT the centre proxy.
+          // wps[0] is the source-adjacent emitted waypoint, wps[last]
+          // the target-adjacent one (catalyst emits interior waypoints
+          // only). ELK laned edges set exit/entry ⇒ unchanged.
+          const w1 = g1.wps ?? [], w2 = g2.wps ?? []
+          const src1 = edgeEndAttach(s1, g1.exitX, g1.exitY, w1[0])
+          const tgt1 = edgeEndAttach(t1, g1.entryX, g1.entryY, w1[w1.length - 1])
+          const src2 = edgeEndAttach(s2, g2.exitX, g2.exitY, w2[0])
+          const tgt2 = edgeEndAttach(t2, g2.entryX, g2.entryY, w2[w2.length - 1])
           if (attachMerged(src1, tgt1, src2, tgt2)) {
             attachMerge++
             if (process.env.FACTCHECK_DEBUG) {

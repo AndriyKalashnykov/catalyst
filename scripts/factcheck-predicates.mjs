@@ -117,6 +117,42 @@ export const attachPoint = (n, fracX, fracY) => ({
   y: axis(n, 'y', 'h', fracY),
 })
 
+/**
+ * Base-point-correct edge endpoint attach (item 1a / P5 FP fix).
+ *
+ * `attachPoint` reads the style `exitX/entryX` fraction. ELK laned
+ * edges set those, so it is exact for them. But a `curved=1`
+ * AUTHORITATIVE route (the `dot` engine) intentionally carries NO
+ * exit/entry — dot's spline owns the route — so `attachPoint` collapses
+ * EVERY same-pair edge to the box centre → a spurious `attachMerged`
+ * d2=0 even when the rendered splines are clearly fanned apart
+ * (proven 2026-05-19 vs the real drawio-export render: 0 coincident).
+ * That is the documented factcheck base-point FP class: the comparator
+ * must model what the renderer DRAWS, not a centre proxy.
+ *
+ * When the fraction is unconstrained AND the edge has an emitted route,
+ * the visual attach is where the spline LEAVES the box — i.e. the
+ * border crossing of the ray from the box centre toward the route's
+ * box-adjacent waypoint (`toward`). Two same-pair edges dot fanned have
+ * different `toward` points ⇒ different border attach ⇒ correctly NOT
+ * merged. No waypoint and no fraction ⇒ centre (the genuine
+ * centre-attached straight-edge case — unchanged).
+ */
+export function edgeEndAttach(n, fracX, fracY, toward) {
+  if (!n) return { x: 0, y: 0 }
+  if (fracX !== undefined || fracY !== undefined || !toward)
+    return attachPoint(n, fracX, fracY)            // ELK / explicit / no route → unchanged
+  const cx = n.x + n.w / 2, cy = n.y + n.h / 2
+  const dx = toward.x - cx, dy = toward.y - cy
+  if (dx === 0 && dy === 0) return { x: cx, y: cy }
+  // Ray (cx,cy)→toward, clamped to the axis-aligned box border: the
+  // first axis the ray crosses (min of the two half-extent params).
+  const tx = dx !== 0 ? (n.w / 2) / Math.abs(dx) : Infinity
+  const ty = dy !== 0 ? (n.h / 2) / Math.abs(dy) : Infinity
+  const t = Math.min(tx, ty)
+  return { x: cx + dx * t, y: cy + dy * t }
+}
+
 /** The `attachMerge` decision: two same-(unordered)-pair edges collapse
  *  into one visual line iff BOTH their source-attach and target-attach
  *  points are within `sepMin` Euclidean distance. (X-only would
