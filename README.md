@@ -14,18 +14,24 @@ C4 syntax (`.puml`) into [draw.io](https://draw.io) XML — no PlantUML runtime
 required. The **consumer surface** is a one-call API
 (`Catalyst.convert(puml, options)`) plus `parseEntities` / `parseRelations`,
 installed as a git dependency. The **engine surface** uses
-[elkjs](https://github.com/kieler/elkjs) (Eclipse Layout Kernel) —
-`org.eclipse.elk.layered` (+`NETWORK_SIMPLEX`) for **every** C4 type
-(Context, Container, Component, Deployment alike — matching PlantUML's
-own Graphviz `dot`; ADR 0008/0009), real font-metric node sizing, and
-structural-parity + golden-snapshot + layout-quality test gates.
+[Graphviz `dot`](https://graphviz.org/) — PlantUML's own C4 layout
+engine — via the pinned, byte-deterministic
+[`@hpcc-js/wasm-graphviz`](https://github.com/hpcc-systems/hpcc-js-wasm)
+WASM build, so catalyst's topology matches the PlantUML reference by
+construction (**0 non-incident edge crossings**, ADR 0014), with real
+font-metric node sizing and a render-truth gate suite (structural
+parity, golden snapshot, layout-quality, factcheck, edgecross,
+arrowskew).
 
-> **Project status:** independently maintained. The layout engine is
-> elkjs with real font-metric node sizing; ELK `layered`+`NETWORK_SIMPLEX`
-> is used for all C4 diagram types (ADR 0008 superseded the earlier
-> Context→`stress` branch; ADR 0009 sets `cycleBreaking=DEPTH_FIRST`),
-> with structural-parity, golden-snapshot and layout-quality test gates.
-> Third-party copyright/license terms are retained in [LICENSE](LICENSE).
+> **Project status:** independently maintained. As of **2.0.0** the
+> layout engine is **Graphviz `dot`** (pinned `@hpcc-js/wasm-graphviz`
+> WASM, byte-deterministic) — PlantUML's own C4 engine, so edge
+> crossings drop to 0 by construction (ADR 0014, superseding the
+> ELK ADRs 0008/0009/0011; the `elkjs` engine and the `layoutEngine`
+> option were removed in 2.0.0). Real font-metric node sizing;
+> structural-parity, golden-snapshot, layout-quality, factcheck,
+> edgecross and arrowskew render-truth gates. Third-party
+> copyright/license terms are retained in [LICENSE](LICENSE).
 > Not published to npm — consumed as a git dependency.
 
 ## What a conversion looks like
@@ -33,8 +39,10 @@ structural-parity + golden-snapshot + layout-quality test gates.
 [`sample/example.puml`](sample/example.puml) (left, rendered by
 PlantUML) converts to `.drawio` (right, rendered by draw.io) — a fully
 editable diagram in [diagrams.net](https://app.diagrams.net/) or the
-VS Code Draw.io extension, **not a flat image**. PlantUML and draw.io
-use different layout engines, so the two are never pixel-identical; what
+VS Code Draw.io extension, **not a flat image**. catalyst lays out
+with the *same* engine PlantUML uses (Graphviz `dot`), so the topology
+matches by construction; draw.io then re-renders that layout with its
+own renderer and fonts, so the two are never *pixel*-identical. What
 catalyst guarantees is faithful **content + C4 grammar** — every box,
 the `«stereotype»` / **Name** / `[Technology]` / description element
 order, and every relationship verb with its `[technology]`.
@@ -59,7 +67,7 @@ order, and every relationship verb with its `[technology]`.
 |-----------|-----------|
 | Language | TypeScript 6.0, ES2024 (`.mts` ESM) |
 | Runtime | Node.js 26 (ES2024+), mise-managed (`.mise.toml`) |
-| Layout engine | elkjs (Eclipse Layout Kernel) — `layered` + `NETWORK_SIMPLEX`, all C4 types (ADR 0008/0009) |
+| Layout engine | Graphviz `dot` via pinned `@hpcc-js/wasm-graphviz` (WASM, byte-deterministic) — PlantUML's own C4 engine; 0 edge crossings (ADR 0014) |
 | Text metrics | fontkit + bundled Liberation Sans (SIL OFL) |
 | Serialization | xml2js |
 | Tests | Vitest — unit, structural parity, golden snapshot, layout quality, corpus sanity |
@@ -73,7 +81,7 @@ registry). Pin a tag:
 
 ```bash
 # add to a project (npm resolves it under the package name "catalyst")
-npm install github:AndriyKalashnykov/catalyst#v1.7.0
+npm install github:AndriyKalashnykov/catalyst#v2.0.0
 
 # development of catalyst itself
 make deps      # mise install (node, act, gitleaks, trivy) + npm ci
@@ -106,37 +114,47 @@ make deps
 
 ## Layout engine
 
-elkjs lays out **every** C4 spec level with `org.eclipse.elk.layered` +
-`NETWORK_SIMPLEX` node placement — Context, Container, Component and
-Deployment alike. This matches PlantUML's own engine (Graphviz `dot` is
-hierarchical layered ranking for all C4 types, Context included), which
-is the parity target:
+As of **2.0.0** catalyst lays out **every** C4 spec level with
+**Graphviz `dot`** — *the same engine PlantUML itself uses* — via the
+pinned, byte-deterministic [`@hpcc-js/wasm-graphviz`](https://github.com/hpcc-systems/hpcc-js-wasm)
+WASM build (no system Graphviz needed at runtime). Because the engine
+is identical to the reference renderer's, the topology matches by
+construction rather than by approximation:
 
-- **Layered + `NETWORK_SIMPLEX`** — layered flow, orthogonal routed
-  connectors, native compound nesting (~32% fewer crossings on a large
-  multi-boundary Container vs the default placement; `docs/adr/0006`).
-- **`cycleBreaking=DEPTH_FIRST`** (`docs/adr/0009`) — keeps a 2-cycle
-  compact (source rank, both targets one rank below) as `dot` does,
-  instead of the GREEDY default's three-rank spread.
-- ADR 0008 superseded the earlier Context→`stress`(+`sporeOverlap`)
-  branch: `stress` diverged from PlantUML in every Context shape
-  (linear chain, hub-and-spoke, wide rank), so it was removed — a
-  single layered engine is both faithful and simpler.
+- **0 non-incident edge crossings** across the whole corpus
+  (catalyst == PlantUML == 0), measured on the real drawio-export
+  render-truth — `make edgecross` (ADR 0014). `dot`'s own port
+  ordering fans parallel / `BiRel` / antiparallel same-pair edges, so
+  the previous ELK-era lane-shove machinery (a frequent crossing
+  source) was removed entirely.
+- **Byte-deterministic**: identical input → byte-identical layout
+  (proven cross-process; the WASM binary ships in the pinned npm
+  tarball, identical across CI and host), which is what the gallery
+  drift gates depend on.
+- **`dot` splines emitted verbatim** as `curved=1` draw.io edges
+  (ADR 0013) — no orthogonal re-route, no waypoint shoving.
+- ADR 0014 supersedes the ELK-era ADRs 0008 (Context→layered),
+  0009 (cycleBreaking) and 0011 (layout-aspect ratchet): under `dot`,
+  Context ranking, aspect ratio and routing are correct by
+  construction, not by tuned heuristics. The `elkjs` dependency, the
+  `LayoutEngine`, and the `LAYOUT_ENGINE`/`layoutEngine` selector
+  were removed in 2.0.0 — `dot` is the sole engine.
 
 Node sizes are measured from the real label font (fontkit + bundled
-Liberation Sans), floored at the conventional C4 element-box size so rendered
-shapes never cram. Directional intent: `Rel_U/D` honored on the layered path;
-`Rel_L/R` honored when nodes share a rank (cross-rank L/R is not expressible
-in any layered engine).
+Liberation Sans) and pinned into `dot` (`fixedsize=true`) at the
+conventional C4 element-box size so rendered shapes never cram —
+`dot` lays out, it does not re-measure text. Directional intent
+(`Rel_U/D/L/R`) and `Lay_*` constraints map to `dot` ranking
+(reversed/`rank=same`/invisible constraint edges).
 
 Relationship rendering: the verb is shown bold with the technology
 bracketed below it (an absent technology yields no `[]` artifact); entity
 descriptions are preserved for every C4 element (including `Person`/`System`,
 which have no technology parameter); `RelIndex(...)` dynamic relations are
-parsed. When two or more relations connect the **same node pair**
-(antiparallel `Rel`+`Rel_Back` or parallel duplicates), each is fanned onto
-its own lane — a perpendicular waypoint plus an offset label — so connectors
-and labels never render collinear or stacked.
+parsed. Multiple relations between the **same node pair** (antiparallel
+`Rel`+`Rel_Back` or parallel duplicates) are fanned by `dot`'s own port
+ordering, so connectors never render collinear or stacked — without the
+crossing-introducing perpendicular-shove the ELK path needed.
 
 ## Usage
 
@@ -262,9 +280,11 @@ package is git-consumed, not npm-published.
 
 ## Verifying conversions (parity, snapshots, visual proof)
 
-PlantUML and draw.io use different layout engines, so a rendered `.puml` and
-the converted `.drawio` are **never pixel-identical** even for a perfect
-conversion. Correctness is therefore guaranteed structurally, not visually:
+catalyst uses PlantUML's own layout engine (Graphviz `dot`), so the
+*topology* matches; draw.io re-renders that layout with its own
+renderer, so a rendered `.puml` and the converted `.drawio` are
+**never pixel-identical** even for a perfect conversion. Correctness is
+therefore guaranteed structurally, not visually:
 
 - **Structural parity** (`tests/parity.test.mts`) — for every fixture
   (including `tests/fixtures/c4-exhaustive.puml`, which exercises every
