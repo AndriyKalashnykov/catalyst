@@ -216,6 +216,127 @@ export function assignEdgeLanes(
   return out
 }
 
+/** Per-edge border-attach fractions (mxGraph exitX/exitY on source,
+ *  entryX/entryY on target — the ONLY reliably-honored geometric lever
+ *  under orthogonalEdgeStyle+curved=1; the waypoint Array is an
+ *  overridable hint, see docs/research/edge-crossing-minimization.md). */
+export interface PortAttach {
+  exit: { x: number; y: number }
+  entry: { x: number; y: number }
+}
+
+/**
+ * Bearing-sorted ordered-port assignment (rotation-system crossing
+ * minimization with FIXED node positions) — backlog item 1 / ADR-less
+ * decision `docs/research/edge-crossing-minimization.md`.
+ *
+ * For EVERY node, ALL its incident edges (not just same-pair groups,
+ * which `assignEdgeLanes` handled) are sorted into the cyclic order of
+ * the bearing from the node centre to the OTHER endpoint, grouped by
+ * the box side that bearing points at, and given evenly-spaced
+ * `(i+1)/(K+1)` attach fractions in that order. Per the rotation-
+ * system result this removes every AVOIDABLE incident-edge ("fan")
+ * crossing near a node — the class that is 100% of catalyst's measured
+ * `make edgecross` defect (30/30 shared-node, 0 topologically forced).
+ *
+ * Same-pair (parallel/antiparallel) edges become a NESTED fan
+ * (crossing-free) by construction: the sort key falls back to
+ * `(pairKey, relIdx)` which is identical at BOTH endpoints, so the K
+ * edges keep the same rank order on each side (monotone-consistent —
+ * the metro-line nested-fan rule).
+ *
+ * DETERMINISTIC for the byte-exact drift gates: nodes iterated by
+ * sorted id; total sort key `(bearing, pairKey, relIdx)` with relIdx
+ * the unique final discriminator (no float-equality ties, no Map /
+ * time / random); fractions are exact rationals.
+ *
+ * Pure & side-effect free. Self-loops and excluded (cluster/boundary)
+ * endpoints are skipped (caller keeps existing behaviour — centre
+ * attach / draw.io auto-route).
+ */
+export function assignPortOrder(
+  relations: ReadonlyArray<{ source: string; target: string }>,
+  nodeCenter: ReadonlyMap<string, NodeCenter>,
+  isExcludedEndpoint: (id: string) => boolean,
+): Map<number, PortAttach> {
+  interface End { relIdx: number; far: string; isSource: boolean }
+  const endsByNode = new Map<string, End[]>()
+  relations.forEach((r, i) => {
+    if (r.source === r.target) return
+    if (isExcludedEndpoint(r.source) || isExcludedEndpoint(r.target)) return
+    if (!nodeCenter.has(r.source) || !nodeCenter.has(r.target)) return
+    ;(endsByNode.get(r.source) ?? endsByNode.set(r.source, []).get(r.source)!)
+      .push({ relIdx: i, far: r.target, isSource: true })
+    ;(endsByNode.get(r.target) ?? endsByNode.set(r.target, []).get(r.target)!)
+      .push({ relIdx: i, far: r.source, isSource: false })
+  })
+  const out = new Map<number, PortAttach>()
+  const ensure = (i: number): PortAttach => {
+    let p = out.get(i)
+    if (!p) { p = { exit: { x: HALF, y: HALF }, entry: { x: HALF, y: HALF } }; out.set(i, p) }
+    return p
+  }
+  // Monotone clockwise perimeter parameter of a border fraction,
+  // range [0,4): N 0..1, E 1..2, S 2..3, W 3..4.
+  const perimOf = (p: { x: number; y: number }): number =>
+    p.y === 0 ? p.x : p.x === 1 ? 1 + p.y : p.y === 1 ? 2 + (1 - p.x) : 3 + (1 - p.y)
+  const fromPerim = (u: number): { x: number; y: number } => {
+    const v = ((u % 4) + 4) % 4
+    return v < 1 ? { x: v, y: 0 } : v < 2 ? { x: 1, y: v - 1 }
+      : v < 3 ? { x: 3 - v, y: 1 } : { x: 0, y: 4 - v }
+  }
+  for (const node of [...endsByNode.keys()].sort()) {
+    const C = nodeCenter.get(node)!
+    const hw = C.hw || 1, hh = C.hh || 1
+    const ann = endsByNode.get(node)!.map((e) => {
+      const F = nodeCenter.get(e.far)!
+      const dx = F.cx - C.cx, dy = F.cy - C.cy
+      // ROTATION SYSTEM by construction (invariant I1): the attach is
+      // the centre-to-far RAY intersected with the box border. A ray
+      // swept clockwise hits the rectangle perimeter in strictly
+      // monotone order, so attach order == bearing cyclic order with
+      // ZERO inversions -- no per-side bucketing that breaks
+      // continuity at the corners (the disproved first attempt).
+      const adx = Math.abs(dx) || 1e-9, ady = Math.abs(dy) || 1e-9
+      const t = Math.min(hw / adx, hh / ady)
+      const a = node < e.far ? node : e.far
+      const b = node < e.far ? e.far : node
+      return {
+        ...e,
+        base: perimOf({ x: HALF + (dx * t) / (2 * hw), y: HALF + (dy * t) / (2 * hh) }),
+        pairKey: `${a} ${b}`,
+      }
+    })
+    // Equal-bearing edges (same-pair fans / collinear targets) collide
+    // at one perimeter point. Spread each group by an ordered step in
+    // (pairKey, relIdx) order -- the SAME key at both endpoints, so the
+    // K edges keep the same rank on each side (invariant I2, nested
+    // fan). Span < 0.4*(gap to next distinct base) so the spread never
+    // reorders across a distinct bearing (I1 preserved).
+    const groups = new Map<number, typeof ann>()
+    for (const a of ann) {
+      const k = Math.round(a.base * 1e6) / 1e6
+      ;(groups.get(k) ?? groups.set(k, []).get(k)!).push(a)
+    }
+    const keys = [...groups.keys()].sort((x, y) => x - y)
+    keys.forEach((k, gi) => {
+      const grp = groups.get(k)!
+      const next = keys[(gi + 1) % keys.length]
+      const gap = keys.length === 1 ? 1 : ((((next - k) % 4) + 4) % 4) || 1
+      grp.sort((p, q) =>
+        (p.pairKey < q.pairKey ? -1 : p.pairKey > q.pairKey ? 1 : 0) ||
+        p.relIdx - q.relIdx)
+      const K = grp.length
+      grp.forEach((a, idx) => {
+        const off = K === 1 ? 0 : (idx - (K - 1) / 2) * (Math.min(gap, 1) * 0.4) / K
+        const pt = fromPerim(a.base + off)
+        const pa = ensure(a.relIdx)
+        if (a.isSource) pa.exit = pt; else pa.entry = pt
+      })
+    })
+  }
+  return out
+}
 /** Axis-aligned rectangle (top-left + size) — a node's box in absolute px. */
 export interface NodeRect { x: number; y: number; w: number; h: number }
 
