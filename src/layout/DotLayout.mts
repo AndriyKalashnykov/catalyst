@@ -316,6 +316,10 @@ function adapt(
     edges,
     width: Math.ceil(bbW),
     height: Math.ceil(bbH),
+    // dot routes every edge as a globally crossing-free spline (the
+    // entire reason for 1a). Signal layoutData2mx to emit them
+    // verbatim and skip the ELK-compensation lane machinery.
+    routesAuthoritative: true,
   }
 }
 

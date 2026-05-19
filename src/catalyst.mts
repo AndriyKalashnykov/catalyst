@@ -7,6 +7,7 @@ import { parseProperties, type C4PropertyTable } from './puml/PropertyParser.mjs
 import { splitLabelLines } from './text/labelLines.mjs'
 import { ELEMENT_BODY_PX, PUML_LEAF_BOX } from './mx/c4/theme.mjs'
 import { LayoutEngine, LayoutResult } from './layout/LayoutEngine.mjs'
+import { DotLayout } from './layout/DotLayout.mjs'
 import { assignEdgeLanes, resolveLabelOverlap, slideLabelAlongLane, polylineMidpoint, enforceApproachClearance, type NodeCenter, type NodeRect } from './layout/edgeLanes.mjs'
 import { measureEdgeLabel } from './layout/measureNode.mjs'
 import { spaceAdvance, textWidth, renderedLineHeight, MX_DEFAULT_FONTSIZE } from './text/TextMetrics.mjs'
@@ -271,7 +272,45 @@ async function layoutData2mx(layoutData: LayoutResult, pumlElements: EntityDescr
     g.$.relative = 1
     const lane = edgeLanes.get(i)
     const poly = layoutEdgeByRelIdx.get(i)
-    if (lane) {
+    if (layoutData.routesAuthoritative && poly && poly.length > 2
+        && !clusterIds.has(rel.source) && !clusterIds.has(rel.target)) {
+      // Item 1a — AUTHORITATIVE ROUTE (the `dot` engine). dot routes
+      // every edge as a globally crossing-free spline (parallel /
+      // BiRel / antiparallel edges fanned by dot's own port ordering
+      // — the whole point of the swap). Emit its interior waypoints
+      // VERBATIM; `curved=1` (ADR 0013, no edgeStyle) makes draw.io
+      // spline through them faithfully. The ELK-era lane
+      // perpendicular-shove and the multi-bend/straight ELK branches
+      // are DELIBERATELY bypassed: applied on top of dot's splines
+      // they reintroduce exactly the crossings the swap removes
+      // (measured root cause: rel-fan-stress raw spline 0 crossings →
+      // post-lane render 10; the CLAUDE.md item-2 "local per-pair
+      // perpendicular translation ignorant of other edges" defect).
+      const interior = poly.slice(1, -1).map((p) => ({ x: Math.round(p.x), y: Math.round(p.y) }))
+      for (const p of interior) g.addArrayPoint(new MxPoint(p.x, p.y))
+      // dot does not place edge labels; draw.io anchors the label at
+      // the rendered path midpoint (what PlantUML/dot also do). Slide
+      // ALONG the route axis only to clear any unrelated leaf — the
+      // same geometry-exact de-collision the ELK branches use, and
+      // byte-inert (t=0) wherever it already clears.
+      const A = nodeCenter.get(rel.source)
+      const B = nodeCenter.get(rel.target)
+      if (A && B) {
+        const route = [{ x: A.cx, y: A.cy }, ...interior, { x: B.cx, y: B.cy }]
+        const mid = polylineMidpoint(route)
+        const d = measureEdgeLabel(rel.label, rel.description, edgeLabelCap(rel.source, rel.target))
+        const vx = B.cx - A.cx, vy = B.cy - A.cy
+        const len = Math.hypot(vx, vy) || 1
+        const axis = { x: vx / len, y: vy / len }
+        const obstacles: NodeRect[] = []
+        for (const [id, c] of nodeCenter) {
+          if (id === rel.source || id === rel.target) continue
+          obstacles.push({ x: c.cx - c.hw, y: c.cy - c.hh, w: c.hw * 2, h: c.hh * 2 })
+        }
+        const t = slideLabelAlongLane({ x: mid.x, y: mid.y }, axis, d.width, d.height, obstacles)
+        if (t !== 0) g.addPoint(new MxPoint(Math.round(axis.x * t), Math.round(axis.y * t), 'offset'))
+      }
+    } else if (lane) {
       // Collect the interior waypoints actually emitted so the label
       // anchor below is computed against the SAME polyline the renderer
       // (and the factcheck oracle) sees — never ELK's raw attach-point
@@ -450,7 +489,7 @@ async function layoutData2mx(layoutData: LayoutResult, pumlElements: EntityDescr
     // -> c4Technology). Passing rel.description as the `technology` arg fixes
     // the swapped-field bug where the verb landed in unused c4Name and the
     // template rendered the technology bold + an empty "[]".
-    await mx.addMxC4Relationship(g, rel.source, rel.target, 'Relationship', rel.label, rel.description, undefined, rel.bidirectional === true, Object.keys(relOvr).length ? relOvr : undefined, edgeLabelCap(rel.source, rel.target), rel.back === true, lane ? { exit: lane.exit, entry: lane.entry } : undefined)
+    await mx.addMxC4Relationship(g, rel.source, rel.target, 'Relationship', rel.label, rel.description, undefined, rel.bidirectional === true, Object.keys(relOvr).length ? relOvr : undefined, edgeLabelCap(rel.source, rel.target), rel.back === true, (lane && !layoutData.routesAuthoritative) ? { exit: lane.exit, entry: lane.entry } : undefined)
     if (!emittedIds.has(rel.source) || !emittedIds.has(rel.target)) {
       // Not silently swallowed: an unresolved endpoint means the puml
       // referenced an alias that never produced a shape. Surface it so the
@@ -496,6 +535,16 @@ export interface CatalystOptions {
   marginx?: number
   /** @deprecated #15 — accepted for API compatibility but IGNORED. */
   marginy?: number
+  /**
+   * Item 1a — layout engine selector. `'elk'` (DEFAULT) is the
+   * battle-tested elkjs path; `'dot'` opts into the Graphviz-`dot`
+   * engine (the swap target — PlantUML's own engine, 0 edge crossings).
+   * Precedence: this option › `process.env.LAYOUT_ENGINE` › `'elk'`.
+   * ELK stays the default + the only fallback until 1a/P6; a `dot`
+   * failure is NEVER silently swallowed into the ELK path (that would
+   * be fake-green) — it surfaces so P3–P5 measure real behaviour.
+   */
+  layoutEngine?: 'elk' | 'dot'
 }
 
 export class Catalyst {
@@ -577,7 +626,16 @@ export class Catalyst {
       // as accepted-but-ignored no-ops to keep the API non-breaking.
     }
 
-    const layoutData = await LayoutEngine.calculateLayout(elements, relations, layoutOptions, layoutConstraints)
+    // Item 1a — engine selection. `LayoutEngine` (elkjs) and
+    // `DotLayout` (Graphviz-dot) share an identical static signature,
+    // so the swap is one binding. Precedence: option › env › 'elk'.
+    // ELK is the default + the ONLY fallback until P6; a dot failure
+    // is not caught here (it must surface — masking it would be the
+    // cardinal fake-green).
+    const engineName = options.layoutEngine
+      ?? (process.env.LAYOUT_ENGINE === 'dot' ? 'dot' : 'elk')
+    const engine = engineName === 'dot' ? DotLayout : LayoutEngine
+    const layoutData = await engine.calculateLayout(elements, relations, layoutOptions, layoutConstraints)
     // PlantUML `title <text>` (single-line; the form used corpus-wide).
     // Skip-listed by EntityParser — parsed here so the completeness
     // invariant (every source construct traces to a target element)
