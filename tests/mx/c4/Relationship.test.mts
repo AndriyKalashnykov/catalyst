@@ -59,7 +59,7 @@ describe('Relastionship', () => {
     // ADR 0013: curved (dot-spline-faithful) routing — `curved=1`,
     // NO `edgeStyle=orthogonalEdgeStyle` (which made draw.io
     // Manhattan-re-route; proven 3.5× less PlantUML-faithful by
-    // `make routefidelity`).
+    // the since-retired `routefidelity` harness, ADR 0013).
     expect(style).toContain('curved=1');
     expect(style).not.toContain('edgeStyle=orthogonalEdgeStyle');
     expect(style).not.toContain('edgeStyle=');

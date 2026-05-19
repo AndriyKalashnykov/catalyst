@@ -161,19 +161,6 @@ bendcount: build
 		DRAWIO_EXPORT_IMAGE=$(DRAWIO_EXPORT_IMAGE) node scripts/bendcount-svg.mjs; \
 	fi
 
-#routefidelity: @ ADR-0013 decision gate: per-edge-style route-shape distance to PlantUML (needs java+jar+docker; manual, self-verifying)
-routefidelity: build
-	@command -v java >/dev/null 2>&1 || { echo "Error: java (Temurin) is mise-managed — run 'make deps'."; exit 1; }
-	@command -v docker >/dev/null 2>&1 || { echo "Error: docker required for drawio-export rendering."; exit 1; }
-	@test -f $(PLANTUML_JAR) || { echo "ERROR: $(PLANTUML_JAR) missing — run 'make gallery' once to fetch it"; exit 1; }
-	@# Builds catalyst 3× (orthogonal/straight/curved), renders every
-	@# corpus + route-stress fixture via PlantUML -tsvg AND drawio-export,
-	@# and reports each style's route-shape distribution distance to the
-	@# PlantUML dot-spline target (scripts/route-fidelity.mjs metrics).
-	@# Self-verifying: ABORTS if the per-style builds did not actually
-	@# differentiate (the failure mode of the reverted /tmp driver).
-	@PLANTUML_JAR=$(PLANTUML_JAR) DRAWIO_EXPORT_IMAGE=$(DRAWIO_EXPORT_IMAGE) node scripts/route-fidelity-matrix.mjs
-
 #edgecross: @ Non-incident edge-crossing inventory + regression ratchet vs committed render-truth (deterministic; no java/docker)
 edgecross: build
 	@# Crossings are THE primary readability aesthetic (Purchase 1997).
@@ -262,4 +249,4 @@ ci-run: deps
 
 .PHONY: help deps deps-render clean build lint test coverage-check vulncheck \
 	secrets trivy-fs static-check golden-update render-compare gallery \
-	factcheck arrowskew routefidelity edgecross gallery-verify ci ci-run
+	factcheck arrowskew edgecross gallery-verify ci ci-run

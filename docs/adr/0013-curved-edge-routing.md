@@ -1,9 +1,12 @@
 # ADR 0013 — Curved edge routing (drop `orthogonalEdgeStyle`)
 
-- Status: **ACCEPTED — `curved=1` proven by the committed
-  self-verifying route-fidelity harness (`make routefidelity`).
-  Implementation (edge-style change + gallery/arrowskew/factcheck
-  re-derive) is the next scoped PR.**
+- Status: **ACCEPTED & LANDED.** `curved=1` (no `edgeStyle`) is live;
+  under 2.0 the `dot` engine's splines are emitted verbatim through
+  it (ADR 0014). The `make routefidelity` decision harness that
+  produced the verdict (described below) was retired post-decision
+  with 2.0 — its premise (3 mutable edge styles) no longer exists;
+  `scripts/route-fidelity.mjs` survives only as the metric library
+  the live `edgecross` gate consumes.
 - Date: 2026-05-18
 - Decision record for the user-reported `rel-bidirectional` connector
   defect ("connectors are clusterfucked"). Companion to

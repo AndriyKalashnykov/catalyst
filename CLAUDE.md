@@ -180,9 +180,11 @@ Standalone, independently-maintained library (no upstream; never add an
   **0013 curved edge routing — ACCEPTED, live**); research bases
   `docs/research/*` (incl. `elk-vs-graphviz-dot.md` — deferred
   engine bet); running log `docs/UPGRADE-NOTES.md`; coverage matrix
-  `docs/C4-COVERAGE.md`. Render-truth/decision gates: `make
-  arrowskew` (CI), `make factcheck` (manual), `make routefidelity`
-  (`scripts/route-fidelity*.mjs`, ADR 0013 decision gate). Agent
+  `docs/C4-COVERAGE.md`. Render-truth gates: `make arrowskew` (CI),
+  `make edgecross` (CI, no-docker via `dot-layout` C6), `make
+  factcheck` (host-MANUAL). `make routefidelity` was retired with
+  2.0 (the ADR-0013 decision landed); `scripts/route-fidelity.mjs`
+  lives on only as the metric library `edgecross` consumes. Agent
   memory:
   `~/.claude/projects/-home-andriy-projects-catalyst-fork/memory/`
   (`open-followups` IS the durable tracker — GH Issues are disabled).
@@ -193,217 +195,91 @@ Everything below is researched, not speculative. Sizes are honest.
 Completed-work root-cause prose lives in git history + ADRs +
 `docs/UPGRADE-NOTES.md` + agent memories — not re-dumped here.
 
-> ▶ **HANDOFF #21, 2026-05-18 — C4 residuals swept; ADR 0007 COMPLETE;
-> seq+C4 reproducible-SVG galleries; coverage-gate fake-gate fixed.**
-> 14 catalyst PRs (#127–#140) + 3 claude-config rule commits.
+> ▶ **HANDOFF #22, 2026-05-19 — catalyst 2.0.0: Graphviz `dot` is the
+> SOLE layout engine; the edge-crossing problem is SOLVED.** This
+> supersedes HANDOFF #21 (C4-residual sweep / ADR 0007 seq complete /
+> seq+C4 SVG galleries — all still true, now history; see git + ADRs +
+> `docs/UPGRADE-NOTES.md`).
 >
-> **Sequence — ADR 0007 FULLY IMPLEMENTED (phases a–d2b, NOTHING
-> deferred):** `ref` (#131), `create`/`destroy` (#133),
-> `box`/`*_Boundary` (#134) landed; `SeqParser.DEFERRED` is now
-> intentionally empty (fail-loud kept for malformed/unknown only).
-> Empty `====` → thin rule (#130); self-message loop width = own
-> measured label not the column gap (#137). 12 `seq-perm-*`
-> permutation fixtures + `seq-corpus-sanity` globbing gate (#135) —
-> caught & fixed a REAL dispatch defect (C4-macro-form sequence
-> mis-routed to the static/ELK path → crash). `make seq-gallery` +
-> `seq-gallery-verify` (committed SVG drift gate, CI) (#132).
+> **The swap (ADR 0014, PRs #150 swap · #151 ELK removal · #152
+> pre-2.0 hardening · #154 release `v2.0.0`; supersedes ADR
+> 0008/0009/0011):** elkjs → Graphviz `dot` via pinned
+> `@hpcc-js/wasm-graphviz` (`src/layout/DotLayout.mjs`;
+> `LayoutResult`/`Node`/`Edge` in `src/layout/types.mjs`, no shape
+> change). `dot` IS PlantUML's C4 engine ⇒ topology matches by
+> construction: **`make edgecross` 30 → 0** (catalyst == PlantUML ==
+> 0 on the real drawio-export render-truth), factcheck **CLEAN
+> 28/28** (was 26/28), arrowskew 22/22, byte-deterministic.
+> `dot` splines emitted VERBATIM as `curved=1` (ADR 0013).
 >
-> **C4 residuals — ALL actionable ones done** (each: `c4-feat`
-> fixture + committed SVG + tests + `C4-COVERAGE.md` ✗→✓; overlay/
-> style-only ⇒ static-C4 corpus byte-identical, proven by
-> gallery-verify/golden diff): `HIDE_STEREOTYPE`, `LAYOUT_AS_SKETCH`/
-> `SET_SKETCH_STYLE` (#138); `note left|right|top|bottom of X` (#139,
-> note-text-render regression fixed #140); `SHOW_LEGEND`,
-> `AddProperty`/`SetPropertyHeader` (#140). `make c4feat-gallery` +
-> `c4feat-gallery-verify` (CI). `$sprite`/`SHOW_PERSON_SPRITE` =
-> **CLOSED, not implementable** (no draw.io sprite registry — a fact,
-> not a TODO).
+> **Removed (all dead post-swap, proven byte-identical via
+> `gallery-verify` where applicable):** `elkjs` dep,
+> `LayoutEngine.mts`, the `layoutEngine`/`LAYOUT_ENGINE` selector +
+> ELK-impl tests (#151); the vestigial ELK lane apparatus
+> (`assignEdgeLanes`/`assignPortOrder`/`enforceApproachClearance`) +
+> the dead multibend emit branch + `tests/portorder.test.mts` +
+> `tests/edge-lanes.test.mts` (slide-label coverage rehomed to
+> `tests/layout/`); the moot ADR-0013 `make routefidelity` decision
+> driver (`route-fidelity-matrix/-convert.mjs`) — the
+> `route-fidelity.mjs` metric library lives on (consumed by the live
+> `edgecross` gate). `edgeLanes.mts` is now a lean
+> label-de-collision + midpoint module.
 >
-> **Infra/correctness:** the vitest 85 % coverage gate was a silent
-> no-op (`thresholds.global` is Jest syntax) — fixed to the real
-> schema + scoped to `src/**/*.mts`, `src/catalyst.mts` now gated
-> (#128). `bendcount` `make` target + the instrument fixed for
-> ADR-0013 curved edges (#127). `rel-self-loop`/`rel-fan-stress`
-> promoted into `corpus/` (#129). C4 gallery gained committed
-> reproducible SVG, parity with seq (#136). C4 gallery eyeball-swept
-> 22/22 (content-faithful; dense fixtures are dot-faithful topology,
-> not defect-crosswiring).
+> **Pre-2.0 skill sweep (#152):** /test-coverage-analysis clean;
+> /upgrade-analysis (deps + mise tools all latest, 0 CVEs; oxlint/
+> @types/node drop-ins); /renovate (added the `@hpcc-js/wasm-graphviz`
+> `automerge:false` coupling gate — every render baseline + the P0
+> determinism proof are pinned to its graphviz version); /readme +
+> /repo-about re-derived from post-swap state. README, C4-COVERAGE,
+> FACTCHECK-COVERAGE, UPGRADE-NOTES, GitHub About all re-derived.
 >
-> **Memories:** `silent-fake-gate-classes`, `render-verify-and-emit-
-> encoding` (+ MEMORY.md). **claude-config rules added:** gate-RED-
-> proves-enforcement; render-verified-must-confirm-content; new-
-> parallel-subsystem-needs-own-drift-gate; permutation-matrix-corpus.
+> **Downstream:** puml2drawio `CATALYST_REF` → v2.0.0 (PR #99, full
+> CI incl. e2e green). **Open:** ibm-wm-cert-management `_drawio`
+> regen (its own release cadence) — see [[open-followups]].
 >
-> **Standing gates (all green @ handoff, main @ post-#140):** `make
-> ci` = static-check + build + coverage-check (real 85 %, ≈97 %) +
-> gallery-verify + seq-gallery-verify + c4feat-gallery-verify, all
-> CLEAN; 560 vitest; arrowskew CLEAN 22/22 (CI render-truth);
-> factcheck 26/28 (host-JVM MANUAL — the 2 non-clean are the
-> documented ≤0.01 host-font ratio jitter, NOT a defect);
-> `make routefidelity` self-verifying. Repo 0 warnings.
->
-> **Process discipline (this session's lessons — see memories):**
-> a gate's value is its proven RED, never an observed green;
-> "render-verified" means the rendered TEXT was confirmed present,
-> not that a shape appeared (#139 shipped empty notes); a new
-> parallel pipeline needs its OWN committed artifact + drift gate
-> from inception; a systematic permutation matrix catches dispatch
-> defects curated fixtures hide.
+> **Standing gates (all green @ `v2.0.0`):** `make ci` =
+> static-check + build + coverage-check (86%) + gallery-verify +
+> seq-gallery-verify + c4feat-gallery-verify, all CLEAN; 579 vitest;
+> arrowskew 22/22; edgecross 0; factcheck 28/28 (host-JVM MANUAL).
+> Repo 0 warnings.
 
 ## BACKLOG — remaining (priority order)
 
-The C4-residual sweep and seq/C4 reproducible-SVG infra are **DONE**
-(handoff #21). P3/P5/P7 are CLOSED with cited numbers (item 2). P1 is
-REOPENED and folded into item 1 (edge crossings = global routing).
-What is left:
+Completed work lives in git history + ADRs + `docs/UPGRADE-NOTES.md` +
+agent memories — not re-dumped here.
 
-1. **Edge-crossing minimization — in-pipeline approach DISPROVED;
-   residual escalated to 1a (2026-05-18).** P1 QUANTIFIED & GATED:
-   `make edgecross` = 30 non-incident crossings / 5 multi-edge
-   fixtures vs PlantUML 0; ratchet `tests/edgecross-baseline.json`.
-   Full research→matrix→decision→spike→measure done
-   (`docs/research/edge-crossing-minimization.md`). The ranked
-   approach (correct-by-construction post-layout bearing-sorted
-   port-ordering pass, `assignPortOrder` + exhaustive geometry-derived
-   tests `tests/portorder.test.mts` proving rotation-system I1 /
-   nested-fan I2 / 0 pure-model crossings) was implemented and
-   RENDER-measured: it sharply improves the P1 multi-edge class
-   (those 4 fixtures 12→5) BUT draw.io's `orthogonalEdgeStyle`
-   re-router overrides the proven attach geometry on dense
-   (edge-large-graph 18→30) and boundary (c4-context 0→2) graphs →
-   net regression → **reverted, not shipped** (two prior in-place
-   tweaks also measured-worse: 30→40, 30→49/38). `assignPortOrder` is
-   RETAINED (proven-correct, deterministic, unit-tested, SVG models
-   in `build/portorder-models/`) but NOT wired — it is the building
-   block for 1a. Conclusion: the attach lever is necessary but not
-   sufficient against draw.io's own router; the fix REQUIRES owning
-   routing end-to-end ⇒ item 1a.
+**The edge-crossing problem is SOLVED** (catalyst 2.0.0 / ADR 0014:
+`dot` is PlantUML's own engine ⇒ `make edgecross` 0). Sequence
+(ADR 0007 a–d2b) and the C4 directive surface are feature-complete;
+P3/P5/P7 closed with cited numbers (history). Nothing in catalyst
+itself is actionably open. Remaining items, both deliberately
+deferred & documented (NOT silently dropped):
 
-   1a. **ELK→Graphviz-`dot` engine swap — DONE, P0–P6 + ELK REMOVED
-   (2026-05-19). `dot` is the SOLE engine.** `@hpcc-js/wasm-graphviz`
-   pinned, `src/layout/DotLayout.mjs`. The `elkjs` dep,
-   `LayoutEngine.mts`, the `layoutEngine`/`LAYOUT_ENGINE` selector,
-   the ELK-impl tests, and the vestigial ELK-compensation emit
-   machinery (lane + dead multi-bend branch) are DELETED (FU1) —
-   lane/multibend removal proven BYTE-IDENTICAL (gallery-verify).
-   No `LayoutResult` shape change (`src/layout/types.mjs`).
-   **edgecross 30→0** in the committed real drawio-export
-   render-truth; factcheck **CLEAN 28/28** (was 26/28 ELK);
-   arrowskew 22/22; coverage 86.09%;
-   `make ci` GREEN. ADR 0014 (supersedes 0008/0011). Eyeball:
-   `docs/gallery-compare/` (PlantUML|ELK|dot). Seq pipeline is
-   engine-independent (unaffected). Follow-ups (NOT blocking): remove
-   the ELK path + `elkjs` after ≥1 green dot release; flag the
-   rendered-output change in the next `puml2drawio` bump. Detail:
-   `docs/research/dot-engine-swap-plan.md` + ADR 0014. Below = the
-   original plan, retained as the ELK-removal follow-up reference.
+1. **factcheck `attachMerge`/`labelHit` on the 2 SYNTHETIC
+   exhaustiveness fixtures** (`c4-all-rel-variants`,
+   `c4-exhaustive`) — honestly RED, ratchet-guarded
+   (`tests/factcheck-dot-baseline.json`, `scripts/factcheck-dot-ratchet.mjs`,
+   RED-tested), NOT advisory-downgraded. `dot` packs many parallel
+   same-pair edges tightly exactly as PlantUML's own `dot` does, so
+   on these synthetic fixtures it is faithful-to-reference, not a
+   defect (the real 22-fixture corpus is `attachMerge=0`,
+   `edgecross=0`). The "most-correct" close — a PlantUML-edge-spline
+   independent-signal guard generalising the `edgecross`
+   PlantUML-floor — is named in ADR 0014 as a follow-up; the ratchet
+   is the correct interim terminal state (a freshly-built guard is
+   the least-trusted thing — `gate-RED-proves-enforcement`).
+   `make factcheck` is host-MANUAL, not CI; the CI render-truth
+   contracts are `edgecross` (=0, via `dot-layout` C6) + `arrowskew`.
 
-   1a. **ELK→Graphviz-`dot` engine swap — ACTIVE, IN THIS REPO
-   (user decision 2026-05-18; supersedes the "new repo" prior in
-   `elk-vs-graphviz-dot.md`).** THE detailed phased plan:
-   **`docs/research/dot-engine-swap-plan.md`** (P0 engine-spike+
-   determinism → P1 C4→dot emitter → P2 dot→LayoutResult adapter →
-   P3 spline routing → P4 `LAYOUT_ENGINE=elk|dot` flag → P5 parity+
-   re-baseline+ADR 0014 → P6 flip default). Long-lived branch
-   **`feat/dot-engine`** (created with the plan); ELK stays the
-   DEFAULT and fallback until P5 fully green. Acceptance = the existing
-   instrument suite under `dot`: `edgecross` 30→**0** (the target),
-   `route-fidelity`→parity, `factcheck` completeness, `corpus-sanity`
-   no-drop, galleries regenerated, ADR 0014 superseding 0008/0011.
-   Guardrails (replace "separate repo" as risk control): flag-gated,
-   per-phase byte-baseline + `git diff --exit-code`, determinism a P0
-   hard gate, no fake-green/fixture-exclusion/contract-downgrade.
-   Banked: proven `assignPortOrder`+tests+`build/portorder-models/`,
-   the `edgecross` ratchet, `route-fidelity`, the full research base.
-   The three disproved in-place attempts (30→40/49/38,
-   `edge-crossing-minimization.md`) are the "why owning routing
-   end-to-end is required" evidence; do NOT re-attempt in-place
-   lane tweaks.
+2. **ibm-wm-cert-management `_drawio` regeneration** — the third
+   release-chain link (catalyst v2.0.0 → puml2drawio v2.0.0 [done,
+   PR #99] → ibm-wm). ibm-wm still pins the pre-2.0 puml2drawio and
+   ships ELK-era architecture renders; its committed
+   `docs/architecture/_drawio` will change to the dot layout
+   (large but content-faithful diff) when bumped. Separate repo, its
+   own release cadence. See [[open-followups]] / [[release-chain-topology]].
 
-2. **Gallery-visual residuals — P3/P5/P7 CLOSED; P1 REOPENED &
-   RE-SCOPED to item 1 (2026-05-18).** P1's earlier "CLOSED on
-   `attachMerge=0`" was WRONG and is retracted: `attachMerge` only
-   measures same-pair *collapse*, NOT edge *crossings* — an unmeasured
-   property is UNKNOWN, not pass (the BLOCKING done-on-a-green-gate
-   rule; the user caught it by eyeballing the gallery, the exact
-   failure that rule names):
-     - **P1 — REOPENED, re-scoped under item 1.** A NEW rendered-SVG
-       contract `make edgecross` (`scripts/edgecross-svg.mjs`, RED +
-       mutation-tested `tests/edgecross-svg.test.mjs`) measures
-       non-incident edge crossings on the COMMITTED drawio-export
-       render-truth. The ratchet is **CI-enforced via vitest** (a
-       deterministic no-docker test reads the committed gallery SVGs;
-       fails on any regression past `tests/edgecross-baseline.json`)
-       AND an independent-signal FP guard (PlantUML render side must
-       be 0) — both fact-checked 2026-05-18 (no PlantUML FP, no
-       self-split FP, edge-large-graph's 1 spurious path = 0
-       crossings, FP-corrected==instrument). LIMITATION (honest): it
-       gates the COMMITTED render; `gallery-verify` refreshes only
-       `.drawio`, so an emit change that worsens crossings is caught
-       when the gallery SVGs are re-rendered and committed
-       (`make gallery`, docker) — same freshness model as the gallery
-       PNGs, not a live emit gate. Honest inventory: **catalyst 30 crossings across
-       5 multi-edge fixtures (edge-large-graph 18, rel-fan-stress 6,
-       rel-tech-vs-notech 3, rel-parallel-duplicate 2,
-       rel-bidirectional 1) vs PlantUML 0** — the other 17 fixtures
-       are 0=0. Root cause: lane separation is a LOCAL per-pair
-       perpendicular translation of ELK's route, ignorant of other
-       edges → it shoves a laned route across non-group neighbours.
-       A targeted in-place fix (emit ELK's route as-is) was
-       implemented and MEASURED via docker re-render: **30→40
-       (regression) — disproved, reverted, not shipped** (negative
-       result, per the rules). This is the global routing/port-order
-       problem item 1 explicitly owns ("crossings"); not an in-place
-       fixable residual. Guard: per-fixture ratchet
-       `tests/edgecross-baseline.json` (= factcheck-ratio pattern) —
-       contract stays honestly RED (NOT advisory-downgraded), the
-       ratchet fails any regression past baseline (would have caught
-       the 30→40).
-     - **P3 long-label width — CLOSED + sufficiency note.**
-       rel-long-labels wRatio=0.98 (NO blow-up — narrower than
-       PlantUML), labelDrop=0, ratioBad=0. edge-multiline-labels:
-       literal `\n` verified emitted as `&lt;br/&gt;` in the
-       `.drawio` (NOT tofu), hRatio=1.63 within ratchet. SUFFICIENCY:
-       factcheck `norm()` collapses `\n`≡`<br/>` so `labelDrop` is
-       blind to a literal-`\n` regression — that class is guarded by
-       `corpus-sanity` pt 6 (`not.toMatch(/\\n/)`) + `output-
-       correctness` Phase-1 (triple-covered), and the blind spot is
-       now an ASSERTED limitation in `factcheck-predicates.test.mts`.
-     - **P5 hub-label proximity — CLOSED.** topology-hub-spoke (6
-       spokes) labelHit=0 nodeOverlap=0 min-leaf-clearance 53.9px;
-       topology-wide-rank (8-wide ribbon) labelHit=0 clearance
-       56.8px; ratios within ratchet. `partialOverlap` (the labelHit
-       core) RED-tested.
-     - **P7 short 2-pt edge-label cram — CLOSED.** Both fixtures are
-       all-0-waypoint (the genuine 2-point branch): edge-tags-styling
-       labelHit=0 clearance 225.5px; level-dynamic 185–204px. Robust.
-   Instrument hardened (no longer green-only): the 8 factcheck
-   contract predicates extracted to `scripts/factcheck-predicates.mjs`
-   (byte-identical 28-fixture baseline) + RED+GREEN unit tests
-   (mutation-verified). Whole test suite RED-audited (see discipline
-   below): `catalyst-functions.test.mts` (100% fake — zero `src/`
-   imports) DELETED; `catalyst.test.mts` de-mocked into a real
-   RED-capable public-API contract.
-
-3. **`$sprite` / `SHOW_PERSON_SPRITE` — CLOSED (not a backlog item).**
-   draw.io has no PlantUML sprite registry ⇒ a sprite glyph cannot be
-   faithfully rendered. Parsing never breaks; the attribute is
-   captured and ignored. Documented in `C4-COVERAGE.md`. Listed here
-   only so a future reader does not re-open it as "missing".
-
-4. **layout-readability — DO NOT reopen** without a render-measured,
-   user-pointable defect (B1 declined on evidence; tall-ribbon is
-   `dot`-faithful per ADR 0011).
-
-5. **Obsolete parked branch:** `feat/seq-phase-b-layout-emit`
-   (already gone from origin as of handoff #21; listed only so a
-   future reader does not resurrect it) is SUPERSEDED — the
-   sequence pipeline is fully implemented on `main`.
-
-Active work: the deferred **item 1** (ELK→`dot` research bet, its own
-repo) — now the owner of the P1 edge-crossing residual, QUANTIFIED &
-ratchet-gated by `make edgecross` (30 vs PlantUML 0), with the
-in-place fix empirically disproved. P3/P5/P7 are CLOSED with cited
-numbers; the sequence pipeline and the C4 *directive* surface are
-feature-complete. The honest standing state: crossings are a real,
-measured, deferred residual — not "no residual outstanding".
+**DO NOT reopen** without a render-measured, user-pointable defect:
+`$sprite`/`SHOW_PERSON_SPRITE` (CLOSED — no draw.io sprite registry,
+documented in `C4-COVERAGE.md`); layout-readability / tall-ribbon
+(`dot`-faithful by construction — it IS PlantUML's engine).

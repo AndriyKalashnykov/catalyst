@@ -115,3 +115,29 @@ release-chain step (the BLOCKING visual acceptance gate).
   comparator to the supported `make factcheck` gate over all 26
   conversions (corpus + C4-spec); exposed P12 (real spec-fixture
   defects). 5 harness false-positive classes total, each fact-checked.
+
+## 2026-05-19 — Layout engine elkjs → Graphviz `dot` (catalyst 2.0.0, ADR 0014)
+
+Applied — PRs #150 (swap), #151 (ELK removal), #152 (pre-2.0
+hardening), #154 (release; tag `v2.0.0`):
+
+- **elkjs removed; Graphviz `dot` via pinned `@hpcc-js/wasm-graphviz`
+  is the sole engine.** `dot` IS PlantUML's C4 engine, so topology
+  matches by construction: `make edgecross` 30 → 0 (catalyst ==
+  PlantUML == 0 on the real drawio-export render-truth); factcheck
+  CLEAN 28/28 (was 26/28); arrowskew 22/22; byte-deterministic.
+- Removed: `LayoutEngine.mts`, `elkjs` dep, the `layoutEngine`/
+  `LAYOUT_ENGINE` selector, the ELK-era `assignEdgeLanes` /
+  `assignPortOrder` / `enforceApproachClearance` lane apparatus, and
+  the moot ADR-0013 `make routefidelity` decision driver
+  (`route-fidelity-matrix.mjs`/`-convert.mjs`). The
+  `route-fidelity.mjs` metric library lives on (consumed by the live
+  `edgecross` gate). Lane/multibend removal proven byte-identical
+  (`gallery-verify`); ADR 0014 supersedes 0008/0009/0011.
+- Docs touched: README + GitHub About re-derived; `docs/C4-COVERAGE.md`
+  L1–L5 + scattered ELK refs → dot; `docs/FACTCHECK-COVERAGE.md`
+  path→metric matrix + advisory rationale → dot; ADR 0008/0009/0011
+  headers marked superseded.
+- Downstream: puml2drawio `CATALYST_REF` → v2.0.0 (PR #99, full CI
+  incl. e2e green). ibm-wm-cert-management `_drawio` regen pending
+  (its own release cadence).

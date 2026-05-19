@@ -102,6 +102,14 @@
       "labels": ["dependencies", "layout-engine"]
     },
     {
+      "description": "rlespinasse/drawio-export is the renderer behind every COMMITTED render-truth artifact (docs/gallery|gallery-seq|gallery-c4feat SVG+PNG, the arrowskew/edgecross instruments parse those SVGs). A drawio-export bump changes the rendered pixels/SVG → it is NOT automergeable: it requires `make gallery seq-gallery c4feat-gallery` + `make arrowskew` regen + the edgecross/factcheck-ratio re-baseline and a commit of the refreshed render-truth (exactly the v4.51→v4.52 manual re-render done 2026-05-19). Same coupling class as the @hpcc-js/wasm-graphviz engine gate above and the C4-PlantUML stdlib gate. Open the PR, never automerge.",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["rlespinasse/drawio-export"],
+      "automerge": false,
+      "minimumReleaseAge": "3 days",
+      "labels": ["dependencies", "render-truth"]
+    },
+    {
       "description": "Keep the Makefile drawio-export docker pin tag-only — config:best-practices transitively enables docker:pinDigests which would rewrite it to tag@sha256 and break the customManager regex (which expects a semver-shaped tag). The image is consumed via `docker run` at render time, which resolves the digest for the tag anyway. (GitHub Actions still get SHA-pinned via helpers:pinGitHubActionDigests in config:best-practices.)",
       "matchManagers": ["custom.regex"],
       "matchFileNames": ["Makefile"],

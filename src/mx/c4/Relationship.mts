@@ -45,8 +45,9 @@ class Relastionship {
             // `orthogonalEdgeStyle` made draw.io re-route every edge as
             // Manhattan right-angles (discarding ELK's waypoints — the
             // #107/B1 finding) → the `rel-bidirectional` connector
-            // tangle. Proven by `make routefidelity` (route-shape L1 to
-            // the PlantUML target: orthogonal 1.017 → curved 0.294,
+            // tangle. Proven (ADR 0013) by the since-retired
+            // `routefidelity` harness (route-shape L1 to the PlantUML
+            // target: orthogonal 1.017 → curved 0.294,
             // ~3.5× closer; ordering robust on both detour AND turn).
             // arrowskew stays CLEAN 20/20; factcheck is edge-style-
             // invariant; golden is style-agnostic.
