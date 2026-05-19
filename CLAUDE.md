@@ -245,22 +245,27 @@ git history + ADRs + memories — not re-dumped). What is left:
    aspect — NOT connectors; curved routing solved those, ADR 0013)
    becomes the dominant residual after a release.
 
-2. **Gallery-visual residuals P1/P3/P5/P7 — closed-by-AGGREGATE-
-   evidence this session, NOT individually re-judged (honest
-   follow-up).** P1 (multi-edge lane separation), P3 (long-label
-   width blow-up), P5 (hub-label proximity), P7 (short 2-pt edge
-   label cram) were retired from the backlog on the *aggregate*
-   basis: ADR 0013 curved routing closed the tangled-connector
-   class, the full 22/22 C4 gallery eyeball-sweep (handoff #21)
-   found every render content-faithful, and `make factcheck` is
-   contract-clean on all (26/28 = the 2 documented host-font ratio-
-   jitter fixtures, not a defect). They were NOT each re-verified
-   with a per-item factcheck number. Bar to act: a render-measured,
-   user-pointable defect on a specific fixture WITH the factcheck
-   metric that flags it (same evidence discipline as item 4). Likely
-   genuinely closed — but the holistic-vs-per-item distinction is
-   recorded here so it is a tracked judgement call, not a silent
-   retirement.
+2. **Gallery-visual residuals P1/P3/P5/P7 — ACTIVE: individually
+   re-judge each, per item, with a cited factcheck number.** These
+   were retired this session on *aggregate* evidence only (ADR 0013
+   curved routing + the 22/22 eyeball-sweep + factcheck contract-
+   clean 26/28) — they were NOT each verified. This is open work,
+   not closed: walk each one against its specific fixtures and the
+   factcheck metric that would flag it, and record a per-item
+   verdict (CLOSED-with-number, or a render-measured defect to fix):
+     - **P1 multi-edge lane separation** — `rel-parallel-duplicate`,
+       `rel-tech-vs-notech`, `rel-bidirectional`, `rel-fan-stress`;
+       metric `attachMerge` (same-pair edges collapsing) + visual.
+     - **P3 long-label width blow-up** — `rel-long-labels`,
+       `edge-multiline-labels`; metric `wRatio`/`labelDrop`.
+     - **P5 hub-label proximity** — `topology-hub-spoke`,
+       `topology-wide-rank`; metric `labelHit` + `nodeOverlap`.
+     - **P7 short 2-pt edge-label cram** — `edge-tags-styling`,
+       `level-dynamic`; metric `labelHit` on the 2-point branch.
+   `make factcheck` per-fixture (`node scripts/factcheck-geometry.mjs
+   <stem>`) is the per-item instrument; cite its number per the
+   no-eyeball rule. Likely several are genuinely closed — but each
+   needs its own number, not the aggregate.
 
 3. **`$sprite` / `SHOW_PERSON_SPRITE` — CLOSED (not a backlog item).**
    draw.io has no PlantUML sprite registry ⇒ a sprite glyph cannot be
@@ -277,7 +282,8 @@ git history + ADRs + memories — not re-dumped). What is left:
    future reader does not resurrect it) is SUPERSEDED — the
    sequence pipeline is fully implemented on `main`.
 
-The only forward-looking *work* item is the deferred ELK→`dot`
-research bet (its own repo); item 2 is a tracked re-verify-if-
-challenged, not active work. Sequence support and the C4 surface
-are feature-complete.
+Active work: **item 2** (per-item re-judge of P1/P3/P5/P7 — small,
+do-able now) and the deferred **item 1** (ELK→`dot` research bet, its
+own repo). The sequence pipeline and the C4 *directive* surface are
+feature-complete; item 2 is residual *visual-fidelity* verification,
+not new capability.
