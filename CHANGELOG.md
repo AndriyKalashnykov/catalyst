@@ -6,6 +6,55 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 This project adheres to [Keep a CHANGELOG](http://keepachangelog.com/).
 
+## [2.0.0] - 2026-05-19
+
+**BREAKING — the layout engine is now Graphviz `dot`; ELK is removed.**
+
+### Changed
+
+- **Layout engine: elkjs → Graphviz `dot`** via the pinned,
+  byte-deterministic `@hpcc-js/wasm-graphviz` WASM build (ADR 0014,
+  superseding the ELK-era ADRs 0008/0009/0011). `dot` IS the engine
+  PlantUML uses for C4, so catalyst's topology now matches the
+  reference **by construction**: `make edgecross` **30 → 0**
+  non-incident edge crossings across the whole corpus (catalyst ==
+  PlantUML == 0), measured on the real drawio-export render-truth.
+  Determinism proven cross-process (P0). factcheck **CLEAN 28/28**
+  (was 26/28 under ELK); arrowskew 22/22.
+- Rendered output changes substantially for most diagrams (different,
+  PlantUML-faithful coordinates + curved `dot` splines). Downstream
+  consumers (puml2drawio → ibm-wm) regenerate their committed
+  `.drawio`/renders on bump.
+
+### Removed (BREAKING)
+
+- The `elkjs` dependency, `src/layout/LayoutEngine.mts`, and the
+  ELK-era `assignEdgeLanes` perpendicular-shove + dead multi-bend
+  emit machinery in `layoutData2mx` (the lane machinery was a primary
+  crossing source; `dot`'s own port ordering fans same-pair edges).
+  Removal of the lane/multibend branches proven byte-identical
+  (`gallery-verify`).
+- The `LAYOUT_ENGINE` env var and the `CatalystOptions.layoutEngine`
+  option — `dot` is the sole engine, so the selector is gone. Code
+  passing `{ layoutEngine: 'elk' }` must drop the option (the public
+  `Catalyst.convert(puml, options)` signature is otherwise unchanged;
+  `LayoutResult`/`LayoutNode`/`LayoutEdge` relocated verbatim to
+  `src/layout/types.mts`, no shape change).
+
+### Added
+
+- `src/layout/DotLayout.mts` — C4→dot emitter + dot-JSON→LayoutResult
+  adapter; `routesAuthoritative` emits `dot` splines verbatim as
+  `curved=1` draw.io edges (ADR 0013). Whole-path contract gate
+  `tests/dot-layout.test.mts` (C1–C6, mutation-verified RED) +
+  `tests/dot-whole-path.test.mts` corpus/feature sweep.
+- ADR 0014 (Graphviz dot engine) + the full P0–P6 decision/plan
+  record (`docs/research/dot-engine-swap-plan.md`); committed
+  PlantUML | ELK | dot eyeball gallery (`docs/gallery-compare/`).
+- factcheck comparator base-point FP fix (`edgeEndAttach`) +
+  dot-residual ratchet (`scripts/factcheck-dot-ratchet.mjs`,
+  RED-tested) for the 2 synthetic exhaustiveness fixtures.
+
 ## [1.8.0] - 2026-05-18
 
 ### Added
