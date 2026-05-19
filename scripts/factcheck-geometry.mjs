@@ -130,11 +130,10 @@ const UPDATE_BASELINE = process.env.UPDATE_FACTCHECK_BASELINE === '1'
 // per-fixture baseline (same mechanism as factcheck-ratio /
 // edgecross-baseline) fails any REGRESSION beyond the committed dot
 // baseline. Regen: `LAYOUT_ENGINE=dot UPDATE_FACTCHECK_DOT_BASELINE=1`.
-// P6: catalyst's default engine is now `dot` (ADR 0014); it is `elk`
-// ONLY when explicitly opted out — mirror catalyst.mts's selection
-// exactly so factcheck applies the dot residual ratchet whenever
-// catalyst actually laid out with dot (i.e. unless LAYOUT_ENGINE=elk).
-const DOT_ENGINE = process.env.LAYOUT_ENGINE !== 'elk'
+// FU1 / ADR 0014: the ELK engine was removed — `dot` is the ONLY
+// engine, so the dot residual ratchet (attachMerge/labelHit on the
+// synthetic exhaustiveness fixtures) always applies.
+const DOT_ENGINE = true
 const DOT_BASELINE_FILE = join(
   process.env.CATALYST_ROOT ?? '.', 'tests', 'factcheck-dot-baseline.json')
 const DOT_BASELINE = existsSync(DOT_BASELINE_FILE)
