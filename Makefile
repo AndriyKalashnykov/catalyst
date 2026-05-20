@@ -19,7 +19,7 @@ export PATH := $(HOME)/.local/share/mise/shims:$(HOME)/.local/bin:$(PATH)
 # via the inline comments below (the portfolio's standard exception for
 # JAR-download / docker-image-pinned tools).
 # renovate: datasource=maven depName=net.sourceforge.plantuml:plantuml
-PLANTUML_VERSION    ?= 1.2026.3
+PLANTUML_VERSION    ?= 1.2026.4
 # renovate: datasource=docker depName=rlespinasse/drawio-export
 DRAWIO_EXPORT_IMAGE ?= rlespinasse/drawio-export:v4.52.0
 DRAWIO_EXPORT_SCALE ?= 2
