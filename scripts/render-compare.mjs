@@ -30,7 +30,7 @@ import { Catalyst } from '../dist/catalyst.mjs';
 
 const SRC = resolve(process.argv[2] ?? 'tests/fixtures/c4-exhaustive.puml');
 const OUT = resolve(process.argv[3] ?? 'build/render-compare');
-const PLANTUML_VERSION = process.env.PLANTUML_VERSION ?? '1.2026.2';
+const PLANTUML_VERSION = process.env.PLANTUML_VERSION ?? '1.2026.3';
 const DRAWIO_IMAGE = process.env.DRAWIO_EXPORT_IMAGE ?? 'rlespinasse/drawio-export:v4.52.0';
 const DRAWIO_SCALE = process.env.DRAWIO_EXPORT_SCALE ?? '2';
 
