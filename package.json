@@ -51,7 +51,7 @@
     }
   },
   "dependencies": {
-    "@hpcc-js/wasm-graphviz": "1.21.6",
+    "@hpcc-js/wasm-graphviz": "1.21.7",
     "fontkit": "^2.0.4",
     "xml2js": "^0.6.2"
   },
