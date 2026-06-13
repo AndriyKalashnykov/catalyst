@@ -48,7 +48,7 @@ the `«stereotype»` / **Name** / `[Technology]` / description element
 order, and every relationship verb with its `[technology]`.
 
 > 🖼️ **See it on real diagrams: the [**full conversion gallery →
-> `docs/gallery/`**](docs/gallery/)** — all **20 corpus fixtures**
+> `docs/gallery/`**](docs/gallery/)** — all **22 corpus fixtures**
 > (deep-nested boundaries, deployment nodes, hub-and-spoke context,
 > cyclic & disconnected topologies, tag styling, unicode/edge cases)
 > rendered PlantUML-vs-draw.io side by side. Reproduce this pair with
@@ -87,8 +87,10 @@ npm install github:AndriyKalashnykov/catalyst#v2.0.0
 make deps      # mise install (node, act, gitleaks, trivy) + npm ci
 make build     # compile TypeScript -> dist/
 make test      # full vitest suite (fast; no coverage gate)
-make ci        # full local pipeline == CI (static-check[lint+sec] +
-               #   build + coverage-check[85%] + gallery-verify)
+make ci        # docker-free CI gate (static-check[lint+sec] + build +
+               #   coverage-check[85%] + gallery-verify + seq-gallery-verify
+               #   + c4feat-gallery-verify). make ci-run = full ci.yml via act
+               #   (adds the render-gate / arrowskew docker job)
 ```
 
 ## Prerequisites
@@ -236,7 +238,7 @@ Run `make help` to list targets.
 | `make factcheck` | Numeric PlantUML→drawio fidelity audit of all conversions (host-JVM PlantUML; the no-eyeballing **manual** gate — not CI-portable) |
 | `make arrowskew` | Arrowhead-skew gate on draw.io's REAL render (Docker-pinned; the CI render-truth contract) |
 | `make gallery-verify` | Fail if committed gallery `.drawio` drifted from current emit |
-| `make ci` | Local pipeline == CI: static-check (lint+sec) + build + coverage-check + gallery-verify |
+| `make ci` | Docker-free CI gate: static-check (lint+sec) + build + coverage-check + gallery-verify + seq-gallery-verify + c4feat-gallery-verify (`make ci-run` adds the render-gate/arrowskew docker job) |
 | `make ci-run` | Run the real `.github/workflows/ci.yml` locally via `act` (Docker) |
 
 ## CI/CD
@@ -255,14 +257,14 @@ gates the Docker-based `render-gate` job so fast PRs stay fast.
 | **changes** | — (`dorny/paths-filter`) | doc-only + render-input detection; gates the jobs below |
 | **static-check** | `make static-check` | `oxlint` + `markdownlint` + `npm audit` + `gitleaks` + `trivy fs` |
 | **build** | `make build` | `tsc` → `dist/` |
-| **test** | `make gallery-verify coverage-check` | gallery drift gate + Vitest (85 % `thresholds.global`) |
+| **test** | `make gallery-verify seq-gallery-verify c4feat-gallery-verify coverage-check` | C4 / seq / C4-feature `.drawio` drift gates + Vitest (85 % coverage thresholds) |
 | **render-gate** | `make arrowskew` | draw.io render-truth contract: pinned `rlespinasse/drawio-export` renders every gallery `.drawio` → SVG; asserts no arrowhead skew / feeder occlusion (the deterministic anti-#107 net) |
 | **ci-pass** | — | aggregator; the single required check for branch protection |
 
 `make arrowskew` renders inside a Renovate-pinned Docker image so its
 geometry is byte-portable across machines and runners — it is the CI
 render-truth contract. `make factcheck` (numeric PlantUML→drawio
-fidelity over all 26 conversions) is **not** CI: PlantUML text
+fidelity over all 28 conversions) is **not** CI: PlantUML text
 geometry is host-font-dependent, so its `ratioBad` ratchet is
 reproducible only against the calibration host. It is a **mandatory
 manual gate** for any emit/geometry change. (Docker-pinning it was
@@ -315,9 +317,10 @@ therefore guaranteed structurally, not visually:
   [`docs/gallery/`](docs/gallery/) with an indexed README. Requires Java +
   Docker; **not** a CI gate.
 
-Current: **218 tests** across unit, parity, golden-snapshot,
-layout-quality, corpus-sanity and edge-lane suites; 85% coverage thresholds
-enforced in CI.
+Current: **579 tests** across unit, parity, golden-snapshot,
+layout-quality, corpus-sanity, dot-layout, dot-whole-path, sequence,
+edgecross and factcheck-predicate/ratio/ratchet suites; 85% coverage
+thresholds enforced in CI.
 
 ## Contributing
 

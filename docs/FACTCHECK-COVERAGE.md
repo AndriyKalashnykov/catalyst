@@ -57,7 +57,7 @@ corrected metric. Memories `factcheck-harness-gate` (FP class #7),
 ## Path → guarding metric matrix
 
 Emit/geometry paths are in `src/catalyst.mts` `layoutData2mx` unless
-noted. "Exemplar fixtures" are conversions in the 26-fixture gate that
+noted. "Exemplar fixtures" are conversions in the 28-fixture gate that
 exercise the path (any regression there flips a contract metric).
 
 | # | Geometry/emit path | Source | Guarding contract metric(s) | Exemplar fixtures |
@@ -92,9 +92,12 @@ metric — **no emit path is unguarded**.
    `compound-boundary` unit tests + `nodeOverlap` (a too-small band
    collides → `nodeOverlap`/`labelHit`).
 3. **Sequence diagrams** (`C4_Sequence` / PlantUML sequence) are NOT in
-   the 26-fixture gate — catalyst fail-louds on them today (ADR 0007,
-   not yet implemented). When implemented, the gate MUST gain a
-   lifeline/message/order metric + fixtures (CLAUDE.md directive).
+   the 28-fixture gate — `factcheck-geometry.mjs` covers only the C4
+   static family. Sequence is **fully implemented** (ADR 0007 a–d2b) and
+   has its own committed drift gate (`make seq-gallery-verify` +
+   `docs/gallery-seq` render evidence), but lacks a numeric factcheck
+   metric. Before any sequence geometry change, the gate MUST gain a
+   lifeline/message/order metric + seq fixtures (CLAUDE.md directive).
 4. **Pure-aesthetic spacing** (e.g. P4b box-emptiness) is intentionally
    NOT a contract — it is a deliberate cross-cutting visual change
    gated by render-compare + a byte baseline, not by factcheck.

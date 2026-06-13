@@ -32,6 +32,10 @@ C4FEAT_DIR          ?= tests/fixtures/c4-feat
 C4FEAT_OUT          ?= docs/gallery-c4feat
 PLANTUML_JAR        ?= $(GALLERY_OUT)/plantuml.jar
 FACTCHECK_SVG_DIR   ?= build/factcheck-svg
+# act's local artifact server binds an ephemeral host port (random in
+# this band to avoid collisions across parallel `make ci-run` runs).
+ACT_PORT_LOW        ?= 40000
+ACT_PORT_HIGH       ?= 59999
 
 .DEFAULT_GOAL := help
 
@@ -240,7 +244,7 @@ ci: static-check build coverage-check gallery-verify seq-gallery-verify c4feat-g
 #ci-run: @ Run the real .github/workflows/ci.yml locally via act (mise-managed act; needs Docker)
 ci-run: deps
 	@docker container prune -f 2>/dev/null || true
-	@ACT_PORT=$$(shuf -i 40000-59999 -n 1); \
+	@ACT_PORT=$$(shuf -i $(ACT_PORT_LOW)-$(ACT_PORT_HIGH) -n 1); \
 	ARTIFACT_PATH=$$(mktemp -d -t act-artifacts.XXXXXX); \
 	act push --workflows .github/workflows/ci.yml \
 		--container-architecture linux/amd64 \
@@ -249,4 +253,6 @@ ci-run: deps
 
 .PHONY: help deps deps-render clean build lint test coverage-check vulncheck \
 	secrets trivy-fs static-check golden-update render-compare gallery \
-	factcheck arrowskew edgecross gallery-verify ci ci-run
+	factcheck arrowskew bendcount edgecross gallery-verify \
+	seq-gallery seq-gallery-verify c4feat-gallery c4feat-gallery-verify \
+	ci ci-run

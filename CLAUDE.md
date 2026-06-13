@@ -105,7 +105,7 @@ Standalone, independently-maintained library (no upstream; never add an
   `factcheck-geometry.mjs` now exits non-zero on any non-clean
   fixture (it previously only printed `CLEAN N/26` and a human had
   to read it — a latent fake-gate even for the manual flow).
-- Visual proof (corroborative only): `PLANTUML_VERSION=1.2026.2
+- Visual proof (corroborative only): `PLANTUML_VERSION=1.2026.6
   RENDER_SRC=<puml> RENDER_OUT=<dir> make render-compare` (java+docker;
   PlantUML PNG + catalyst→drawio PNG side by side). `make gallery`
   renders the 22-fixture corpus into `docs/gallery/`. Large PNGs:
@@ -162,27 +162,32 @@ Standalone, independently-maintained library (no upstream; never add an
 
 ## Where things are
 
-- Layout: `src/layout/LayoutEngine.mts` (ELK; **always**
-  `layered`+`NETWORK_SIMPLEX` — Context too, matching PlantUML/`dot`;
-  ADR 0008 superseded the old Context→`stress` branch;
-  `titlePadding`, `leafWidths`/`edgeCap`), `src/layout/measureNode.mts`
-  (`measureNode`, `measureEdgeLabel`), `src/layout/edgeLanes.mts`
-  (`assignEdgeLanes` multi-edge fan, `resolveLabelOverlap` single-edge
-  de-collision).
+- Layout: `src/layout/DotLayout.mts` (`buildDot` — emits the Graphviz
+  `dot` source; layout runs through the pinned `@hpcc-js/wasm-graphviz`
+  WASM `dot` engine, ADR 0014, superseding the ELK ADRs 0008/0009/0011;
+  `dot` IS PlantUML's C4 engine so column/rank/ribbon match by
+  construction and `dot` does multi-edge fan natively),
+  `src/layout/measureNode.mts` (`measureNode`, `measureEdgeLabel`),
+  `src/layout/edgeLanes.mts` (lean label-de-collision + midpoint module:
+  `slideLabelAlongLane`, `resolveLabelOverlap`, `polylineMidpoint` — the
+  ELK-era lane apparatus was removed with the engine swap),
+  `src/layout/types.mts` (`LayoutResult`/`Node`/`Edge`).
 - Emit: `src/catalyst.mts` (`layoutData2mx` — the edge/label emit loop,
-  `edgeLabelCap`), `src/mx/Mx.mts`, `src/mx/c4/*.mts` (17 shape
+  `edgeLabelCap`), `src/mx/Mx.mts`, `src/mx/c4/*.mts` (24 shape
   templates, all import `theme.mjs`).
 - Text: `src/text/TextMetrics.mts`, `src/text/labelLines.mts`
   (`splitLabelLines`, `htmlBreaks`, `wrapEdgeLabelLines`).
-- Decisions: `docs/adr/0001..0013` (0007 sequence design, 0008
+- Decisions: `docs/adr/0001..0014` (0007 sequence design, 0008
   Context→layered, 0009 cycleBreaking=DEPTH_FIRST, 0010 content-fit
   box sizing, 0011 layout-aspect, 0012 completeness invariant,
-  **0013 curved edge routing — ACCEPTED, live**); research bases
+  0013 curved edge routing — ACCEPTED, live, **0014 Graphviz `dot`
+  layout engine — ACCEPTED, live; supersedes 0008/0009/0011**); research
+  bases
   `docs/research/*` (incl. `elk-vs-graphviz-dot.md` — deferred
   engine bet); running log `docs/UPGRADE-NOTES.md`; coverage matrix
-  `docs/C4-COVERAGE.md`. Render-truth gates: `make arrowskew` (CI),
-  `make edgecross` (CI, no-docker via `dot-layout` C6), `make
-  factcheck` (host-MANUAL). `make routefidelity` was retired with
+  `docs/C4-COVERAGE.md`. Render-truth gates: `make arrowskew` (CI
+  render-gate, docker), `make edgecross` (LOCAL, no-docker via
+  `dot-layout` C6), `make factcheck` (host-MANUAL). `make routefidelity` was retired with
   2.0 (the ADR-0013 decision landed); `scripts/route-fidelity.mjs`
   lives on only as the metric library `edgecross` consumes. Agent
   memory:
