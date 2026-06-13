@@ -141,3 +141,37 @@ hardening), #154 (release; tag `v2.0.0`):
 - Downstream: puml2drawio `CATALYST_REF` → v2.0.0 (PR #99, full CI
   incl. e2e green). ibm-wm-cert-management `_drawio` regen pending
   (its own release cadence).
+
+## 2026-06-13 — Dependency sweep (graphviz engine bump + trivy phantom-release)
+
+- **`@hpcc-js/wasm-graphviz` 1.21.7 → 1.22.0 — MERGED #165** (the
+  `automerge:false` layout-engine coupling gate, sanctioned reset
+  honored). The new wasm build bundles graphviz 15.0.0 (was 14.1.5).
+  Verified the engine bump is render-equivalent before merge: all three
+  `.drawio` drift gates byte-identical (`gallery-verify` 22 /
+  `seq-gallery-verify` 18 / `c4feat-gallery-verify` 4), `make edgecross`
+  TOTAL catalyst=0 regressions=0, `make factcheck` CLEAN 28/28
+  (host-JVM), the `p0-dot-spike` determinism proof BYTE-STABLE
+  (in-process×6 + cross-process×1), 579 vitest + lint clean. **No
+  baseline regeneration needed** — graphviz 1.22.0 produces
+  byte-identical layout coordinates, so no committed render-truth
+  shifted. The graphviz-internal `triangulation failed` spline
+  diagnostics on stderr are **pre-existing** (identical count on main's
+  1.21.7 — confirmed via worktree), not a regression. CI `render-gate`
+  (`make arrowskew`) green on the PR.
+- **`aqua:aquasecurity/trivy` 0.71.0 → 0.71.1 — PR #174 CLOSED (not
+  merged), staying on 0.71.0.** Upstream-broken, not a catalyst issue:
+  trivy git-tag `v0.71.1` exists (release-please #10818 merged
+  2026-06-10) but trivy's goreleaser **Release workflow FAILED** on
+  that tag (run 27273845995), so no GitHub Release and no binary assets
+  were ever published (`releases/tags/v0.71.1` and the
+  `_checksums.txt` asset both 404; v0.71.0 200). mise's aqua backend
+  installs trivy strictly from Release assets (`type: github_release`,
+  no git-tag/source fallback) → the pin is uninstallable →
+  static-check `mise ERROR Failed to install ... 404`. Recurring
+  upstream pattern (v0.68.0, v0.67.1 also had failed Release runs and
+  were superseded by the next patch, not back-filled). No Renovate/mise
+  config change is warranted — `minimumReleaseAge`/`allowedVersions`
+  would only be brittle special-casing for an upstream transient.
+  Renovate will open a clean, installable PR when the next valid trivy
+  release lands.
