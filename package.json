@@ -59,11 +59,11 @@
     "@types/fontkit": "2.0.9",
     "@types/node": "25.9.3",
     "@types/xml2js": "0.4.14",
-    "@vitest/coverage-v8": "4.1.8",
-    "markdownlint-cli": "0.48.0",
+    "@vitest/coverage-v8": "4.1.9",
+    "markdownlint-cli": "0.49.0",
     "oxlint": "^1.69.0",
     "typescript": "6.0.3",
     "unsplash-js": "8.0.0",
-    "vitest": "4.1.8"
+    "vitest": "4.1.9"
   }
 }
