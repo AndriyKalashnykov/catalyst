@@ -31,4 +31,4 @@ java = "temurin-21.0.11+10.0.LTS"
 "aqua:gitleaks/gitleaks" = "8.30.1"
 
 # trivy — `make trivy-fs` (vuln/secret/misconfig scan; static-check gate).
-"aqua:aquasecurity/trivy" = "0.71.2"
+"aqua:aquasecurity/trivy" = "0.72.0"
