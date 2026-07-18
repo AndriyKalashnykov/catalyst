@@ -21,7 +21,7 @@ export PATH := $(HOME)/.local/share/mise/shims:$(HOME)/.local/bin:$(PATH)
 # renovate: datasource=maven depName=net.sourceforge.plantuml:plantuml
 PLANTUML_VERSION    ?= 1.2026.6
 # renovate: datasource=docker depName=rlespinasse/drawio-export
-DRAWIO_EXPORT_IMAGE ?= rlespinasse/drawio-export:v4.52.0
+DRAWIO_EXPORT_IMAGE ?= rlespinasse/drawio-export:v4.54.0
 DRAWIO_EXPORT_SCALE ?= 2
 RENDER_SRC          ?= tests/fixtures/c4-exhaustive.puml
 RENDER_OUT          ?= build/render-compare
