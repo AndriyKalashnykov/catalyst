@@ -63,7 +63,7 @@
     "markdownlint-cli": "0.49.1",
     "oxlint": "^1.76.0",
     "typescript": "7.0.2",
-    "unsplash-js": "8.0.0",
+    "unsplash-js": "8.0.1",
     "vitest": "4.1.10"
   }
 }
