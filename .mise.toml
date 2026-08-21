@@ -19,7 +19,7 @@ node = "26"
 # modern LTS JRE works. mise core `java` plugin (Temurin 21 LTS, tag
 # verified via `mise ls-remote java`). Not needed for build/lint/
 # test/CI — those are Node-only.
-java = "temurin-21.0.12+8.0.LTS"
+java = "temurin-21.0.12+101.0.LTS"
 
 # act — runs the real ci.yml locally (`make ci-run`). Was previously
 # claimed "mise-managed" by the Makefile but never declared here, so a
