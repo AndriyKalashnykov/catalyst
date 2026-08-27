@@ -25,7 +25,7 @@ HIDE_STEREOTYPE, sketch (LAYOUT_AS_SKETCH/SET_SKETCH_STYLE), note callouts, lege
 
 ```plantuml
 @startuml feat-hide-stereotype
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Container.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.14.0/C4_Container.puml
 HIDE_STEREOTYPE()
 title Feature — HIDE_STEREOTYPE (no «Type» line)
 Person(op, "Operator", "Runs the platform")
@@ -48,7 +48,7 @@ Rel(api, db, "reads/writes", "SQL")
 
 ```plantuml
 @startuml feat-legend-properties
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Container.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.14.0/C4_Container.puml
 title Feature — SHOW_LEGEND + AddProperty table
 AddElementTag("critical", $bgColor="#c0392b", $fontColor="#ffffff")
 AddElementTag("external", $bgColor="#8a8a8a", $fontColor="#ffffff")
@@ -75,7 +75,7 @@ SHOW_LEGEND()
 
 ```plantuml
 @startuml feat-note
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Container.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.14.0/C4_Container.puml
 title Feature — note callouts (left/right/top/bottom of X)
 Person(op, "Operator")
 System_Boundary(cp, "platform") {
@@ -105,7 +105,7 @@ note bottom of db : single source of truth
 
 ```plantuml
 @startuml feat-sketch
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Container.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.14.0/C4_Container.puml
 LAYOUT_AS_SKETCH()
 title Feature — LAYOUT_AS_SKETCH (hand-drawn render)
 Person(op, "Operator")
