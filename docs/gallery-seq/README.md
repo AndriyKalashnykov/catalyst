@@ -23,7 +23,7 @@ Regenerate after any seq emit change: `make seq-gallery && git add docs/gallery-
 
 ```plantuml
 @startuml seq-d2-fragments
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Sequence.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.14.0/C4_Sequence.puml
 
 title Certificate reconcile — fragments (alt/else, nested loop, opt)
 
@@ -67,7 +67,7 @@ deactivate ctl
 
 ```plantuml
 @startuml seq-d2b-box-boundary
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Sequence.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.14.0/C4_Sequence.puml
 
 title Certificate issuance — box / Boundary grouping (phase d2b)
 
@@ -101,7 +101,7 @@ ctl -> op : status = Ready
 
 ```plantuml
 @startuml seq-d2b-create-destroy
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Sequence.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.14.0/C4_Sequence.puml
 
 title Certificate issuance — create / destroy lifespan (phase d2b)
 
@@ -131,7 +131,7 @@ ctl -> op : status = Ready
 
 ```plantuml
 @startuml seq-d2b-ref
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Sequence.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.14.0/C4_Sequence.puml
 
 title Certificate issuance — ref frames (phase d2b)
 
@@ -163,7 +163,7 @@ ctl -> op : status = Ready
 
 ```plantuml
 @startuml seq-perm-activation
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Sequence.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.14.0/C4_Sequence.puml
 title Permutation — nested activation
 participant "Op" as op
 participant "Ctl" as ctl
@@ -193,7 +193,7 @@ ctl -> op -- : shorthand deactivate
 
 ```plantuml
 @startuml seq-perm-arrows
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Sequence.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.14.0/C4_Sequence.puml
 title Permutation — all arrow kinds
 participant "A" as a
 participant "B" as b
@@ -220,7 +220,7 @@ BiRel(a, b, "C4 BiRel")
 
 ```plantuml
 @startuml seq-perm-box
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Sequence.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.14.0/C4_Sequence.puml
 title Permutation — box + Boundary groupings
 participant "Client" as cl
 box "service mesh"
@@ -252,7 +252,7 @@ db --> cl : result
 
 ```plantuml
 @startuml seq-perm-c4-kinds
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Sequence.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.14.0/C4_Sequence.puml
 title Permutation — C4 lifeline kinds
 Person(op, "Operator")
 System(sys, "Legacy System")
@@ -284,7 +284,7 @@ Rel(sys, ext, "federates")
 
 ```plantuml
 @startuml seq-perm-combined
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Sequence.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.14.0/C4_Sequence.puml
 title Permutation — combined stress (all constructs)
 Person(op, "Operator")
 box "control plane"
@@ -330,7 +330,7 @@ ctl -> op : status = Ready
 
 ```plantuml
 @startuml seq-perm-create-destroy
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Sequence.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.14.0/C4_Sequence.puml
 title Permutation — create / destroy lifespans
 participant "Mgr" as m
 m -> m : start
@@ -358,7 +358,7 @@ m -> m : done
 
 ```plantuml
 @startuml seq-perm-dividers
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Sequence.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.14.0/C4_Sequence.puml
 title Permutation — divider variants
 participant "A" as a
 participant "B" as b
@@ -383,7 +383,7 @@ a -> b : after empty divider
 
 ```plantuml
 @startuml seq-perm-fragments-nested
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Sequence.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.14.0/C4_Sequence.puml
 title Permutation — deeply nested fragments
 participant "A" as a
 participant "B" as b
@@ -413,7 +413,7 @@ end
 
 ```plantuml
 @startuml seq-perm-fragments
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Sequence.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.14.0/C4_Sequence.puml
 title Permutation — every fragment kind
 participant "A" as a
 participant "B" as b
@@ -455,7 +455,7 @@ end
 
 ```plantuml
 @startuml seq-perm-notes
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Sequence.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.14.0/C4_Sequence.puml
 title Permutation — note positions
 participant "A" as a
 participant "B" as b
@@ -484,7 +484,7 @@ end note
 
 ```plantuml
 @startuml seq-perm-ref
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Sequence.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.14.0/C4_Sequence.puml
 title Permutation — ref frames
 participant "A" as a
 participant "B" as b
@@ -512,7 +512,7 @@ c --> a : done
 
 ```plantuml
 @startuml seq-perm-self-message
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Sequence.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.14.0/C4_Sequence.puml
 title Permutation — self-messages (short + long label)
 participant "Worker" as w
 participant "Queue" as q
@@ -535,7 +535,7 @@ q --> w : batch
 
 ```plantuml
 @startuml seq-v1-cert-lifecycle
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Sequence.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.14.0/C4_Sequence.puml
 
 title Certificate issuance — v1 sequence (no dividers/fragments)
 
@@ -569,7 +569,7 @@ deactivate ctl
 
 ```plantuml
 @startuml seq-v1-dividers
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.13.0/C4_Sequence.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.14.0/C4_Sequence.puml
 
 title Certificate lifecycle — phased (== divider ==, no fragments)
 
