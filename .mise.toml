@@ -25,7 +25,7 @@ java = "temurin-21.0.12+101.0.LTS"
 # claimed "mise-managed" by the Makefile but never declared here, so a
 # fresh checkout hit `act: command not found`. aqua backend = precompiled
 # release binary (faster than cargo/go install).
-"aqua:nektos/act" = "0.2.89"
+"aqua:nektos/act" = "0.2.92"
 
 # gitleaks — `make secrets` (leaked-credential scan; static-check gate).
 "aqua:gitleaks/gitleaks" = "8.30.1"
