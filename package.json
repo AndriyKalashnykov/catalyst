@@ -52,7 +52,7 @@
   },
   "dependencies": {
     "@hpcc-js/wasm-graphviz": "1.29.0",
-    "fontkit": "^2.0.4",
+    "fontkit": "^3.0.0",
     "xml2js": "^0.6.2"
   },
   "devDependencies": {
